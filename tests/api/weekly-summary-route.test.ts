@@ -224,6 +224,29 @@ describe('POST /api/analytics/weekly-summary', () => {
     expect(mockPrisma.aiWeeklySummary.create).not.toHaveBeenCalled();
   });
 
+  it('two requests at the same time (double tap, StrictMode): one AI call, both get the summary', async () => {
+    ctx = merchant;
+    let release: () => void = () => {};
+    const started = new Promise<void>((ready) => {
+      mockWriter.mockImplementation(
+        () =>
+          new Promise((resolve) => {
+            release = () => resolve({ content, model: 'claude-haiku-5-5', inputTokens: 1, outputTokens: 1 });
+            ready();
+          })
+      );
+    });
+    const first = POST(req());
+    const second = POST(req());
+    await started;
+    release();
+    const [a, b]: any[] = await Promise.all([first, second]);
+    expect(mockWriter).toHaveBeenCalledTimes(1);
+    expect(mockPrisma.aiWeeklySummary.create).toHaveBeenCalledTimes(1);
+    expect(a.body.data.status).toBe('READY');
+    expect(b.body.data.status).toBe('READY');
+  });
+
   it('no ANTHROPIC_API_KEY: 503 AI_SUMMARY_UNAVAILABLE', async () => {
     ctx = merchant;
     delete process.env.ANTHROPIC_API_KEY;

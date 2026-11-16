@@ -109,11 +109,30 @@ export interface WriteParams {
   language: string;
 }
 
+/** Writes running in this process, by scope and week */
+const inFlight = new Map<string, Promise<WeeklySummaryData>>();
+
 /**
  * POST: the stored summary, or write it now (once per scope and week). A week with no activity is stored as
  * NO_ORDERS without AI. Writer errors propagate and nothing is stored, so the next tap retries.
+ * A second request for the same scope and week while the first is writing (double tap, React StrictMode running
+ * the effect twice, app and web at once) waits for that write instead of calling AI again.
  */
-export async function writeWeeklySummary(
+export function writeWeeklySummary(
+  prisma: Prisma,
+  db: Db,
+  writer: SummaryWriter,
+  params: WriteParams
+): Promise<WeeklySummaryData> {
+  const key = `${params.scope.key}|${lastFullWeek(params.todayKey).start}`;
+  const running = inFlight.get(key);
+  if (running) return running;
+  const write = writeOnce(prisma, db, writer, params).finally(() => inFlight.delete(key));
+  inFlight.set(key, write);
+  return write;
+}
+
+async function writeOnce(
   prisma: Prisma,
   db: Db,
   writer: SummaryWriter,
