@@ -2512,4 +2512,24 @@
         <item>bool.true|ใช่</item>
         <item>bool.false|ไม่</item>
     </string-array>
+    <!-- #1612 AI weekly summary on Tổng quan (button, sheet) -->
+    <string name="weekly_summary_title">สรุปประจำสัปดาห์</string>
+    <string name="weekly_summary_whole_shop">ทั้งร้าน</string>
+    <string name="weekly_summary_loading">AI กำลังอ่านตัวเลขของสัปดาห์ที่แล้ว…</string>
+    <string name="weekly_summary_loading_hint">ไม่กี่วินาที</string>
+    <string name="weekly_summary_actions">สิ่งที่ควรทำสัปดาห์นี้</string>
+    <string name="weekly_summary_orders_group">ออเดอร์ การเช่าและการคืน</string>
+    <string name="weekly_summary_rent_sale_cancel">เช่า · ขาย · ยกเลิก</string>
+    <string name="weekly_summary_out_back">ส่งมอบ · รับคืน</string>
+    <string name="weekly_summary_late_not_picked">คืนล่าช้า · ยังไม่มารับ</string>
+    <string name="weekly_summary_products_group">สินค้ายอดนิยมและลูกค้า</string>
+    <string name="weekly_summary_customers">ลูกค้าที่มีออเดอร์</string>
+    <string name="weekly_summary_new_returning">ใหม่ · ลูกค้าเก่า</string>
+    <string name="weekly_summary_footer_figures">ตัวเลขคำนวณโดย AnyRent บรรทัดที่มี ✦ เขียนโดย AI และอาจไม่ถูกต้อง</string>
+    <string name="weekly_summary_footer_written">เขียนเมื่อ %1$s · ฉบับใหม่ %2$s</string>
+    <string name="weekly_summary_no_orders">สัปดาห์ที่แล้วไม่มีออเดอร์ จึงยังไม่มีอะไรให้สรุป</string>
+    <string name="weekly_summary_error">สร้างสรุปไม่สำเร็จ</string>
+    <plurals name="weekly_summary_times">
+        <item quantity="other">%1$d ครั้ง</item>
+    </plurals>
 </resources>

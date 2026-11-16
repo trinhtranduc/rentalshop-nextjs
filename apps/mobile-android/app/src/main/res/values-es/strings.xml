@@ -2512,4 +2512,25 @@
         <item>bool.true|Sí</item>
         <item>bool.false|No</item>
     </string-array>
+    <!-- #1612 AI weekly summary on Tổng quan (button, sheet) -->
+    <string name="weekly_summary_title">Resumen semanal</string>
+    <string name="weekly_summary_whole_shop">Toda la tienda</string>
+    <string name="weekly_summary_loading">La IA está leyendo las cifras de la semana pasada…</string>
+    <string name="weekly_summary_loading_hint">Unos segundos</string>
+    <string name="weekly_summary_actions">Para hacer esta semana</string>
+    <string name="weekly_summary_orders_group">Pedidos, alquileres y devoluciones</string>
+    <string name="weekly_summary_rent_sale_cancel">Alquiler · Venta · Anulado</string>
+    <string name="weekly_summary_out_back">Entregado · Devuelto</string>
+    <string name="weekly_summary_late_not_picked">Con retraso · Sin retirar</string>
+    <string name="weekly_summary_products_group">Artículos populares y clientes</string>
+    <string name="weekly_summary_customers">Clientes con pedidos</string>
+    <string name="weekly_summary_new_returning">Nuevos · Recurrentes</string>
+    <string name="weekly_summary_footer_figures">Las cifras las calcula AnyRent. Las líneas con ✦ las escribe la IA y pueden tener errores.</string>
+    <string name="weekly_summary_footer_written">Escrito %1$s · el próximo %2$s</string>
+    <string name="weekly_summary_no_orders">La semana pasada no hubo pedidos, así que no hay nada que resumir.</string>
+    <string name="weekly_summary_error">No se pudo crear el resumen.</string>
+    <plurals name="weekly_summary_times">
+        <item quantity="one">%1$d vez</item>
+        <item quantity="other">%1$d veces</item>
+    </plurals>
 </resources>

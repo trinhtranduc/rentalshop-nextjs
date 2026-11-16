@@ -77,6 +77,7 @@ import com.anyrent.pos.domain.overview.IncomeRow
 import com.anyrent.pos.domain.overview.OverviewTodayOrders
 import com.anyrent.pos.domain.overview.OverviewTodayOrderRow
 import com.anyrent.pos.domain.overview.OverviewWaterfallKey
+import com.anyrent.pos.domain.overview.WeeklySummaryLogic
 import com.anyrent.pos.ui.common.AppDateRangePickerSheet
 import com.anyrent.pos.ui.common.formatDayShort
 import com.anyrent.pos.ui.common.formatMoneyVnd
@@ -163,8 +164,12 @@ fun OverviewV2Screen(
     onOpenRelated: (String, String, String) -> Unit = { _, _, _ -> },
     /** #1059: a row of "Đơn tạo hôm nay" opens the order */
     onOpenOrder: (Int) -> Unit = {},
+    /** #1612 "✦ Tóm tắt tuần" (owner, branch manager) */
+    summaryViewModel: WeeklySummaryViewModel = viewModel(factory = WeeklySummaryViewModel.Factory()),
 ) {
     val state by viewModel.state.collectAsState()
+    val summaryState by summaryViewModel.state.collectAsState()
+    val showsSummaryButton = state.showsRevenue && WeeklySummaryLogic.showsButton(summaryState.summary)
     // #674: back on screen or an order changed: quiet reload only when dirty or 10 minutes old
     LaunchedEffect(Unit) { viewModel.onShown() }
     // #1307: every role follows the shop currency the owner set (at most once a minute)
@@ -182,85 +187,105 @@ fun OverviewV2Screen(
     val start = range.start.toString()
     val end = range.end.toString()
 
-    PullToRefreshBox(
-        isRefreshing = state.refreshing, onRefresh = viewModel::refresh,
-        modifier = Modifier.fillMaxSize().background(OV.Page),
-    ) {
-        Column(
-            Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 24.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp),
+    Box(Modifier.fillMaxSize()) {
+        PullToRefreshBox(
+            isRefreshing = state.refreshing,
+            onRefresh = {
+                viewModel.refresh()
+                summaryViewModel.load()
+            },
+            modifier = Modifier.fillMaxSize().background(OV.Page),
         ) {
-            Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(
-                    stringResource(R.string.overview_v2_title), fontSize = DS.TextSize.Title, fontWeight = FontWeight.Bold, color = OV.Ink,
-                    modifier = Modifier.semantics { heading() },
-                )
-                Text(
-                    longRange(range), fontSize = DS.TextSize.Secondary, color = OV.Muted, textAlign = TextAlign.End, maxLines = 1,
-                    overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f).padding(bottom = 3.dp),
-                )
-            }
-            if (state.showsRevenue) {
-                Row(
-                    Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).heightIn(min = DS.TouchTarget).padding(bottom = 0.dp),
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    OverviewChip.entries.forEach { chip ->
-                        val title = if (chip == OverviewChip.CUSTOM && state.chip == OverviewChip.CUSTOM) OverviewLogic.shortRange(range) else chipTitle(chip)
-                        OVChipButton(title, chip == state.chip) {
-                            when {
-                                chip == OverviewChip.CUSTOM -> showPicker = true
-                                chip != state.chip -> viewModel.select(chip)
+            Column(
+                Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(
+                    start = 16.dp, end = 16.dp, top = 16.dp,
+                    // #1612: the floating button never covers the last card
+                    bottom = 24.dp + if (showsSummaryButton) WeeklySummaryButtonClearance else 0.dp,
+                ),
+                verticalArrangement = Arrangement.spacedBy(14.dp),
+            ) {
+                Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(
+                        stringResource(R.string.overview_v2_title), fontSize = DS.TextSize.Title, fontWeight = FontWeight.Bold, color = OV.Ink,
+                        modifier = Modifier.semantics { heading() },
+                    )
+                    Text(
+                        longRange(range), fontSize = DS.TextSize.Secondary, color = OV.Muted, textAlign = TextAlign.End, maxLines = 1,
+                        overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f).padding(bottom = 3.dp),
+                    )
+                }
+                if (state.showsRevenue) {
+                    Row(
+                        Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).heightIn(min = DS.TouchTarget).padding(bottom = 0.dp),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        OverviewChip.entries.forEach { chip ->
+                            val title = if (chip == OverviewChip.CUSTOM && state.chip == OverviewChip.CUSTOM) OverviewLogic.shortRange(range) else chipTitle(chip)
+                            OVChipButton(title, chip == state.chip) {
+                                when {
+                                    chip == OverviewChip.CUSTOM -> showPicker = true
+                                    chip != state.chip -> viewModel.select(chip)
+                                }
                             }
                         }
                     }
                 }
-            }
-            if (state.showsRevenue) {
-                if (failed) {
-                    OVCard {
-                        Text(
-                            state.reportError.orEmpty().ifBlank { stringResource(R.string.calendar_v2_error) } + " · " + stringResource(R.string.retry),
-                            fontSize = DS.TextSize.Secondary, color = OV.Red,
-                            modifier = Modifier.fillMaxWidth().clickable(role = Role.Button) { viewModel.load() },
+                if (state.showsRevenue) {
+                    if (failed) {
+                        OVCard {
+                            Text(
+                                state.reportError.orEmpty().ifBlank { stringResource(R.string.calendar_v2_error) } + " · " + stringResource(R.string.retry),
+                                fontSize = DS.TextSize.Secondary, color = OV.Red,
+                                modifier = Modifier.fillMaxWidth().clickable(role = Role.Button) { viewModel.load() },
+                            )
+                        }
+                    } else {
+                        TilesGrid(report, state.now, state.loading, today, vietnamese) { kind -> if (report != null && !state.loading) sheet = kind }
+                    }
+                    ChartCard(state.chartReport, state.loading, failed, chartRange, today)
+                }
+                // #620: the Hôm nay counters belong to today only
+                if (state.showsOperations && OverviewDashLogic.showsTodayCard(range, today)) {
+                    TodayCard(state.now, state.loading, onOpenOrdersTab, onOpenRentedOut, onOpenNotPickedUp)
+                    // #1199: deposit stages to collect today / soon (today's range only, like the "Hôm nay" counters)
+                    state.now?.installments?.takeIf { !it.isEmpty }?.let { InstallmentsCard(it, onOpenOrder) }
+                }
+                // #1059: a range of exactly today lists today's new orders instead of ranking them
+                if (state.showsRevenue && !failed && OverviewTodayOrders.showsTodayOrders(range, today)) {
+                    TodayOrdersCard(
+                        report, state.newOrders, state.newOrdersFailed, state.loading, vietnamese,
+                        onViewAll = { onOpenRelated(OverviewRelatedKind.ORDER_VALUE.key, start, end) },
+                        onOpen = onOpenOrder,
+                    )
+                }
+                if (state.showsRevenue && !failed && OverviewTodayOrders.showsTopCards(range, today)) {
+                    OverviewTopKind.entries.forEach { kind ->
+                        TopCard(
+                            kind, report, state.loading, vietnamese,
+                            onViewAll = { onOpenTopAll(kind.key, start, end) },
+                            onOpen = { id -> (if (kind == OverviewTopKind.PRODUCTS) onOpenProduct else onOpenCustomer)(id, start, end) },
                         )
                     }
-                } else {
-                    TilesGrid(report, state.now, state.loading, today, vietnamese) { kind -> if (report != null && !state.loading) sheet = kind }
                 }
-                ChartCard(state.chartReport, state.loading, failed, chartRange, today)
-            }
-            // #620: the Hôm nay counters belong to today only
-            if (state.showsOperations && OverviewDashLogic.showsTodayCard(range, today)) {
-                TodayCard(state.now, state.loading, onOpenOrdersTab, onOpenRentedOut, onOpenNotPickedUp)
-                // #1199: deposit stages to collect today / soon (today's range only, like the "Hôm nay" counters)
-                state.now?.installments?.takeIf { !it.isEmpty }?.let { InstallmentsCard(it, onOpenOrder) }
-            }
-            // #1059: a range of exactly today lists today's new orders instead of ranking them
-            if (state.showsRevenue && !failed && OverviewTodayOrders.showsTodayOrders(range, today)) {
-                TodayOrdersCard(
-                    report, state.newOrders, state.newOrdersFailed, state.loading, vietnamese,
-                    onViewAll = { onOpenRelated(OverviewRelatedKind.ORDER_VALUE.key, start, end) },
-                    onOpen = onOpenOrder,
-                )
-            }
-            if (state.showsRevenue && !failed && OverviewTodayOrders.showsTopCards(range, today)) {
-                OverviewTopKind.entries.forEach { kind ->
-                    TopCard(
-                        kind, report, state.loading, vietnamese,
-                        onViewAll = { onOpenTopAll(kind.key, start, end) },
-                        onOpen = { id -> (if (kind == OverviewTopKind.PRODUCTS) onOpenProduct else onOpenCustomer)(id, start, end) },
+                if (!state.showsRevenue && !state.showsOperations) {
+                    Text(
+                        stringResource(R.string.overview_v2_no_access), color = OV.Muted, fontSize = DS.TextSize.Body,
+                        textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth().padding(24.dp),
                     )
                 }
             }
-            if (!state.showsRevenue && !state.showsOperations) {
-                Text(
-                    stringResource(R.string.overview_v2_no_access), color = OV.Muted, fontSize = DS.TextSize.Body,
-                    textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth().padding(24.dp),
-                )
-            }
         }
+        if (showsSummaryButton) {
+            WeeklySummaryButton(
+                showsDot = WeeklySummaryLogic.showsDot(summaryState.summary),
+                onClick = summaryViewModel::open,
+                modifier = Modifier.align(Alignment.BottomEnd).padding(end = 16.dp, bottom = 16.dp),
+            )
+        }
+    }
+    if (summaryState.sheetOpen) {
+        WeeklySummarySheet(summaryState.summary, summaryState.phase, onRetry = summaryViewModel::retry, onClose = summaryViewModel::close)
     }
 
     val open = sheet

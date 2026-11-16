@@ -2512,4 +2512,24 @@
     <string name="signup_app_language">vi</string>
     <string name="settings_email_language">メールの言語</string>
     <string name="settings_email_language_hint">認証メール、パスワード再設定、プラン通知はこの言語で送信されます。</string>
+    <!-- #1612 AI weekly summary on Tổng quan (button, sheet) -->
+    <string name="weekly_summary_title">週間サマリー</string>
+    <string name="weekly_summary_whole_shop">ショップ全体</string>
+    <string name="weekly_summary_loading">AIが先週の数字を読み込んでいます…</string>
+    <string name="weekly_summary_loading_hint">数秒かかります</string>
+    <string name="weekly_summary_actions">今週やること</string>
+    <string name="weekly_summary_orders_group">注文とレンタル・返却</string>
+    <string name="weekly_summary_rent_sale_cancel">レンタル · 販売 · キャンセル</string>
+    <string name="weekly_summary_out_back">お渡し · 返却</string>
+    <string name="weekly_summary_late_not_picked">返却延滞 · 未受取</string>
+    <string name="weekly_summary_products_group">人気商品と顧客</string>
+    <string name="weekly_summary_customers">注文した顧客</string>
+    <string name="weekly_summary_new_returning">新規 · リピーター</string>
+    <string name="weekly_summary_footer_figures">数字はAnyRentが計算しています。✦の行はAIが書いたもので、誤りがある場合があります。</string>
+    <string name="weekly_summary_footer_written">作成 %1$s · 次回 %2$s</string>
+    <string name="weekly_summary_no_orders">先週は注文がなかったため、まとめる内容がありません。</string>
+    <string name="weekly_summary_error">サマリーを作成できませんでした。</string>
+    <plurals name="weekly_summary_times">
+        <item quantity="other">%1$d回</item>
+    </plurals>
 </resources>

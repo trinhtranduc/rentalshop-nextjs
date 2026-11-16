@@ -2512,4 +2512,24 @@
         <item>bool.true|Ya</item>
         <item>bool.false|Tidak</item>
     </string-array>
+    <!-- #1612 AI weekly summary on Tổng quan (button, sheet) -->
+    <string name="weekly_summary_title">Ringkasan mingguan</string>
+    <string name="weekly_summary_whole_shop">Seluruh toko</string>
+    <string name="weekly_summary_loading">AI sedang membaca angka minggu lalu…</string>
+    <string name="weekly_summary_loading_hint">Beberapa detik</string>
+    <string name="weekly_summary_actions">Yang perlu dilakukan minggu ini</string>
+    <string name="weekly_summary_orders_group">Pesanan, sewa, dan pengembalian</string>
+    <string name="weekly_summary_rent_sale_cancel">Sewa · Jual · Batal</string>
+    <string name="weekly_summary_out_back">Diantar · Dikembalikan</string>
+    <string name="weekly_summary_late_not_picked">Terlambat · Belum diambil</string>
+    <string name="weekly_summary_products_group">Barang terlaris dan pelanggan</string>
+    <string name="weekly_summary_customers">Pelanggan dengan pesanan</string>
+    <string name="weekly_summary_new_returning">Baru · Kembali</string>
+    <string name="weekly_summary_footer_figures">Angka dihitung oleh AnyRent. Baris bertanda ✦ ditulis oleh AI dan bisa keliru.</string>
+    <string name="weekly_summary_footer_written">Ditulis %1$s · berikutnya %2$s</string>
+    <string name="weekly_summary_no_orders">Minggu lalu tidak ada pesanan, jadi tidak ada yang perlu diringkas.</string>
+    <string name="weekly_summary_error">Ringkasan belum bisa dibuat.</string>
+    <plurals name="weekly_summary_times">
+        <item quantity="other">%1$d kali</item>
+    </plurals>
 </resources>
