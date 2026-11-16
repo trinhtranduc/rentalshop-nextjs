@@ -49,6 +49,23 @@ export function listedOutletForList(input: {
   return input.queryOutletId ? input.queryOutletId : undefined;
 }
 
+/**
+ * #1601 the owner on the iOS / Android app, which never sends `listed`: the list keeps only what the branch in use lists
+ * (the `outletId` the app sends, else the shop's default branch). `listed` sent on purpose wins: `true` goes through
+ * `listedOutletForList`, `false` means no filter. The web and the other roles are unchanged. undefined = no filter.
+ */
+export function ownerAppListedOutlet(input: {
+  role: string | null | undefined;
+  isMobile: boolean;
+  listedRaw: string | null | undefined;
+  queryOutletId?: number | null;
+  defaultOutletId?: number | null;
+}): number | undefined {
+  if (input.role !== 'MERCHANT' || !input.isMobile) return undefined;
+  if ((input.listedRaw ?? '').trim() !== '') return undefined;
+  return input.queryOutletId || input.defaultOutletId || undefined;
+}
+
 export interface ListedRow {
   outletId: number;
   stock: number;

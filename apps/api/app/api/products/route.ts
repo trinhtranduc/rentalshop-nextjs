@@ -9,7 +9,7 @@ import { compressImageTo1MB } from '../../../lib/image-compression';
 import { buildProductAuditSnapshot, safeAudit } from '../../../lib/change-timeline';
 import { searchRateLimiter } from '@rentalshop/middleware';
 import { API, USER_ROLE, VALIDATION, isOutletRole } from '@rentalshop/constants';
-import { listedOutletForList, listedRowsForCreate, parseListedParam, shopHasSingleActiveOutlet } from '../../../lib/product-listing';
+import { listedOutletForList, listedRowsForCreate, ownerAppListedOutlet, parseListedParam, shopHasSingleActiveOutlet } from '../../../lib/product-listing';
 import { otherActiveOutletsFor, otherOutletStock } from '../../../lib/other-outlet-stock';
 import { z } from 'zod';
 import { productForClient } from '../../../lib/block-pricing-legacy';
@@ -129,14 +129,32 @@ export const GET = withPermissions(['products.view'])(async (request, { user, us
     const effectiveSortBy = isMobilePlatform ? 'name' : (sortBy as any);
     const effectiveSortOrder = isMobilePlatform ? 'asc' : (sortOrder as any);
 
+    // A merchant login has no outlet (#432). On iOS/Android it works in its default outlet (#398), so
+    // count today's free units there, as the availability routes do (and #1601: list what it lists).
+    // The web list keeps its all-outlets view; no default and several outlets also keeps it.
+    let merchantDefaultOutletId: number | undefined;
+    if (user.role === USER_ROLE.MERCHANT && !queryOutletId && isMobilePlatform) {
+      const defaultOutlet = await db.outlets.findDefaultForMerchant(userScope.merchantId);
+      merchantDefaultOutletId = defaultOutlet?.id;
+    }
+
     // #1341 "Hiện ở chi nhánh": `listed=true` keeps only the products listed at one branch (a branch role: its own; the
-    // owner: the outletId of the query). A shop with a single active branch ignores it. No `listed` = no change at all.
-    let listedOutletId = listedOutletForList({
-      listed: parseListedParam(listed),
-      role: user.role,
-      userOutletId: userScope.outletId,
-      queryOutletId,
-    });
+    // owner: the outletId of the query). #1601 the owner's iOS / Android app (no `listed`): the branch in use, else the
+    // default one. A shop with a single active branch ignores it. The web without `listed` = no change at all.
+    let listedOutletId =
+      listedOutletForList({
+        listed: parseListedParam(listed),
+        role: user.role,
+        userOutletId: userScope.outletId,
+        queryOutletId,
+      }) ??
+      ownerAppListedOutlet({
+        role: user.role,
+        isMobile: isMobilePlatform,
+        listedRaw: listed,
+        queryOutletId,
+        defaultOutletId: merchantDefaultOutletId,
+      });
     if (listedOutletId && filterMerchantId) {
       const activeOutlets = await prisma.outlet.count({ where: { merchantId: filterMerchantId, isActive: true } });
       if (shopHasSingleActiveOutlet(activeOutlets)) listedOutletId = undefined;
@@ -168,15 +186,6 @@ export const GET = withPermissions(['products.view'])(async (request, { user, us
 
     // Check if user has permission to view costPrice
     const canViewCostPrice = await hasPermission(user, 'products.manage');
-
-    // A merchant login has no outlet (#432). On iOS/Android it works in its default outlet (#398), so
-    // count today's free units there, as the availability routes do. Products are not filtered by it.
-    // The web list keeps its all-outlets view; no default and several outlets also keeps it.
-    let merchantDefaultOutletId: number | undefined;
-    if (user.role === USER_ROLE.MERCHANT && !queryOutletId && isMobilePlatform) {
-      const defaultOutlet = await db.outlets.findDefaultForMerchant(userScope.merchantId);
-      merchantDefaultOutletId = defaultOutlet?.id;
-    }
 
     const availabilityOutletId = resolveProductListAvailabilityOutletId({
       role: user.role,
