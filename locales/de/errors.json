@@ -1,4 +1,7 @@
 {
+  "AI_SUMMARY_UNAVAILABLE": "Die KI-Zusammenfassung ist nicht aktiviert.",
+  "AI_SUMMARY_FAILED": "Die Zusammenfassung konnte nicht erstellt werden. Bitte erneut versuchen.",
+  "AI_WEEKLY_SUMMARY_SUCCESS": "Wochenzusammenfassung abgerufen",
   "_comment": "Fehlercodes für API-Antworten – deutsche Fassung",
   "UNAUTHORIZED": "Anmeldung erforderlich",
   "FORBIDDEN": "Zugriff verweigert",

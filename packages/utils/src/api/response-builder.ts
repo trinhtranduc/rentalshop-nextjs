@@ -176,6 +176,9 @@ const ERROR_MESSAGES: Record<string, string> = {
   // System Errors
   'INTERNAL_SERVER_ERROR': 'Internal server error',
   'SERVICE_UNAVAILABLE': 'Service temporarily unavailable. Please try again later.',
+  'AI_SUMMARY_UNAVAILABLE': 'AI summary is not turned on.',
+  'AI_SUMMARY_FAILED': 'Could not write the summary. Please try again.',
+  'AI_WEEKLY_SUMMARY_SUCCESS': 'Weekly summary retrieved successfully',
   'GATEWAY_ERROR': 'Gateway error. The server is temporarily unavailable.',
   'TIMEOUT_ERROR': 'Request timeout. Please try again.',
   'FETCH_MERCHANTS_FAILED': 'Failed to fetch merchants',

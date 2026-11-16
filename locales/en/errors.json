@@ -1,4 +1,7 @@
 {
+  "AI_SUMMARY_UNAVAILABLE": "AI summary is not turned on.",
+  "AI_SUMMARY_FAILED": "Could not write the summary. Please try again.",
+  "AI_WEEKLY_SUMMARY_SUCCESS": "Weekly summary retrieved successfully",
   "_comment": "Error codes for API responses - English version",
   
   "UNAUTHORIZED": "Authentication required",

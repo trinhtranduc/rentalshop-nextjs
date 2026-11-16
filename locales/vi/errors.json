@@ -1,4 +1,7 @@
 {
+  "AI_SUMMARY_UNAVAILABLE": "Tóm tắt bằng AI chưa được bật.",
+  "AI_SUMMARY_FAILED": "Chưa tạo được tóm tắt. Vui lòng thử lại.",
+  "AI_WEEKLY_SUMMARY_SUCCESS": "Lấy tóm tắt tuần thành công",
   "_comment": "Mã lỗi cho API responses - Phiên bản tiếng Việt",
   
   "UNAUTHORIZED": "Yêu cầu xác thực",

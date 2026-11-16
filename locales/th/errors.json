@@ -1,4 +1,7 @@
 {
+  "AI_SUMMARY_UNAVAILABLE": "ยังไม่ได้เปิดสรุปด้วย AI",
+  "AI_SUMMARY_FAILED": "สร้างสรุปไม่สำเร็จ โปรดลองอีกครั้ง",
+  "AI_WEEKLY_SUMMARY_SUCCESS": "ดึงสรุปรายสัปดาห์สำเร็จ",
   "_comment": "รหัสข้อผิดพลาดสำหรับ API responses - ฉบับภาษาไทย",
   "UNAUTHORIZED": "ต้องเข้าสู่ระบบก่อน",
   "FORBIDDEN": "ไม่อนุญาตให้เข้าถึง",

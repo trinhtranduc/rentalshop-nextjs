@@ -1,4 +1,7 @@
 {
+  "AI_SUMMARY_UNAVAILABLE": "AI 摘要尚未開啟。",
+  "AI_SUMMARY_FAILED": "無法產生摘要，請再試一次。",
+  "AI_WEEKLY_SUMMARY_SUCCESS": "已取得每週摘要",
   "_comment": "API 回應錯誤碼 - 繁體中文版",
   "UNAUTHORIZED": "需要驗證身分",
   "FORBIDDEN": "存取被拒",

@@ -1,4 +1,7 @@
 {
+  "AI_SUMMARY_UNAVAILABLE": "AI 摘要尚未开启。",
+  "AI_SUMMARY_FAILED": "未能生成摘要，请重试。",
+  "AI_WEEKLY_SUMMARY_SUCCESS": "已获取每周摘要",
   "_comment": "Error codes for API responses - Chinese version",
   "UNAUTHORIZED": "需要登录",
   "FORBIDDEN": "无权访问",

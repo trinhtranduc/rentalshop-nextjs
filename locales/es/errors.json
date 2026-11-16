@@ -1,4 +1,7 @@
 {
+  "AI_SUMMARY_UNAVAILABLE": "El resumen con IA no está activado.",
+  "AI_SUMMARY_FAILED": "No se pudo crear el resumen. Inténtalo de nuevo.",
+  "AI_WEEKLY_SUMMARY_SUCCESS": "Resumen semanal obtenido",
   "_comment": "Códigos de error para las respuestas de la API - Versión en español",
   "UNAUTHORIZED": "Se requiere autenticación",
   "FORBIDDEN": "Acceso denegado",
