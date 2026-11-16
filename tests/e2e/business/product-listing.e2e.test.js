@@ -4,7 +4,9 @@
  * Owner rules checked here (2026-10-30):
  *  - a new product is listed at the branch that creates it; every other branch gets a 0 row that is NOT listed;
  *  - GET /api/products?listed=true lists one branch (a branch role: its own; the owner: outletId); a product listed with
- *    stock 0 stays in; without `listed` every product comes back as before (installed apps never send it);
+ *    stock 0 stays in; without `listed` the web and branch roles get every product as before;
+ *  - #1601 the owner on the iOS / Android app (`x-client-platform: mobile`) without `listed` gets only the products
+ *    listed at the outletId it sends (else the shop default branch); `listed=false` turns that off; the web is unchanged;
  *  - only the owner ticks / unticks (PUT /api/products/listing); OUTLET_ADMIN, kho and staff get 403 INSUFFICIENT_PERMISSIONS;
  *  - unticking is never blocked (stock, units on rent, open orders); orders already on the book still work;
  *  - an order from an OLD app (no `X-Client-Capabilities: branch-listing`) lists the product again; the web / new apps do not;
@@ -120,6 +122,7 @@ describeList('BF-LIST ticks: create, list, tick, roles (#1341)', () => {
     expect(await listIds(m, `listed=true&outletId=${b.id}`)).not.toContain(p.id);
     // installed apps never send listed: the branch still gets every product, as before
     expect(await listIds(oa)).toContain(p.id);
+    // #1601 the owner's app without outletId: the default branch (A), where p is listed
     expect(await listIds(m)).toContain(p.id);
     // false is not the filter
     expect(await listIds(oa, 'listed=false')).toContain(p.id);
@@ -271,6 +274,53 @@ describeList('BF-LIST unticking is never blocked; orders on the book go on (#134
   });
 });
 
+describeList('BF-LIST the owner on the app sees only what the branch in use lists (#1601)', () => {
+  let w;
+  let m;
+  let b;
+  beforeAll(async () => {
+    w = world('owner-app', { outlets: -1 });
+    m = await login(w.merchant); // the iOS / Android app (x-client-platform: mobile), no listed
+    b = await outlet(m, `CN B ${w.id}`);
+  });
+
+  test('BF-LIST-15 outletId of the app (else the default branch) filters; listed=false and the web see everything', async () => {
+    const atA = await product(m, [[w.outletId, 3]]);
+    const atB = await product(m, [[b.id, 0], [w.outletId, 0, false]]);
+    expect(rowsOf(atB.id)).toEqual({ [w.outletId]: 'f/0/0', [b.id]: 't/0/0' });
+
+    // the branch the app sends
+    const atAIds = await listIds(m, `outletId=${w.outletId}`);
+    expect(atAIds).toContain(atA.id);
+    expect(atAIds).not.toContain(atB.id);
+    const atBIds = await listIds(m, `outletId=${b.id}`);
+    expect(atBIds).toContain(atB.id); // listed with stock 0 stays in
+    expect(atBIds).not.toContain(atA.id);
+
+    // no outletId: the shop default branch (A)
+    const noBranch = await listIds(m);
+    expect(noBranch).toContain(atA.id);
+    expect(noBranch).not.toContain(atB.id);
+
+    // listed=false sent on purpose: everything
+    expect(await listIds(m, `listed=false&outletId=${b.id}`)).toEqual(expect.arrayContaining([atA.id, atB.id]));
+
+    // the web is unchanged: no branch = everything, a branch without listed = everything
+    const appHeaders = m.headers;
+    m.asPlatform({ ...appHeaders, ...S.WEB_HEADERS }); // same session (logins are single-session), now the web
+    expect(await listIds(m)).toEqual(expect.arrayContaining([atA.id, atB.id]));
+    expect(await listIds(m, `outletId=${b.id}`)).toEqual(expect.arrayContaining([atA.id, atB.id]));
+    m.asPlatform(appHeaders);
+
+    // the product still opens by id (orders, edit) at a branch that hides it
+    expect((await m.get(`/api/products/${atB.id}?outletId=${w.outletId}`)).status).toBe(200);
+
+    // shown again (tick at A): back in A's list
+    expect((await tick(m, w.outletId, [atB.id], true)).status).toBe(200);
+    expect(await listIds(m, `outletId=${w.outletId}`)).toContain(atB.id);
+  });
+});
+
 describeList('BF-LIST a shop with one active branch ignores listed (#1341)', () => {
   let w;
   let m;
@@ -283,6 +333,9 @@ describeList('BF-LIST a shop with one active branch ignores listed (#1341)', () 
     const p = await product(m, [[w.outletId, 2]]);
     S.sql(`UPDATE "OutletStock" SET "isListed" = false WHERE "productId" = ${p.id}`);
     expect(await listIds(m, `listed=true&outletId=${w.outletId}`)).toContain(p.id);
+    // #1601 the owner's app without listed: one branch, nothing hidden
+    expect(await listIds(m, `outletId=${w.outletId}`)).toContain(p.id);
+    expect(await listIds(m)).toContain(p.id);
     const staff = await login(w.staff);
     expect(await listIds(staff, 'listed=true')).toContain(p.id);
   });
