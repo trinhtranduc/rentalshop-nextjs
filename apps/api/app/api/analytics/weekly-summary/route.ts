@@ -19,7 +19,10 @@ import { readWeeklySummary, summaryScope, writeWeeklySummary } from '../../../..
  *
  * Query: timeZone (optional IANA zone, like the analytics routes). The text follows Accept-Language.
  */
-async function handle(request: Request, user: any, userScope: any, write: boolean) {
+type SummaryUser = { role: string };
+type SummaryUserScope = { merchantId?: number; outletId?: number };
+
+async function handle(request: Request, user: SummaryUser, userScope: SummaryUserScope, write: boolean) {
   try {
     const { searchParams } = new URL(request.url);
     const timeZone = readAnalyticsTimeZone(searchParams);

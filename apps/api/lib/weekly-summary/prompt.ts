@@ -108,11 +108,11 @@ export function summaryUserMessage(numbers: WeeklyNumbers, shop: SummaryShop, to
     week: numbers.week,
     previousWeek: numbers.previousWeek,
     revenue: numbers.revenue,
-    branches: numbers.branches.map(({ outletId: _id, ...row }) => row),
+    branches: numbers.branches.map((b) => ({ name: b.name, orderValue: b.orderValue, collected: b.collected, newOrders: b.newOrders })),
     orders: numbers.orders,
     rentals: numbers.rentals,
     products: {
-      hot: numbers.products.hot.map(({ productId: _id, ...row }) => row),
+      hot: numbers.products.hot.map((p) => ({ name: p.name, rentals: p.rentals, sales: p.sales, revenue: p.revenue })),
       notRented: numbers.products.notRented
     },
     customers: numbers.customers

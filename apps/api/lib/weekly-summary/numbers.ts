@@ -1,5 +1,4 @@
 import type { prisma as databasePrisma } from '@rentalshop/database';
-import { ORDER_STATUS, ORDER_TYPE } from '@rentalshop/constants';
 import { formatDateKeyInTimeZone, getUtcRangeForDateKeys } from '@rentalshop/utils';
 import { buildAnalyticsPeriodReport, computePeriodByOutlet, percentChange } from '@rentalshop/utils/server';
 import { daysOf, previousWeek, type WeekKeys } from './week';
@@ -54,7 +53,12 @@ export interface WeeklyNumbers {
 
 /** The client of `@rentalshop/database` (the routes pass it) */
 export type Prisma = typeof databasePrisma;
+/** Prisma input types of that client (the API also has a second generated copy; never mix the two) */
+type OrderWhere = NonNullable<NonNullable<Parameters<Prisma['order']['findMany']>[0]>['where']>;
+type ProductWhere = NonNullable<NonNullable<Parameters<Prisma['product']['count']>[0]>['where']>;
 type Db = Parameters<typeof buildAnalyticsPeriodReport>[1];
+/** @rentalshop/utils types its own copy of the Prisma client; same object at runtime */
+type UtilsPrisma = Parameters<typeof buildAnalyticsPeriodReport>[0];
 
 export interface WeeklyNumbersParams {
   week: WeekKeys;
@@ -62,7 +66,7 @@ export interface WeeklyNumbersParams {
   timeZone: string;
   userRole: string;
   /** Same filter as the Overview routes (`resolveAnalyticsOutletFilter`) */
-  outletFilter: Record<string, any>;
+  outletFilter: OrderWhere;
   /** Open branches to list (owner, two or more); null = no list */
   branchOutletIds: number[] | null;
   /** Products counted in `notRented`: the shop's, or those shown at one branch */
@@ -75,47 +79,56 @@ const change = (current: number, previous: number): Change => ({
   growth: percentChange(current, previous)
 });
 
+interface TopProductRow {
+  id?: unknown;
+  name?: unknown;
+  rentalCount?: unknown;
+  saleCount?: unknown;
+  totalRevenue?: unknown;
+}
+
 /** Figures of one week for the summary. Cancelled orders are left out; days are civil days of `timeZone`. */
 export async function computeWeeklyNumbers(prisma: Prisma, db: Db, params: WeeklyNumbersParams): Promise<WeeklyNumbers> {
   const { week, todayKey, timeZone, userRole, outletFilter, branchOutletIds, productScope } = params;
   const before = previousWeek(week);
   const range = getUtcRangeForDateKeys({ from: week.start, to: week.end }, timeZone);
   const prevRange = getUtcRangeForDateKeys({ from: before.start, to: before.end }, timeZone);
-  const orderWhere = { ...outletFilter, deletedAt: null };
-  const notCancelled = { not: ORDER_STATUS.CANCELLED as any };
+  const orderWhere: OrderWhere = { ...outletFilter, deletedAt: null };
+  const notCancelled = { not: 'CANCELLED' as const };
+  const dayOf = (at: Date) => formatDateKeyInTimeZone(new Date(at), timeZone);
 
   const lateIn = async (r: { start: Date; end: Date }): Promise<number> => {
     const due = await prisma.order.findMany({
       where: {
         ...orderWhere,
-        orderType: ORDER_TYPE.RENT as any,
-        status: { in: [ORDER_STATUS.PICKUPED, ORDER_STATUS.RETURNED] as any },
+        orderType: 'RENT',
+        status: { in: ['PICKUPED', 'RETURNED'] },
         returnPlanAt: { gte: r.start, lte: r.end }
-      } as any,
+      },
       select: { returnPlanAt: true, returnedAt: true },
       take: 10000
     });
-    return due.filter((o: any) => {
-      const dueKey = formatDateKeyInTimeZone(new Date(o.returnPlanAt), timeZone);
-      const backKey = o.returnedAt ? formatDateKeyInTimeZone(new Date(o.returnedAt), timeZone) : todayKey;
-      return backKey > dueKey;
+    return due.filter((o) => {
+      if (!o.returnPlanAt) return false;
+      const backKey = o.returnedAt ? dayOf(o.returnedAt) : todayKey;
+      return backKey > dayOf(o.returnPlanAt);
     }).length;
   };
 
+  const utilsPrisma = prisma as unknown as UtilsPrisma;
   const [report, prevBranches, created, prevNew, late, prevLate, notPickedUp, lineProducts] = await Promise.all([
-    // `as any`: @rentalshop/utils types its own copy of the Prisma client
-    buildAnalyticsPeriodReport(prisma as any, db, {
+    buildAnalyticsPeriodReport(utilsPrisma, db, {
       startDate: week.start,
       endDate: week.end,
       groupBy: 'day',
       limit: 3,
-      outletFilter,
+      outletFilter: outletFilter as Record<string, unknown>,
       userRole,
       timeZone,
       ...(branchOutletIds ? { byOutletIds: branchOutletIds } : {})
     }),
     branchOutletIds
-      ? computePeriodByOutlet(prisma as any, {
+      ? computePeriodByOutlet(utilsPrisma, {
           startDate: before.start,
           endDate: before.end,
           outletIds: branchOutletIds,
@@ -123,73 +136,69 @@ export async function computeWeeklyNumbers(prisma: Prisma, db: Db, params: Weekl
         })
       : Promise.resolve(null),
     prisma.order.findMany({
-      where: { ...orderWhere, createdAt: { gte: range.start, lte: range.end }, status: notCancelled } as any,
+      where: { ...orderWhere, createdAt: { gte: range.start, lte: range.end }, status: notCancelled },
       select: { createdAt: true, orderType: true, customerId: true, totalAmount: true },
       take: 10000
     }),
     prisma.order.count({
-      where: { ...orderWhere, createdAt: { gte: prevRange.start, lte: prevRange.end }, status: notCancelled } as any
+      where: { ...orderWhere, createdAt: { gte: prevRange.start, lte: prevRange.end }, status: notCancelled }
     }),
     lateIn(range),
     lateIn(prevRange),
     prisma.order.count({
-      where: {
-        ...orderWhere,
-        orderType: ORDER_TYPE.RENT as any,
-        status: ORDER_STATUS.RESERVED as any,
-        pickupPlanAt: { gte: range.start, lte: range.end }
-      } as any
+      where: { ...orderWhere, orderType: 'RENT', status: 'RESERVED', pickupPlanAt: { gte: range.start, lte: range.end } }
     }),
     prisma.orderItem.findMany({
       where: {
         productId: { not: null },
         order: { ...orderWhere, createdAt: { gte: range.start, lte: range.end }, status: notCancelled }
-      } as any,
+      },
       select: { productId: true },
-      distinct: ['productId'] as any
+      distinct: ['productId']
     })
   ]);
 
   // Customers: new = first order in the scope falls in the week
-  const customerIds = [...new Set(created.map((o: any) => o.customerId).filter((id: any) => typeof id === 'number'))];
+  const customerIds = [...new Set(created.map((o) => o.customerId).filter((id): id is number => typeof id === 'number'))];
   const firstOrders = customerIds.length
     ? await prisma.order.groupBy({
         by: ['customerId'],
-        where: { ...orderWhere, customerId: { in: customerIds } } as any,
+        where: { ...orderWhere, customerId: { in: customerIds } },
         _min: { createdAt: true }
       })
     : [];
   const newCustomers = new Set(
-    (firstOrders as any[])
+    firstOrders
       .filter((row) => row._min?.createdAt && new Date(row._min.createdAt) >= range.start)
       .map((row) => row.customerId as number)
   );
   let withCustomerValue = 0;
   let returningValue = 0;
-  for (const o of created as any[]) {
+  for (const o of created) {
     if (typeof o.customerId !== 'number') continue;
     withCustomerValue += o.totalAmount || 0;
     if (!newCustomers.has(o.customerId)) returningValue += o.totalAmount || 0;
   }
 
-  const rentedIds = (lineProducts as any[]).map((row) => row.productId).filter((id) => typeof id === 'number');
-  const productWhere =
+  const rentedIds = lineProducts.map((row) => row.productId).filter((id): id is number => typeof id === 'number');
+  const productWhere: ProductWhere =
     'merchantId' in productScope
       ? { merchantId: productScope.merchantId, deletedAt: null }
       : { deletedAt: null, outletStock: { some: { outletId: productScope.outletId, isListed: true } } };
   const notRented = await prisma.product.count({
-    where: { ...productWhere, ...(rentedIds.length ? { id: { notIn: rentedIds } } : {}) } as any
+    where: { ...productWhere, ...(rentedIds.length ? { id: { notIn: rentedIds } } : {}) }
   });
 
   const perDay = new Map(daysOf(week).map((key) => [key, 0]));
-  for (const o of created as any[]) {
-    const key = formatDateKeyInTimeZone(new Date(o.createdAt), timeZone);
+  for (const o of created) {
+    const key = dayOf(o.createdAt);
     if (perDay.has(key)) perDay.set(key, (perDay.get(key) || 0) + 1);
   }
 
   const prevByOutlet = new Map((prevBranches ?? []).map((row) => [row.outletId, row.orderValue]));
   const counts = report.operational?.orderCounts;
   const growth = report.growth;
+  const hot: TopProductRow[] = report.topProducts ?? [];
 
   return {
     week,
@@ -213,8 +222,8 @@ export async function computeWeeklyNumbers(prisma: Prisma, db: Db, params: Weekl
     })),
     orders: {
       new: change(created.length, prevNew),
-      rent: (created as any[]).filter((o) => o.orderType === ORDER_TYPE.RENT).length,
-      sale: (created as any[]).filter((o) => o.orderType === ORDER_TYPE.SALE).length,
+      rent: created.filter((o) => o.orderType === 'RENT').length,
+      sale: created.filter((o) => o.orderType === 'SALE').length,
       cancelled: counts?.cancelled ?? 0,
       byDay: [...perDay.entries()].map(([date, count]) => ({ date, count }))
     },
@@ -225,7 +234,7 @@ export async function computeWeeklyNumbers(prisma: Prisma, db: Db, params: Weekl
       notPickedUp
     },
     products: {
-      hot: (report.topProducts ?? []).slice(0, 3).map((p: any) => ({
+      hot: hot.slice(0, 3).map((p) => ({
         productId: Number(p.id),
         name: String(p.name),
         rentals: Number(p.rentalCount) || 0,

@@ -5,6 +5,7 @@ import { computeWeeklyNumbers, weekHasActivity, type Prisma, type WeeklyNumbers 
 import { summarySystemPrompt, summaryUserMessage, type SummaryContent } from './prompt';
 import { lastFullWeek, nextWeekStart, type WeekKeys } from './week';
 
+type SummaryCreateData = Parameters<Prisma['aiWeeklySummary']['create']>[0]['data'];
 type Db = Parameters<typeof resolveAnalyticsOutletFilter>[0] & Parameters<typeof computeWeeklyNumbers>[1];
 
 /** #1612 whose summary: the whole shop (owner) or one branch (branch manager) */
@@ -144,9 +145,11 @@ export async function writeWeeklySummary(
     productScope: scope.outletId == null ? { merchantId: scope.merchantId } : { outletId: scope.outletId }
   });
 
-  let data: Record<string, unknown>;
+  const json = (value: unknown) => value as NonNullable<SummaryCreateData['numbers']>;
+  const base = { merchantId: scope.merchantId, outletId: scope.outletId, scopeKey: scope.key, weekStart: week.start };
+  let data: SummaryCreateData;
   if (!weekHasActivity(numbers)) {
-    data = { status: 'NO_ORDERS', numbers: numbers as any };
+    data = { ...base, status: 'NO_ORDERS', numbers: json(numbers) };
   } else {
     const shop = await prisma.merchant.findUnique({
       where: { id: scope.merchantId },
@@ -157,24 +160,23 @@ export async function writeWeeklySummary(
       user: summaryUserMessage(numbers, { ...(shop ?? {}), branchName }, todayKey)
     });
     data = {
+      ...base,
       status: 'READY',
       language,
       model: written.model,
-      numbers: numbers as any,
-      content: written.content as any,
+      numbers: json(numbers),
+      content: json(written.content),
       inputTokens: written.inputTokens,
       outputTokens: written.outputTokens
     };
   }
 
   try {
-    const row = await prisma.aiWeeklySummary.create({
-      data: { merchantId: scope.merchantId, outletId: scope.outletId, scopeKey: scope.key, weekStart: week.start, ...data } as any
-    });
+    const row = await prisma.aiWeeklySummary.create({ data });
     return toData(row, week, todayKey, branchName);
-  } catch (error: any) {
+  } catch (error) {
     // Two taps at once: the other request stored it first
-    if (error?.code === 'P2002') {
+    if ((error as { code?: string } | null)?.code === 'P2002') {
       const row = await findRow(prisma, scope, week);
       if (row) return toData(row, week, todayKey, branchName);
     }
