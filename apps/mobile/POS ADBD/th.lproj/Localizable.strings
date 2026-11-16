@@ -3076,3 +3076,26 @@
 "shopinfo.emailLanguage" = "ภาษาของอีเมล";
 "shopinfo.emailLanguage.hint" = "อีเมลยืนยัน ตั้งรหัสผ่านใหม่ และการแจ้งแพ็กเกจจะส่งเป็นภาษานี้";
 "shopinfo.emailLanguage.failed" = "บันทึกภาษาอีเมลไม่สำเร็จ กรุณาลองอีกครั้ง";
+
+/* #1612 AI weekly summary on Tổng quan (floating button and sheet) */
+"weeklySummary.title" = "สรุปรายสัปดาห์";
+"weeklySummary.wholeShop" = "ทั้งร้าน";
+"weeklySummary.unread" = "มีสรุปใหม่";
+"weeklySummary.loading" = "AI กำลังอ่านตัวเลขของสัปดาห์ที่แล้ว…";
+"weeklySummary.loadingHint" = "ใช้เวลาไม่กี่วินาที";
+"weeklySummary.actions" = "สิ่งที่ควรทำสัปดาห์นี้";
+"weeklySummary.aiTag" = "AI";
+"weeklySummary.ordersGroup" = "ออเดอร์ การเช่า และการคืน";
+"weeklySummary.rentSaleCancel" = "เช่า · ขาย · ยกเลิก";
+"weeklySummary.outBack" = "ส่งมอบ · รับคืน";
+"weeklySummary.lateNotPicked" = "คืนช้า · ยังไม่มารับ";
+"weeklySummary.byDay" = "ออเดอร์ใหม่รายวัน";
+"weeklySummary.productsGroup" = "สินค้าขายดีและลูกค้า";
+"weeklySummary.customers" = "ลูกค้าที่มีออเดอร์";
+"weeklySummary.times" = "%d ครั้ง";
+"weeklySummary.times.one" = "%d ครั้ง";
+"weeklySummary.newReturning" = "ใหม่ · กลับมาซ้ำ";
+"weeklySummary.footer.figures" = "ตัวเลขคำนวณโดย AnyRent บรรทัดที่มี ✦ เขียนโดย AI และอาจไม่ถูกต้อง";
+"weeklySummary.footer.written" = "เขียนเมื่อ %1$@ · ฉบับถัดไป %2$@";
+"weeklySummary.noOrders" = "สัปดาห์ที่แล้วไม่มีออเดอร์ จึงยังไม่มีอะไรให้สรุป";
+"weeklySummary.error" = "สร้างสรุปไม่สำเร็จ";

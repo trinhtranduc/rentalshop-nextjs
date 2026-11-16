@@ -3294,3 +3294,26 @@
 "shopinfo.emailLanguage" = "Email language";
 "shopinfo.emailLanguage.hint" = "Verification, password reset and plan emails are sent in this language.";
 "shopinfo.emailLanguage.failed" = "Could not save the email language. Please try again.";
+
+/* #1612 AI weekly summary on Tổng quan (floating button and sheet) */
+"weeklySummary.title" = "Weekly summary";
+"weeklySummary.wholeShop" = "Whole shop";
+"weeklySummary.unread" = "New summary";
+"weeklySummary.loading" = "AI is reading last week's figures…";
+"weeklySummary.loadingHint" = "A few seconds";
+"weeklySummary.actions" = "To do this week";
+"weeklySummary.aiTag" = "AI";
+"weeklySummary.ordersGroup" = "Orders, rentals and returns";
+"weeklySummary.rentSaleCancel" = "Rent · Sale · Cancelled";
+"weeklySummary.outBack" = "Picked up · Returned";
+"weeklySummary.lateNotPicked" = "Late · Not picked up";
+"weeklySummary.byDay" = "New orders per day";
+"weeklySummary.productsGroup" = "Hot items and customers";
+"weeklySummary.customers" = "Customers with orders";
+"weeklySummary.times" = "%d times";
+"weeklySummary.times.one" = "%d time";
+"weeklySummary.newReturning" = "New · Returning";
+"weeklySummary.footer.figures" = "Figures are calculated by AnyRent. Lines marked ✦ are written by AI and may be wrong.";
+"weeklySummary.footer.written" = "Written %1$@ · next one %2$@";
+"weeklySummary.noOrders" = "There were no orders last week, so there is nothing to summarize.";
+"weeklySummary.error" = "Could not write the summary.";

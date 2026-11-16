@@ -3076,3 +3076,26 @@
 "shopinfo.emailLanguage" = "E-Mail-Sprache";
 "shopinfo.emailLanguage.hint" = "Bestätigungs-, Passwort-Zurücksetzungs- und Tarif-E-Mails werden in dieser Sprache gesendet.";
 "shopinfo.emailLanguage.failed" = "Die E-Mail-Sprache konnte nicht gespeichert werden. Bitte versuchen Sie es erneut.";
+
+/* #1612 AI weekly summary on Tổng quan (floating button and sheet) */
+"weeklySummary.title" = "Wochenübersicht";
+"weeklySummary.wholeShop" = "Ganzer Shop";
+"weeklySummary.unread" = "Neue Übersicht";
+"weeklySummary.loading" = "Die KI liest die Zahlen der letzten Woche…";
+"weeklySummary.loadingHint" = "Ein paar Sekunden";
+"weeklySummary.actions" = "Diese Woche zu tun";
+"weeklySummary.aiTag" = "AI";
+"weeklySummary.ordersGroup" = "Aufträge, Vermietungen und Rückgaben";
+"weeklySummary.rentSaleCancel" = "Miete · Verkauf · Storniert";
+"weeklySummary.outBack" = "Übergeben · Zurück";
+"weeklySummary.lateNotPicked" = "Verspätet · Nicht abgeholt";
+"weeklySummary.byDay" = "Neue Aufträge pro Tag";
+"weeklySummary.productsGroup" = "Beliebte Artikel und Kunden";
+"weeklySummary.customers" = "Kunden mit Aufträgen";
+"weeklySummary.times" = "%d-mal";
+"weeklySummary.times.one" = "%d-mal";
+"weeklySummary.newReturning" = "Neu · Wiederkehrend";
+"weeklySummary.footer.figures" = "Die Zahlen berechnet AnyRent. Mit ✦ markierte Zeilen schreibt die KI; sie können falsch sein.";
+"weeklySummary.footer.written" = "Erstellt %1$@ · nächste %2$@";
+"weeklySummary.noOrders" = "Letzte Woche gab es keine Aufträge, daher gibt es nichts zusammenzufassen.";
+"weeklySummary.error" = "Die Übersicht konnte nicht erstellt werden.";

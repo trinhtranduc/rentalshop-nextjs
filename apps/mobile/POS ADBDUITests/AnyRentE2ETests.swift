@@ -2013,6 +2013,60 @@ final class AnyRentE2ETests: XCTestCase {
         sleep(2)
     }
 
+    /// #1612 AI weekly summary (mockup variant D): owner and branch manager get "✦ Tóm tắt tuần" bottom right, with a
+    /// red dot (button value "Có bản tóm tắt mới") until last week's summary is opened; the sheet spins while the AI
+    /// writes, then shows the summary. Staff and warehouse get no button. Screenshots 76a–76e. To see the first open
+    /// again, delete the scope's row: delete from "AiWeeklySummary" where "scopeKey" in ('m:1','o:1').
+    func test7xWeeklySummary() throws {
+        try e2e.requireFlag("newOverview")
+        try e2e.start()
+        guard e2e.tapTab(["Reports", "Báo cáo", "Overview", "Tổng quan"], index: 3) else {
+            throw XCTSkip("No Reports tab for this account")
+        }
+        let button = app.buttons["weeklySummary.button"]
+        if e2e.role == "staff" || e2e.role == "inventory" {
+            sleep(6)
+            e2e.shot("76a-overview-no-summary-button")
+            XCTAssertFalse(button.exists, "no weekly summary button for \(e2e.role)")
+            return
+        }
+        XCTAssertTrue(button.waitForExistence(timeout: 20), "✦ Tóm tắt tuần on Overview")
+        sleep(1)
+        let unread = !((button.value as? String) ?? "").isEmpty
+        e2e.note("WEEKLY button label=\(button.label) unread=\(unread)")
+        e2e.shot("76a-overview-summary-button")
+        button.tap()
+        let loading = e2e.element(labelBeginsWith: ["AI đang đọc", "AI is reading"], type: .staticText)
+        if loading.waitForExistence(timeout: 2) {
+            e2e.shot("76b-summary-loading")
+        } else {
+            e2e.note("WEEKLY no loading state (summary already written this week)")
+        }
+        let lede = app.staticTexts["weeklySummary.lede"]
+        let noOrders = e2e.element(labelBeginsWith: ["Tuần trước chưa có đơn", "There were no orders"], type: .staticText)
+        let failed = e2e.element(labelBeginsWith: ["Chưa tạo được", "Could not write"], type: .staticText)
+        let deadline = Date().addingTimeInterval(40)
+        while Date() < deadline, !lede.exists, !noOrders.exists, !failed.exists { sleep(1) }
+        sleep(1)
+        e2e.shot("76c-summary-top")
+        XCTAssertFalse(failed.exists, "the summary was written")
+        if lede.exists {
+            e2e.note("WEEKLY lede=\(lede.label)")
+            e2e.note("WEEKLY branch rows=\(app.descendants(matching: .any).matching(identifier: "weeklySummary.branch").count)")
+            let scroll = app.scrollViews["weeklySummary.scroll"]
+            for _ in 0..<4 { scroll.swipeUp() }
+            sleep(1)
+            e2e.shot("76d-summary-bottom")
+            let footer = app.staticTexts["weeklySummary.footer"]
+            e2e.soft(footer.exists, "footer at the bottom of the sheet")
+            e2e.note("WEEKLY footer=\(footer.exists ? footer.label : "-")")
+        }
+        e2e.tapIfExists(app.buttons["weeklySummary.close"], timeout: 3)
+        sleep(2)
+        e2e.shot("76e-overview-after-summary")
+        e2e.soft(((button.value as? String) ?? "").isEmpty, "red dot gone after opening the summary")
+    }
+
 
     func test7aCustomers() throws {
         try e2e.requireFlag("newCustomers")
