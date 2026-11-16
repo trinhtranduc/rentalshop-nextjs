@@ -393,6 +393,8 @@ final class ProductFormViewController: BaseViewControler {
         stepper.accessibilityIdentifier = "product.form.stock.\(row.outletId)"
         stepper.setContentHuggingPriority(.required, for: .horizontal)
         stepper.setContentCompressionResistancePriority(.required, for: .horizontal)
+        // Same width on every row (− 44 · number 44 · + 44), whatever the branch name wraps to
+        stepper.snp.makeConstraints { make in make.width.equalTo(132) }
         stepper.onChange = { [weak self] value in
             guard let self, index < self.tickRows.count else { return }
             self.tickRows[index].stock = value
