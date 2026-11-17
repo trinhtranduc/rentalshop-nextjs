@@ -2214,7 +2214,11 @@
     <string name="shopinfo_address_label">Alamat</string>
     <string name="products_listing_title">Tampil di cabang</string>
     <string name="products_listing_owner_only">Hanya pemilik toko yang dapat mengaktifkan/menonaktifkan</string>
-    <string name="products_listing_current">Sedang dipilih</string>
+    <string name="products_listing_current">Cabang yang dipakai</string>
+    <string name="products_listing_box_title">Stok dan tampil di cabang</string>
+    <string name="products_listing_tip">Produk tampil di cabang yang dicentang. Isi jumlah untuk setiap cabang.</string>
+    <string name="products_listing_total">Total %1$d</string>
+    <string name="products_listing_need_one">Centang minimal 1 cabang untuk menampilkan produk</string>
     <string name="products_listing_branch_main">%1$s (utama)</string>
     <string name="products_listing_stock">Stok %1$d</string>
     <string name="products_listing_stock_rent">Stok %1$d · sedang disewa %2$d</string>

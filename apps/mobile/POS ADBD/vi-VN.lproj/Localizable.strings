@@ -3049,8 +3049,12 @@
 // #1346 "Hiện ở chi nhánh"
 "products.listing.title" = "Hiện ở chi nhánh";
 "products.listing.ownerOnly" = "Chỉ chủ shop bật/tắt";
-"products.listing.current" = "Đang chọn";
+"products.listing.current" = "Chi nhánh đang dùng";
 "products.listing.branchMain" = "%@ (chính)";
+"products.listing.boxTitle" = "Tồn và hiện ở chi nhánh";
+"products.listing.tip" = "Tick chi nhánh nào thì món hiện ở chi nhánh đó. Số lượng nhập theo từng chi nhánh.";
+"products.listing.total" = "Tổng %d";
+"products.listing.needOne" = "Chọn ít nhất 1 chi nhánh để hiện sản phẩm";
 "products.listing.stock" = "Tồn %d";
 "products.listing.stockRent" = "Tồn %d · đang thuê %d";
 "products.listing.reminder" = "Còn %d cái ở chi nhánh này (%d đang thuê), vẫn tính vào tổng nhưng không hiện khi tạo đơn.";

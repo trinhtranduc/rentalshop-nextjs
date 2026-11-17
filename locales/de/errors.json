@@ -207,6 +207,7 @@
   "CATEGORY_NAME_EXISTS": "Eine Kategorie mit diesem Namen existiert bereits",
   "PRODUCT_NAME_EXISTS": "Ein Artikel mit diesem Namen existiert bereits. Bitte wählen Sie einen anderen Namen.",
   "STOCK_BELOW_RENTED": "Der Bestand darf nicht niedriger sein als die derzeit vermietete Anzahl.",
+  "PRODUCT_NEEDS_ONE_BRANCH": "Ein Artikel muss in mindestens einer Filiale angezeigt werden. Zum Verschieben zuerst die neue Filiale ankreuzen und speichern, dann das Häkchen bei der alten entfernen.",
   "PLAN_NAME_EXISTS": "Ein Tarif mit diesem Namen existiert bereits",
   "MERCHANT_DUPLICATE": "Ein Händler mit dieser E-Mail-Adresse oder Telefonnummer existiert bereits. Bitte verwenden Sie eine andere E-Mail-Adresse oder Telefonnummer.",
   "EMAIL_ALREADY_EXISTS": "E-Mail-Adresse existiert bereits",

@@ -2855,8 +2855,12 @@
 "shopinfo.addressRequired" = "Bitte geben Sie die Adresse ein.";
 "products.listing.title" = "Angezeigt in Filiale";
 "products.listing.ownerOnly" = "Nur der Geschäftsinhaber kann dies ein- oder ausschalten";
-"products.listing.current" = "Ausgewählt";
+"products.listing.current" = "Aktuelle Filiale";
 "products.listing.branchMain" = "%@ (Haupt)";
+"products.listing.boxTitle" = "Bestand und Anzeige je Filiale";
+"products.listing.tip" = "Der Artikel wird in jeder angekreuzten Filiale angezeigt. Menge je Filiale eingeben.";
+"products.listing.total" = "Gesamt %d";
+"products.listing.needOne" = "Mindestens eine Filiale ankreuzen, in der der Artikel angezeigt wird";
 "products.listing.stock" = "Bestand %d";
 "products.listing.stockRent" = "Bestand %d · vermietet %d";
 "products.listing.reminder" = "%d Stück in dieser Filiale übrig (%d vermietet). Sie zählen weiterhin zur Gesamtmenge, werden aber bei der Bestellung nicht angeboten.";

@@ -2214,7 +2214,11 @@
     <string name="shopinfo_address_label">주소</string>
     <string name="products_listing_title">지점에 표시</string>
     <string name="products_listing_owner_only">사장님만 켜기/끄기 가능</string>
-    <string name="products_listing_current">선택됨</string>
+    <string name="products_listing_current">사용 중인 지점</string>
+    <string name="products_listing_box_title">재고 및 지점 표시</string>
+    <string name="products_listing_tip">선택한 지점에 상품이 표시됩니다. 수량은 지점별로 입력하세요.</string>
+    <string name="products_listing_total">합계 %1$d</string>
+    <string name="products_listing_need_one">상품을 표시할 지점을 1개 이상 선택하세요</string>
     <string name="products_listing_branch_main">%1$s (본점)</string>
     <string name="products_listing_stock">재고 %1$d</string>
     <string name="products_listing_stock_rent">재고 %1$d · 대여 중 %2$d</string>

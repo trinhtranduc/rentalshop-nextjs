@@ -11,6 +11,7 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.runtime.SideEffect
 import com.anyrent.pos.data.CurrentOutlet
 import androidx.compose.material3.Checkbox
+import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.ui.draw.alpha
 import com.anyrent.pos.domain.products.BranchListing
 import com.anyrent.pos.domain.products.BranchOutlet
@@ -187,6 +188,8 @@ fun ProductFormV2Screen(
     val openedTicks = remember { makeTickRows(initial, isOwner) }
     var tickRows by remember { mutableStateOf(openedTicks) }
     var tickOriginal by remember { mutableStateOf(openedTicks) }
+    // #1607 (#1603): Save was tapped with no branch ticked; the box says so until a branch is ticked
+    var showsBranchError by remember { mutableStateOf(false) }
     val nameFocus = remember { FocusRequester() }
     val priceFocus = remember { FocusRequester() }
     val formScroll = rememberScrollState()
@@ -245,6 +248,8 @@ fun ProductFormV2Screen(
 
     fun save() {
         val price = priceState()
+        // #1607: with the box, the quantity is the sum of the branches and each branch checks its own units on rent
+        val boxed = tickRows.isNotEmpty()
         val input = ProductFormInput(
             name = name,
             perRental = price.perRental,
@@ -253,12 +258,13 @@ fun ProductFormV2Screen(
             block = price.block,
             salePrice = MoneyInput.parse(sale),
             deposit = MoneyInput.parse(deposit),
-            quantity = quantity,
-            rented = counts?.rented ?: 0,
+            quantity = if (boxed) BranchListing.total(tickRows) else quantity,
+            rented = if (boxed) 0 else counts?.rented ?: 0,
             photoCount = photos.size,
             showsPrices = showsPrices,
         )
-        val issues = ProductFormValidator.validate(input)
+        val low = if (boxed) BranchListing.belowRented(tickRows) else null
+        val issues = ProductFormValidator.validate(input) + listOfNotNull(low?.let { ProductFormIssue.QuantityBelowRented(it.renting) })
         if (issues.isNotEmpty()) {
             error = issues.joinToString("\n") { issue ->
                 when (issue) {
@@ -270,6 +276,12 @@ fun ProductFormV2Screen(
                     is ProductFormIssue.TooManyPhotos -> tooManyPhotos.format(issue.max)
                 }
             }
+            return
+        }
+        // #1607 (#1603): the owner keeps one branch ticked; the box says so and nothing is sent
+        if (boxed && isOwner && BranchListing.needsBranch(tickRows)) {
+            showsBranchError = true
+            scope.launch { formScroll.animateScrollTo(formScroll.maxValue) }
             return
         }
         val target = outletId ?: run {
@@ -299,9 +311,11 @@ fun ProductFormV2Screen(
                             )
                         } else null,
                         outletId = target,
-                        quantity = quantity,
-                        // #1346: the owner's ticks on a new product; a branch role sends one row and the API ticks its branch
-                        createStock = if (initial == null && isOwner && tickRows.isNotEmpty()) BranchListing.createStock(tickRows, quantity, target) else null,
+                        quantity = input.quantity,
+                        // #1607: the owner's box sends every branch with its own quantity and tick; a branch role sends one row
+                        createStock = if (initial == null && isOwner && boxed) BranchListing.createStock(tickRows) else null,
+                        // #1607: an edit with the box sends only the branches whose quantity changed
+                        editStock = if (initial != null && boxed) BranchListing.stockWrites(tickOriginal, tickRows) else null,
                     )
                     val saved = ProductsV2Api.saveProduct(initial?.id, fields, photos.filterIsInstance<FormPhoto.Remote>().map { it.url }, files).getOrThrow()
                     // #1346: the owner's moved ticks go to PUT /api/products/listing after the product is saved
@@ -320,8 +334,11 @@ fun ProductFormV2Screen(
             }
             loading = false
             result.onSuccess { (product, applied, tickError) ->
-                // A retry sends only the ticks that are not saved yet
-                tickOriginal = tickOriginal.map { row -> applied.firstOrNull { it.outletId == row.outletId }?.let { row.copy(listed = it.isListed) } ?: row }
+                // A retry sends only the ticks that are not saved yet; the quantities are saved (#1607)
+                tickOriginal = tickOriginal.mapIndexed { index, row ->
+                    val saved = row.copy(stock = tickRows.getOrNull(index)?.stock ?: row.stock)
+                    applied.firstOrNull { it.outletId == row.outletId }?.let { saved.copy(listed = it.isListed) } ?: saved
+                }
                 if (tickError == null) {
                     onSaved(product)
                 } else {
@@ -498,34 +515,63 @@ fun ProductFormV2Screen(
                     placeholder = stringResource(R.string.v2_form_cost_placeholder), numeric = true, modifier = Modifier.fillMaxWidth())
             }
 
-            SectionBand(stringResource(R.string.v2_form_stock))
-            Row(Modifier.fillMaxWidth().heightIn(min = 56.dp).padding(horizontal = 16.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                Column(Modifier.weight(1f)) {
-                    Text(stringResource(R.string.v2_form_quantity), fontSize = DS.TextSize.Body)
-                    counts?.let { Text(stringResource(R.string.v2_form_stock_note, it.rented, it.free), fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted) }
+            if (tickRows.isEmpty()) {
+                SectionBand(stringResource(R.string.v2_form_stock))
+                Row(Modifier.fillMaxWidth().heightIn(min = 56.dp).padding(horizontal = 16.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Column(Modifier.weight(1f)) {
+                        Text(stringResource(R.string.v2_form_quantity), fontSize = DS.TextSize.Body)
+                        counts?.let { Text(stringResource(R.string.v2_form_stock_note, it.rented, it.free), fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted) }
+                    }
+                    V2Stepper(value = quantity, onChange = { quantity = it }, minimum = 0)
                 }
-                V2Stepper(value = quantity, onChange = { quantity = it }, minimum = 0)
-            }
-            // #1346 "Hiện ở chi nhánh": the owner ticks; a branch role sees its own row dimmed (hidden for a one-branch shop)
-            if (tickRows.isNotEmpty()) {
-                SectionBand(stringResource(R.string.products_listing_title))
+            } else {
+                // #1607 "Tồn và hiện ở chi nhánh": a tick and a quantity per branch (iOS renderStockSection)
+                SectionBand(stringResource(R.string.products_listing_box_title)) {
+                    Text(
+                        stringResource(R.string.products_listing_total, BranchListing.total(tickRows)),
+                        fontSize = DS.TextSize.Secondary, fontWeight = FontWeight.Bold, color = DS.Colors.Text,
+                        modifier = Modifier.testTag("product.form.stock.total"),
+                    )
+                }
+                if (isOwner) {
+                    Text(
+                        stringResource(R.string.products_listing_tip),
+                        fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted,
+                        modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 2.dp),
+                    )
+                }
+                if (showsBranchError) {
+                    Text(
+                        stringResource(R.string.products_listing_need_one),
+                        fontSize = DS.TextSize.Secondary, fontWeight = FontWeight.Bold, color = BRANCH_ERROR,
+                        modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 2.dp).fillMaxWidth()
+                            .border(1.dp, BRANCH_ERROR, RoundedCornerShape(8.dp))
+                            .background(BRANCH_ERROR.copy(alpha = 0.06f), RoundedCornerShape(8.dp))
+                            .padding(horizontal = 10.dp, vertical = 8.dp)
+                            .testTag("product.form.listing.error"),
+                    )
+                }
                 tickRows.forEachIndexed { index, row ->
-                    TickRowView(
+                    BranchStockRowView(
                         row = row,
                         manyRows = tickRows.size > 1,
                         isNew = initial == null,
                         isCurrent = row.outletId == CurrentOutlet.id,
                         enabled = isOwner,
-                        onToggle = { tickRows = tickRows.toMutableList().also { it[index] = row.copy(listed = !row.listed) } },
+                        error = showsBranchError,
+                        onToggle = {
+                            tickRows = tickRows.toMutableList().also { it[index] = row.copy(listed = !row.listed) }
+                            if (!BranchListing.needsBranch(tickRows)) showsBranchError = false
+                        },
+                        onQuantity = { value -> tickRows = tickRows.toMutableList().also { it[index] = it[index].copy(stock = value) } },
                     )
-                }
-                val lines = tickRows.mapNotNull { row -> BranchListing.reminder(row)?.let { row.name to stringResource(it.stringRes, *it.args.toTypedArray()) } }
-                if (lines.isNotEmpty()) {
-                    Text(
-                        if (lines.size > 1) lines.joinToString("\n") { "${it.first}: ${it.second}" } else lines.first().second,
-                        fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted,
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp).testTag("product.form.listing.reminder"),
-                    )
+                    BranchListing.reminder(row)?.let { reminder ->
+                        Text(
+                            stringResource(reminder.stringRes, *reminder.args.toTypedArray()),
+                            fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted,
+                            modifier = Modifier.padding(start = 50.dp, end = 16.dp, top = 0.dp, bottom = 8.dp).testTag("product.form.listing.reminder"),
+                        )
+                    }
                 }
                 if (!isOwner) {
                     Text(
@@ -608,27 +654,56 @@ private fun makeTickRows(product: Product?, isOwner: Boolean): List<BranchTickRo
     return BranchListing.rows(listOf(BranchOutlet(own, CurrentOutlet.name.orEmpty(), isDefault = false)), product, null)
 }
 
+/** #1607 (#1603): the red of "Chọn ít nhất 1 chi nhánh để hiện sản phẩm" (iOS V2.danger) */
+private val BRANCH_ERROR = Color(0xFFB91C1C)
+
+/** #1607: one branch of the box: the tick (owner only) with the name and a caption, then the branch's own quantity */
 @Composable
-private fun TickRowView(row: BranchTickRow, manyRows: Boolean, isNew: Boolean, isCurrent: Boolean, enabled: Boolean, onToggle: () -> Unit) {
+private fun BranchStockRowView(
+    row: BranchTickRow,
+    manyRows: Boolean,
+    isNew: Boolean,
+    isCurrent: Boolean,
+    enabled: Boolean,
+    error: Boolean,
+    onToggle: () -> Unit,
+    onQuantity: (Int) -> Unit,
+) {
     val title = if (row.isDefault && manyRows) stringResource(R.string.products_listing_branch_main, row.name) else row.name
     val caption = when {
-        !isNew -> if (row.renting > 0) stringResource(R.string.products_listing_stock_rent, row.stock, row.renting)
-        else stringResource(R.string.products_listing_stock, row.stock)
+        !isNew -> stringResource(R.string.v2_form_stock_note, row.renting, (row.stock - row.renting).coerceAtLeast(0))
         isCurrent -> stringResource(R.string.products_listing_current)
         else -> ""
     }
     Row(
-        Modifier.fillMaxWidth().heightIn(min = 48.dp)
-            .alpha(if (enabled) 1f else 0.5f)
-            .clickable(enabled = enabled, role = Role.Checkbox, onClick = onToggle)
-            .semantics { contentDescription = "product.form.listing.${row.outletId}" }
-            .padding(horizontal = 16.dp),
+        Modifier.fillMaxWidth().heightIn(min = 56.dp).padding(horizontal = 16.dp, vertical = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        Checkbox(checked = row.listed, onCheckedChange = null, enabled = enabled)
-        Text(title, fontSize = DS.TextSize.Body, fontWeight = if (row.listed) FontWeight.Bold else FontWeight.Normal, modifier = Modifier.weight(1f))
-        if (caption.isNotEmpty()) Text(caption, fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted)
+        Row(
+            Modifier.weight(1f).heightIn(min = 48.dp)
+                .alpha(if (enabled) 1f else 0.5f)
+                .clickable(enabled = enabled, role = Role.Checkbox, onClick = onToggle)
+                .semantics { contentDescription = "product.form.listing.${row.outletId}" },
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            Checkbox(
+                checked = row.listed, onCheckedChange = null, enabled = enabled,
+                colors = if (error && !row.listed) CheckboxDefaults.colors(uncheckedColor = BRANCH_ERROR) else CheckboxDefaults.colors(),
+            )
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Text(title, fontSize = DS.TextSize.Body, fontWeight = if (row.listed) FontWeight.Bold else FontWeight.Normal)
+                if (caption.isNotEmpty()) Text(
+                    caption, fontSize = DS.TextSize.Secondary,
+                    fontWeight = if (isNew) FontWeight.Bold else FontWeight.Normal,
+                    color = if (isNew) DS.Colors.Primary else DS.Colors.TextMuted,
+                )
+            }
+        }
+        Box(Modifier.semantics { contentDescription = "product.form.stock.${row.outletId}" }) {
+            V2Stepper(value = row.stock, onChange = onQuantity, minimum = row.renting, compact = true)
+        }
     }
 }
 

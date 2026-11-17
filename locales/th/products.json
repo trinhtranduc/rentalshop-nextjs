@@ -632,7 +632,8 @@
         "saleRequired": "กรุณากรอกราคาขาย",
         "depositNegative": "เงินมัดจำต้องไม่ติดลบ",
         "stockRequired": "จำนวนต้องมากกว่า 0",
-        "outletStockNegative": "จำนวนต้องไม่ติดลบ"
+        "outletStockNegative": "จำนวนต้องไม่ติดลบ",
+        "branchRequired": "เลือกอย่างน้อย 1 สาขาที่จะแสดงสินค้า"
       },
       "noCreate": "คุณไม่มีสิทธิ์เพิ่มสินค้า",
       "noEdit": "คุณไม่มีสิทธิ์แก้ไขสินค้า",

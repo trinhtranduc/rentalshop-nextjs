@@ -2214,7 +2214,11 @@
     <string name="shopinfo_address_label">ที่อยู่</string>
     <string name="products_listing_title">แสดงที่สาขา</string>
     <string name="products_listing_owner_only">เฉพาะเจ้าของร้านเปิด/ปิดได้</string>
-    <string name="products_listing_current">กำลังเลือก</string>
+    <string name="products_listing_current">สาขาที่ใช้อยู่</string>
+    <string name="products_listing_box_title">คลังและการแสดงที่สาขา</string>
+    <string name="products_listing_tip">สาขาที่ติ๊กจะแสดงสินค้านี้ ใส่จำนวนแยกตามสาขา</string>
+    <string name="products_listing_total">รวม %1$d</string>
+    <string name="products_listing_need_one">เลือกอย่างน้อย 1 สาขาที่จะแสดงสินค้า</string>
     <string name="products_listing_branch_main">%1$s (หลัก)</string>
     <string name="products_listing_stock">สต็อก %1$d</string>
     <string name="products_listing_stock_rent">สต็อก %1$d · กำลังเช่า %2$d</string>

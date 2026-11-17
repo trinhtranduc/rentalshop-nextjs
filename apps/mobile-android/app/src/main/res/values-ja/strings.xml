@@ -2293,7 +2293,11 @@
     <string name="shopinfo_address_label">住所</string>
     <string name="products_listing_title">店舗での表示</string>
     <string name="products_listing_owner_only">表示のオン/オフはオーナーのみ可能です</string>
-    <string name="products_listing_current">選択中</string>
+    <string name="products_listing_current">使用中の店舗</string>
+    <string name="products_listing_box_title">在庫と表示する店舗</string>
+    <string name="products_listing_tip">チェックした店舗に商品が表示されます。数量は店舗ごとに入力します。</string>
+    <string name="products_listing_total">合計 %1$d</string>
+    <string name="products_listing_need_one">商品を表示する店舗を1つ以上選んでください</string>
     <string name="products_listing_branch_main">%1$s（本店）</string>
     <string name="products_listing_stock">在庫 %1$d</string>
     <string name="products_listing_stock_rent">在庫 %1$d · レンタル中 %2$d</string>

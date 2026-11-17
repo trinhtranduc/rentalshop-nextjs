@@ -2353,7 +2353,11 @@
     <!-- #1346 "Hiện ở chi nhánh" (iOS products.listing.*) -->
     <string name="products_listing_title">Hiện ở chi nhánh</string>
     <string name="products_listing_owner_only">Chỉ chủ shop bật/tắt</string>
-    <string name="products_listing_current">Đang chọn</string>
+    <string name="products_listing_current">Chi nhánh đang dùng</string>
+    <string name="products_listing_box_title">Tồn và hiện ở chi nhánh</string>
+    <string name="products_listing_tip">Tick chi nhánh nào thì món hiện ở chi nhánh đó. Số lượng nhập theo từng chi nhánh.</string>
+    <string name="products_listing_total">Tổng %1$d</string>
+    <string name="products_listing_need_one">Chọn ít nhất 1 chi nhánh để hiện sản phẩm</string>
     <string name="products_listing_branch_main">%1$s (chính)</string>
     <string name="products_listing_stock">Tồn %1$d</string>
     <string name="products_listing_stock_rent">Tồn %1$d · đang thuê %2$d</string>

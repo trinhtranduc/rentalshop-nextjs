@@ -394,6 +394,88 @@ final class AnyRentE2ETests: XCTestCase {
         e2e.shot("33-listing-owner-home-ticked-back")
     }
 
+    /// #1607: the owner's box "Tồn và hiện ở chi nhánh" (shop with 2+ branches). Create: untick the branch in use, Save with no
+    /// branch (the box says so, nothing is sent), tick the other branch and move the quantity there. Edit a product whose units
+    /// at the branch in use are all on rent (E2E_RENTED_PRODUCT, default "Product 5 -"): that quantity cannot go lower.
+    func test1gBranchStockBox() throws {
+        try e2e.requireFlag("newProducts")
+        try e2e.requireRole("merchant")
+        try e2e.start()
+        e2e.tapTab(["Home", "Trang chủ"], index: 0)
+        let add = e2e.button(["Add product", "Thêm sản phẩm"])
+        guard add.waitForExistence(timeout: 8) else { return XCTFail("no Add product button") }
+        add.tap()
+        let name = app.textFields["product.form.name"]
+        XCTAssertTrue(name.waitForExistence(timeout: 8), "Add-product form opens")
+        name.tap()
+        name.typeText(ProcessInfo.processInfo.environment["E2E_BOX_PRODUCT"] ?? "SP 1607 chi nhanh 2")
+        e2e.hideKeyboard()
+        guard scrollToListingTicks() else { return XCTFail("no 'Tồn và hiện ở chi nhánh' box (a shop with 2+ branches?)") }
+        app.swipeUp()
+        sleep(1)
+        let total = app.staticTexts["product.form.stock.total"]
+        XCTAssertTrue(total.exists, "the box shows its total")
+        XCTAssertEqual(listingTicks.count, 2, "one row per open branch")
+        XCTAssertEqual(listingTicks.element(boundBy: 0).value as? String, "1", "the branch in use starts ticked")
+        e2e.note("new: total=\(total.label) ticks=\(listingTicks.allElementsBoundByIndex.map { "\($0.identifier)=\(String(describing: $0.value))" })")
+        e2e.shot("70-box-new")
+
+        // Untick the branch in use: its quantity stays, with the reminder; Save says so in the box and sends nothing
+        listingTicks.element(boundBy: 0).tap()
+        sleep(1)
+        XCTAssertTrue(app.staticTexts["product.form.listing.reminder"].exists, "an unticked branch with units shows the reminder")
+        e2e.shot("71-box-unticked-reminder")
+        app.buttons["product.form.save"].tap()
+        sleep(2)
+        let needOne = app.staticTexts["product.form.listing.error"]
+        XCTAssertTrue(needOne.waitForExistence(timeout: 3), "the box says to tick one branch")
+        XCTAssertFalse(app.alerts.firstMatch.exists, "no server alert: nothing was sent")
+        e2e.note("error: \(needOne.label)")
+        e2e.shot("72-box-need-one")
+
+        // Tick the other branch and move the quantity there: branch in use 1 -> 0, other branch 0 -> 2
+        listingTicks.element(boundBy: 1).tap()
+        sleep(1)
+        XCTAssertFalse(app.staticTexts["product.form.listing.error"].exists, "ticking a branch clears the error")
+        let steppers = app.otherElements.matching(NSPredicate(format: "identifier BEGINSWITH 'product.form.stock.' AND identifier != 'product.form.stock.total'"))
+        XCTAssertEqual(steppers.count, 2, "a quantity per branch")
+        let less = NSPredicate(format: "label IN %@", ["Bớt 1", "One less"])
+        let more = NSPredicate(format: "label IN %@", ["Thêm 1", "One more"])
+        steppers.element(boundBy: 0).buttons.matching(less).firstMatch.tap()
+        steppers.element(boundBy: 1).buttons.matching(more).firstMatch.tap()
+        sleep(1)
+        app.otherElements.matching(NSPredicate(format: "identifier BEGINSWITH 'product.form.stock.' AND identifier != 'product.form.stock.total'"))
+            .element(boundBy: 1).buttons.matching(more).firstMatch.tap()
+        sleep(1)
+        e2e.note("moved: total=\(app.staticTexts["product.form.stock.total"].label)")
+        e2e.shot("73-box-moved-to-other-branch")
+        app.buttons["product.form.save"].tap()
+        sleep(4)
+        if app.alerts.firstMatch.exists { e2e.note("alert after save: \(app.alerts.firstMatch.staticTexts.allElementsBoundByIndex.map { $0.label }.joined(separator: " | "))") }
+        e2e.dismissAlerts()
+        e2e.shot("74-home-after-save")
+
+        // Edit a product whose units at the branch in use are all on rent
+        let key = ProcessInfo.processInfo.environment["E2E_RENTED_PRODUCT"] ?? "Product 5 -"
+        guard e2e.openProduct(named: key) else { return XCTFail("product \(key) not found") }
+        XCTAssertTrue(editOpenProduct(), "owner sees Edit")
+        guard scrollToListingTicks() else { return XCTFail("no box on edit") }
+        app.swipeUp()
+        sleep(1)
+        let editSteppers = app.otherElements.matching(NSPredicate(format: "identifier BEGINSWITH 'product.form.stock.' AND identifier != 'product.form.stock.total'"))
+        let mainLess = editSteppers.element(boundBy: 0).buttons.matching(less).firstMatch
+        e2e.note("edit: total=\(app.staticTexts["product.form.stock.total"].label) less-at-branch-in-use enabled=\(mainLess.isEnabled)")
+        XCTAssertFalse(mainLess.isEnabled, "the quantity cannot go below the units on rent")
+        e2e.shot("75-box-edit-rented")
+        editSteppers.element(boundBy: 1).buttons.matching(more).firstMatch.tap()
+        sleep(1)
+        app.buttons["product.form.save"].tap()
+        sleep(4)
+        if app.alerts.firstMatch.exists { e2e.note("alert after edit: \(app.alerts.firstMatch.staticTexts.allElementsBoundByIndex.map { $0.label }.joined(separator: " | "))") }
+        e2e.dismissAlerts()
+        e2e.shot("76-edit-saved")
+    }
+
     /// #1346: a branch role (manager, kho, staff) sees the dimmed tick (E2E_LISTING_PRODUCT has rows at 2+ branches), cannot change it,
     /// and its list holds no product that is unticked at its branch (E2E_HIDDEN_PRODUCT, unticked from outside the test).
     func test1eBranchListingBranchRole() throws {

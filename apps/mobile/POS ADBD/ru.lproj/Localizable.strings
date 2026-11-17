@@ -2855,8 +2855,12 @@
 "shopinfo.addressRequired" = "Введите адрес.";
 "products.listing.title" = "Показывается в филиале";
 "products.listing.ownerOnly" = "Включать и отключать может только владелец магазина";
-"products.listing.current" = "Выбрано";
+"products.listing.current" = "Текущий филиал";
 "products.listing.branchMain" = "%@ (основная)";
+"products.listing.boxTitle" = "Остаток и показ по филиалам";
+"products.listing.tip" = "Товар показывается в отмеченных филиалах. Количество указывается для каждого филиала.";
+"products.listing.total" = "Всего %d";
+"products.listing.needOne" = "Отметьте хотя бы один филиал, где показывать товар";
 "products.listing.stock" = "Остаток %d";
 "products.listing.stockRent" = "Остаток %d · в аренде %d";
 "products.listing.reminder" = "В этом филиале осталось %d шт. (%d в аренде): они учитываются в общем количестве, но не предлагаются при создании заказа.";

@@ -2214,7 +2214,11 @@
     <string name="shopinfo_address_label">Adresse</string>
     <string name="products_listing_title">Affiché au point de location</string>
     <string name="products_listing_owner_only">Seul le propriétaire de la boutique peut activer ou désactiver cette option</string>
-    <string name="products_listing_current">Sélectionné</string>
+    <string name="products_listing_current">Succursale utilisée</string>
+    <string name="products_listing_box_title">Stock et affichage par succursale</string>
+    <string name="products_listing_tip">Le produit est affiché dans chaque succursale cochée. Saisissez la quantité par succursale.</string>
+    <string name="products_listing_total">Total %1$d</string>
+    <string name="products_listing_need_one">Cochez au moins une succursale où afficher le produit</string>
     <string name="products_listing_branch_main">%1$s (principal)</string>
     <string name="products_listing_stock">Stock %1$d</string>
     <string name="products_listing_stock_rent">Stock %1$d · en location %2$d</string>

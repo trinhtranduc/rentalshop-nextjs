@@ -2214,7 +2214,11 @@
     <string name="shopinfo_address_label">地址</string>
     <string name="products_listing_title">在分店顯示</string>
     <string name="products_listing_owner_only">只有店家負責人可開啟／關閉</string>
-    <string name="products_listing_current">目前選擇</string>
+    <string name="products_listing_current">目前使用的分店</string>
+    <string name="products_listing_box_title">庫存與分店顯示</string>
+    <string name="products_listing_tip">勾選的分店會顯示此商品。數量依分店分別填寫。</string>
+    <string name="products_listing_total">合計 %1$d</string>
+    <string name="products_listing_need_one">請至少勾選一間顯示商品的分店</string>
     <string name="products_listing_branch_main">%1$s（總店）</string>
     <string name="products_listing_stock">庫存 %1$d</string>
     <string name="products_listing_stock_rent">庫存 %1$d · 租借中 %2$d</string>

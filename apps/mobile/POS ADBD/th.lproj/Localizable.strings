@@ -2855,8 +2855,12 @@
 "shopinfo.addressRequired" = "กรุณากรอกที่อยู่";
 "products.listing.title" = "แสดงที่สาขา";
 "products.listing.ownerOnly" = "เฉพาะเจ้าของร้านเปิด/ปิดได้";
-"products.listing.current" = "กำลังเลือก";
+"products.listing.current" = "สาขาที่ใช้อยู่";
 "products.listing.branchMain" = "%@ (หลัก)";
+"products.listing.boxTitle" = "คลังและการแสดงที่สาขา";
+"products.listing.tip" = "สาขาที่ติ๊กจะแสดงสินค้านี้ ใส่จำนวนแยกตามสาขา";
+"products.listing.total" = "รวม %d";
+"products.listing.needOne" = "เลือกอย่างน้อย 1 สาขาที่จะแสดงสินค้า";
 "products.listing.stock" = "สต็อก %d";
 "products.listing.stockRent" = "สต็อก %d · กำลังเช่า %d";
 "products.listing.reminder" = "เหลือ %d ชิ้นที่สาขานี้ (กำลังเช่า %d) ยังนับในยอดรวม แต่ไม่แสดงตอนสร้างออเดอร์";

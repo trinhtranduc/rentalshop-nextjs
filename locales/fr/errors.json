@@ -207,6 +207,7 @@
   "CATEGORY_NAME_EXISTS": "Une catégorie portant ce nom existe déjà",
   "PRODUCT_NAME_EXISTS": "Un produit portant ce nom existe déjà. Veuillez choisir un autre nom.",
   "STOCK_BELOW_RENTED": "Le stock ne peut pas être inférieur à la quantité actuellement louée.",
+  "PRODUCT_NEEDS_ONE_BRANCH": "Un produit doit être affiché dans au moins un point de location. Pour le déplacer, cochez d'abord le nouveau point de location et enregistrez, puis décochez l'ancien.",
   "PLAN_NAME_EXISTS": "Un forfait portant ce nom existe déjà",
   "MERCHANT_DUPLICATE": "Une entreprise avec cet email ou ce téléphone existe déjà. Veuillez utiliser un autre email ou téléphone.",
   "EMAIL_ALREADY_EXISTS": "L'email existe déjà",
