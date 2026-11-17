@@ -44,7 +44,7 @@ import com.anyrent.pos.domain.orders.ReorderCart
 import androidx.compose.material.icons.outlined.MoreHoriz
 import androidx.compose.material.icons.outlined.Phone
 import androidx.compose.material.icons.outlined.StickyNote2
-import androidx.compose.material.icons.outlined.Storefront
+import androidx.compose.material.icons.filled.Storefront
 import androidx.compose.material.icons.outlined.WarningAmber
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -920,7 +920,7 @@ private fun DetailHeader(detail: OrderDetail, readyRow: (@Composable () -> Unit)
                             horizontalArrangement = Arrangement.spacedBy(6.dp),
                             modifier = Modifier.semantics(mergeDescendants = true) { contentDescription = label },
                         ) {
-                            Icon(Icons.Outlined.Storefront, contentDescription = null, tint = DS.Colors.TextMuted, modifier = Modifier.size(18.dp))
+                            Icon(Icons.Filled.Storefront, contentDescription = null, tint = DS.Colors.TextMuted, modifier = Modifier.size(18.dp))
                             Text(name, fontSize = DS.TextSize.Secondary, color = DS.Colors.Text, maxLines = 1, overflow = TextOverflow.Ellipsis)
                         }
                     }

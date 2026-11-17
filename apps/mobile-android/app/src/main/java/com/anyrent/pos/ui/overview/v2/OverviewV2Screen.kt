@@ -202,15 +202,18 @@ fun OverviewV2Screen(
                 ),
                 verticalArrangement = Arrangement.spacedBy(14.dp),
             ) {
-                Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(
-                        stringResource(R.string.overview_v2_title), fontSize = DS.TextSize.Title, fontWeight = FontWeight.Bold, color = OV.Ink,
-                        modifier = Modifier.semantics { heading() },
-                    )
-                    Text(
-                        longRange(range), fontSize = DS.TextSize.Secondary, color = OV.Muted, textAlign = TextAlign.End, maxLines = 1,
-                        overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f).padding(bottom = 3.dp),
-                    )
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    // #1618: the date sits under the title, so a range ("11/11/26 – 17/11/26") and the weekly button both fit
+                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                        Text(
+                            stringResource(R.string.overview_v2_title), fontSize = DS.TextSize.Title, fontWeight = FontWeight.Bold, color = OV.Ink,
+                            maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.semantics { heading() },
+                        )
+                        Text(
+                            longRange(range), fontSize = DS.TextSize.Secondary, color = OV.Muted, maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
                     // #1612 "✦ Tóm tắt tuần"; #1618 (owner): top right, end of the title row
                     if (showsSummaryButton) {
                         WeeklySummaryButton(
