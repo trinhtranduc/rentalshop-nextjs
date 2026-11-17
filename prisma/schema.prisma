@@ -210,11 +210,39 @@ model Merchant {
   customerLoyalty      CustomerLoyalty[]
   loyaltyTransactions  LoyaltyTransaction[]
   modules              MerchantModule[]
+  aiWeeklySummaries    AiWeeklySummary[]
 
   @@index([name])
   @@index([email])
   @@index([planId])
   @@index([referredByMerchantId])
+}
+
+/// #1612 AI summary of one past week (Monday..Sunday, civil days of the shop), written once on the first open
+/// and shared by the app and the web. `scopeKey` is `m:<merchantId>` (whole shop) or `o:<outletId>` (one branch).
+model AiWeeklySummary {
+  id           Int      @id @default(autoincrement())
+  merchantId   Int
+  /// null = whole shop
+  outletId     Int?
+  scopeKey     String
+  /// YYYY-MM-DD of the Monday
+  weekStart    String
+  /// READY (AI text) | NO_ORDERS (nothing to summarize, no AI call)
+  status       String
+  language     String?
+  model        String?
+  /// Figures computed by code at write time; the text describes these
+  numbers      Json?
+  /// AI text: summary, actions, a note per group
+  content      Json?
+  inputTokens  Int?
+  outputTokens Int?
+  createdAt    DateTime @default(now())
+  merchant     Merchant @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+
+  @@unique([scopeKey, weekStart])
+  @@index([merchantId])
 }
 
 model Outlet {

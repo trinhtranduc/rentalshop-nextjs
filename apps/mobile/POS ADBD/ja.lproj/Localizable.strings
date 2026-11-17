@@ -3080,3 +3080,26 @@
 "shopinfo.emailLanguage" = "メールの言語";
 "shopinfo.emailLanguage.hint" = "確認メール、パスワード再設定、プランのお知らせは、この言語で送信されます。";
 "shopinfo.emailLanguage.failed" = "メールの言語を保存できませんでした。もう一度お試しください。";
+
+/* #1612 AI weekly summary on Tổng quan (floating button and sheet) */
+"weeklySummary.title" = "週間まとめ";
+"weeklySummary.wholeShop" = "店舗全体";
+"weeklySummary.unread" = "新しいまとめ";
+"weeklySummary.loading" = "AIが先週の数字を読んでいます…";
+"weeklySummary.loadingHint" = "数秒かかります";
+"weeklySummary.actions" = "今週やること";
+"weeklySummary.aiTag" = "AI";
+"weeklySummary.ordersGroup" = "注文・レンタル・返却";
+"weeklySummary.rentSaleCancel" = "レンタル · 販売 · キャンセル";
+"weeklySummary.outBack" = "引き渡し · 返却";
+"weeklySummary.lateNotPicked" = "延滞 · 未受取";
+"weeklySummary.byDay" = "日別の新規注文";
+"weeklySummary.productsGroup" = "人気商品と顧客";
+"weeklySummary.customers" = "注文した顧客";
+"weeklySummary.times" = "%d回";
+"weeklySummary.times.one" = "%d回";
+"weeklySummary.newReturning" = "新規 · リピーター";
+"weeklySummary.footer.figures" = "数字はAnyRentが計算しています。✦の行はAIが書いたもので、誤りがある場合があります。";
+"weeklySummary.footer.written" = "作成 %1$@ · 次回 %2$@";
+"weeklySummary.noOrders" = "先週は注文がなかったため、まとめる内容がありません。";
+"weeklySummary.error" = "まとめを作成できませんでした。";

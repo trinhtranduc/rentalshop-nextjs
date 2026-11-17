@@ -2619,4 +2619,26 @@
     <string name="signup_app_language">en</string>
     <string name="settings_email_language">Email language</string>
     <string name="settings_email_language_hint">Verification, password reset and plan emails are sent in this language.</string>
+    <!-- #1612 AI weekly summary on Tổng quan (button, sheet) -->
+    <string name="weekly_summary_title">Weekly summary</string>
+    <string name="weekly_summary_whole_shop">Whole shop</string>
+    <string name="weekly_summary_loading">AI is reading last week\'s figures…</string>
+    <string name="weekly_summary_loading_hint">A few seconds</string>
+    <string name="weekly_summary_actions">To do this week</string>
+    <string name="weekly_summary_orders_group">Orders, rentals and returns</string>
+    <string name="weekly_summary_rent_sale_cancel">Rent · Sale · Cancelled</string>
+    <string name="weekly_summary_out_back">Picked up · Returned</string>
+    <string name="weekly_summary_late_not_picked">Late · Not picked up</string>
+    <string name="weekly_summary_products_group">Hot items and customers</string>
+    <string name="weekly_summary_customers">Customers with orders</string>
+    <string name="weekly_summary_new_returning">New · Returning</string>
+    <string name="weekly_summary_footer_figures">Figures are calculated by AnyRent. Lines marked ✦ are written by AI and may be wrong.</string>
+    <string name="weekly_summary_footer_written">Written %1$s · next one %2$s</string>
+    <string name="weekly_summary_no_orders">There were no orders last week, so there is nothing to summarize.</string>
+    <string name="weekly_summary_error">Could not write the summary.</string>
+    <string name="weekly_summary_ai_tag" translatable="false">AI</string>
+    <plurals name="weekly_summary_times">
+        <item quantity="one">%1$d time</item>
+        <item quantity="other">%1$d times</item>
+    </plurals>
 </resources>

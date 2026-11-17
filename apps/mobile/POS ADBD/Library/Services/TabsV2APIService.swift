@@ -145,6 +145,20 @@ final class TabsV2APIService: BaseService {
         return params
     }
 
+    /// #1612 AI summary of last week (whole shop for the owner, own branch for a branch manager). `write` false (GET)
+    /// never calls AI; true (POST) returns the stored one or writes it now (a few seconds).
+    @discardableResult
+    func weeklySummary(write: Bool, completion: @escaping (WeeklySummaryData?, NSError?) -> Void) -> DataRequest {
+        request(Self.weeklySummaryPath(), method: write ? .post : .get, completion: completion)
+    }
+
+    /// The path with `timeZone` in the query (POST sends no body), the shop zone like the other Overview calls
+    static func weeklySummaryPath(timeZone: String = Date.shopTimeZone.identifier) -> String {
+        var allowed = CharacterSet.urlQueryAllowed
+        allowed.remove(charactersIn: "+&=")
+        return APIEndpoint.Path.weeklySummary + "?timeZone=" + (timeZone.addingPercentEncoding(withAllowedCharacters: allowed) ?? timeZone)
+    }
+
     // MARK: - Settings
 
     @discardableResult

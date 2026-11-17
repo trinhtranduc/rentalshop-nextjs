@@ -3080,3 +3080,26 @@
 "shopinfo.emailLanguage" = "Langue des e-mails";
 "shopinfo.emailLanguage.hint" = "Les e-mails de vérification, de réinitialisation du mot de passe et les notifications de forfait sont envoyés dans cette langue.";
 "shopinfo.emailLanguage.failed" = "Impossible d'enregistrer la langue des e-mails. Veuillez réessayer.";
+
+/* #1612 AI weekly summary on Tổng quan (floating button and sheet) */
+"weeklySummary.title" = "Résumé de la semaine";
+"weeklySummary.wholeShop" = "Toute la boutique";
+"weeklySummary.unread" = "Nouveau résumé";
+"weeklySummary.loading" = "L’IA lit les chiffres de la semaine dernière…";
+"weeklySummary.loadingHint" = "Quelques secondes";
+"weeklySummary.actions" = "À faire cette semaine";
+"weeklySummary.aiTag" = "AI";
+"weeklySummary.ordersGroup" = "Commandes, locations et retours";
+"weeklySummary.rentSaleCancel" = "Location · Vente · Annulées";
+"weeklySummary.outBack" = "Remis · Rendus";
+"weeklySummary.lateNotPicked" = "En retard · Non retirés";
+"weeklySummary.byDay" = "Nouvelles commandes par jour";
+"weeklySummary.productsGroup" = "Articles phares et clients";
+"weeklySummary.customers" = "Clients avec commande";
+"weeklySummary.times" = "%d fois";
+"weeklySummary.times.one" = "%d fois";
+"weeklySummary.newReturning" = "Nouveaux · Fidèles";
+"weeklySummary.footer.figures" = "Les chiffres sont calculés par AnyRent. Les lignes marquées ✦ sont écrites par l’IA et peuvent être fausses.";
+"weeklySummary.footer.written" = "Rédigé %1$@ · prochain %2$@";
+"weeklySummary.noOrders" = "Aucune commande la semaine dernière, rien à résumer.";
+"weeklySummary.error" = "Impossible de rédiger le résumé.";

@@ -15,6 +15,7 @@
 //  #616: redrawn after the canvas phone boards (web #608 #611 #612 #613): period chips, four KPI tiles that open a
 //  detail sheet, "Thực thu theo ngày" with the hatched forecast, and the "Hôm nay" counters. The sheets and rows
 //  below (#484–#496) stay for their tests; the screen no longer uses them.
+//  #1612: owner and branch manager get the floating "✦ Tóm tắt tuần" button (AI summary of last week).
 //
 
 import UIKit
@@ -41,6 +42,10 @@ final class OverviewV2ViewController: BaseViewControler {
     private var requests: [DataRequest] = []
     /// #674: dirty on the orders-changed signal; reloaded on appear when dirty or 10 minutes old
     private var freshness = RefreshTracker()
+    /// #1612 GET weekly-summary (owner, branch manager): the floating button shows when `available`
+    private var weekly: WeeklySummaryData?
+    private var weeklyGeneration = 0
+    private let weeklyButton = WeeklySummaryButton()
 
     private let scrollView = UIScrollView()
     private let contentStack = UIStackView()
@@ -67,6 +72,7 @@ final class OverviewV2ViewController: BaseViewControler {
         }
         #endif
         setupUI()
+        loadWeeklySummary()
         NotificationCenter.default.addObserver(self, selector: #selector(ordersChanged), name: OrdersChangeSignal.name, object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(outletChanged), name: .currentOutletDidChange, object: nil)
         // #1145: the owner changed the shop currency: money is redrawn
@@ -90,6 +96,7 @@ final class OverviewV2ViewController: BaseViewControler {
     private func refreshIfNeeded() {
         guard !loading, freshness.shouldReload(now: Date(), ttl: RefreshPolicy.summaryTTL) else { return }
         load(quiet: true)
+        loadWeeklySummary()
     }
 
     @objc private func ordersChanged() {
@@ -149,10 +156,66 @@ final class OverviewV2ViewController: BaseViewControler {
         contentStack.addArrangedSubview(header)
         contentStack.addArrangedSubview(chipsScroll)
         contentStack.setCustomSpacing(10, after: chipsScroll)
+
+        // #1612 floating "✦ Tóm tắt tuần", bottom right above the tab bar; hidden until GET says the AI is on
+        weeklyButton.isHidden = true
+        weeklyButton.addTarget(self, action: #selector(weeklyTapped), for: .touchUpInside)
+        view.addSubview(weeklyButton)
+        weeklyButton.snp.makeConstraints { make in
+            make.trailing.equalTo(view.safeAreaLayoutGuide).offset(-DS.Spacing.lg)
+            make.bottom.equalTo(view.safeAreaLayoutGuide).offset(-14)
+        }
         render()
     }
 
-    @objc private func pulled() { load(quiet: true) }
+    @objc private func pulled() {
+        load(quiet: true)
+        loadWeeklySummary()
+    }
+
+    // MARK: - AI weekly summary (#1612)
+
+    /// GET (never calls AI): owner and branch manager only; any error hides the button
+    private func loadWeeklySummary() {
+        weeklyGeneration += 1
+        let token = weeklyGeneration
+        guard showsRevenue else {
+            weekly = nil
+            renderWeeklyButton()
+            return
+        }
+        TabsV2APIService.shared.weeklySummary(write: false) { [weak self] data, _ in
+            guard let self, token == self.weeklyGeneration else { return }
+            self.weekly = data
+            self.renderWeeklyButton()
+        }
+    }
+
+    private func renderWeeklyButton() {
+        let shows = WeeklySummaryLogic.showsButton(weekly)
+        weeklyButton.isHidden = !shows
+        weeklyButton.showsDot = WeeklySummaryLogic.showsDot(weekly)
+        // Room under the last card so the button never covers it
+        scrollView.contentInset.bottom = shows ? 56 : 0
+    }
+
+    @objc private func weeklyTapped() {
+        let sheet = WeeklySummarySheet(data: weekly)
+        sheet.onUpdate = { [weak self] data in
+            guard let self else { return }
+            self.weeklyGeneration += 1 // an older GET answer must not bring the dot back
+            self.weekly = data
+            self.renderWeeklyButton()
+        }
+        sheet.overrideUserInterfaceStyle = overrideUserInterfaceStyle
+        sheet.modalPresentationStyle = .pageSheet
+        if let controller = sheet.sheetPresentationController {
+            controller.detents = [.large()]
+            controller.prefersGrabberVisible = true
+            controller.preferredCornerRadius = DS.Radius.sheet
+        }
+        present(sheet, animated: true)
+    }
 
     // MARK: - Data
 

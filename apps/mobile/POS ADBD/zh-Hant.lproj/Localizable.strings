@@ -3098,3 +3098,26 @@ App 會事先提醒。";
 "shopinfo.emailLanguage" = "電子郵件語言";
 "shopinfo.emailLanguage.hint" = "驗證、重設密碼與方案通知的電子郵件將以此語言寄送。";
 "shopinfo.emailLanguage.failed" = "無法儲存電子郵件語言，請再試一次。";
+
+/* #1612 AI weekly summary on Tổng quan (floating button and sheet) */
+"weeklySummary.title" = "每週摘要";
+"weeklySummary.wholeShop" = "整間店";
+"weeklySummary.unread" = "新的摘要";
+"weeklySummary.loading" = "AI 正在讀取上週的數據…";
+"weeklySummary.loadingHint" = "需要幾秒鐘";
+"weeklySummary.actions" = "本週要做的事";
+"weeklySummary.aiTag" = "AI";
+"weeklySummary.ordersGroup" = "訂單、租出與歸還";
+"weeklySummary.rentSaleCancel" = "租賃 · 銷售 · 取消";
+"weeklySummary.outBack" = "已交付 · 已歸還";
+"weeklySummary.lateNotPicked" = "逾期 · 未取";
+"weeklySummary.byDay" = "每日新訂單";
+"weeklySummary.productsGroup" = "熱門商品與客戶";
+"weeklySummary.customers" = "有訂單的客戶";
+"weeklySummary.times" = "%d 次";
+"weeklySummary.times.one" = "%d 次";
+"weeklySummary.newReturning" = "新客 · 回頭客";
+"weeklySummary.footer.figures" = "數據由 AnyRent 計算。帶 ✦ 的句子由 AI 撰寫，可能有誤。";
+"weeklySummary.footer.written" = "撰寫於 %1$@ · 下一份 %2$@";
+"weeklySummary.noOrders" = "上週沒有訂單，因此沒有可摘要的內容。";
+"weeklySummary.error" = "無法產生摘要。";

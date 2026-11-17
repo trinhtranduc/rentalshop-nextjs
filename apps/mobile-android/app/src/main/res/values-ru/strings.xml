@@ -2516,4 +2516,27 @@
         <item>bool.true|Да</item>
         <item>bool.false|Нет</item>
     </string-array>
+    <!-- #1612 AI weekly summary on Tổng quan (button, sheet) -->
+    <string name="weekly_summary_title">Итоги недели</string>
+    <string name="weekly_summary_whole_shop">Весь магазин</string>
+    <string name="weekly_summary_loading">ИИ читает цифры прошлой недели…</string>
+    <string name="weekly_summary_loading_hint">Несколько секунд</string>
+    <string name="weekly_summary_actions">Что сделать на этой неделе</string>
+    <string name="weekly_summary_orders_group">Заказы, аренда и возвраты</string>
+    <string name="weekly_summary_rent_sale_cancel">Аренда · Продажа · Отмена</string>
+    <string name="weekly_summary_out_back">Выдано · Возвращено</string>
+    <string name="weekly_summary_late_not_picked">Просрочено · Не забрали</string>
+    <string name="weekly_summary_products_group">Популярные товары и клиенты</string>
+    <string name="weekly_summary_customers">Клиенты с заказами</string>
+    <string name="weekly_summary_new_returning">Новые · Постоянные</string>
+    <string name="weekly_summary_footer_figures">Цифры считает AnyRent. Строки с ✦ пишет ИИ, в них возможны ошибки.</string>
+    <string name="weekly_summary_footer_written">Написано %1$s · следующие %2$s</string>
+    <string name="weekly_summary_no_orders">На прошлой неделе заказов не было, поэтому подводить итоги нечего.</string>
+    <string name="weekly_summary_error">Не удалось составить итоги.</string>
+    <plurals name="weekly_summary_times">
+        <item quantity="one">%1$d раз</item>
+        <item quantity="few">%1$d раза</item>
+        <item quantity="many">%1$d раз</item>
+        <item quantity="other">%1$d раза</item>
+    </plurals>
 </resources>

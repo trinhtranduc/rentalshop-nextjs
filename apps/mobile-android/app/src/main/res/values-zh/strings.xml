@@ -2516,4 +2516,24 @@
         <item>bool.true|是</item>
         <item>bool.false|否</item>
     </string-array>
+    <!-- #1612 AI weekly summary on Tổng quan (button, sheet) -->
+    <string name="weekly_summary_title">每周总结</string>
+    <string name="weekly_summary_whole_shop">全店</string>
+    <string name="weekly_summary_loading">AI 正在读取上周数据…</string>
+    <string name="weekly_summary_loading_hint">几秒钟</string>
+    <string name="weekly_summary_actions">本周待办</string>
+    <string name="weekly_summary_orders_group">订单与租还</string>
+    <string name="weekly_summary_rent_sale_cancel">租赁 · 销售 · 取消</string>
+    <string name="weekly_summary_out_back">已交付 · 已归还</string>
+    <string name="weekly_summary_late_not_picked">逾期 · 未取货</string>
+    <string name="weekly_summary_products_group">热门商品与客户</string>
+    <string name="weekly_summary_customers">下单客户</string>
+    <string name="weekly_summary_new_returning">新客 · 回头客</string>
+    <string name="weekly_summary_footer_figures">数据由 AnyRent 计算。带 ✦ 的内容由 AI 撰写，可能不准确。</string>
+    <string name="weekly_summary_footer_written">生成于 %1$s · 下次更新 %2$s</string>
+    <string name="weekly_summary_no_orders">上周没有订单，暂无可总结的内容。</string>
+    <string name="weekly_summary_error">无法生成总结。</string>
+    <plurals name="weekly_summary_times">
+        <item quantity="other">%1$d 次</item>
+    </plurals>
 </resources>

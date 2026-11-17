@@ -17,6 +17,7 @@
     "migrate:generate": "npx prisma generate --schema=../../prisma/schema.prisma"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "1.4.0",
     "@prisma/client": "6.16.2",
     "@rentalshop/auth": "file:../../packages/auth",
     "@rentalshop/database": "file:../../packages/database",
