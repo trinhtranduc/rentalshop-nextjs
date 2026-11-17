@@ -44,6 +44,7 @@ import com.anyrent.pos.domain.orders.ReorderCart
 import androidx.compose.material.icons.outlined.MoreHoriz
 import androidx.compose.material.icons.outlined.Phone
 import androidx.compose.material.icons.outlined.StickyNote2
+import androidx.compose.material.icons.outlined.Storefront
 import androidx.compose.material.icons.outlined.WarningAmber
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -91,6 +92,7 @@ import coil.compose.AsyncImage
 import com.anyrent.pos.R
 import com.anyrent.pos.data.ApiParity
 import com.anyrent.pos.data.CartStore
+import com.anyrent.pos.data.CurrentOutlet
 import com.anyrent.pos.data.DepositModeStore
 import com.anyrent.pos.data.DepositPlanApi
 import com.anyrent.pos.data.PermissionManager
@@ -906,15 +908,33 @@ private fun DetailHeader(detail: OrderDetail, readyRow: (@Composable () -> Unit)
                     }
                 }
             }
-            // #891 (owner): who created the order, next to the created step; no line without a name
-            OrderDetailHeader.creatorName(summary)?.let { creator ->
-                Text(
-                    stringResource(R.string.detail_created_by, creator),
-                    fontSize = DS.TextSize.Secondary,
-                    color = DS.Colors.TextMuted,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
+            // #1618: which branch the order belongs to (owner with 2+ branches), as the web's store line; 8dp above "Người tạo"
+            val branch = OrderDetailHeader.branchName(detail.outletName, PermissionManager.role, CurrentOutlet.outlets.size)
+            val creator = OrderDetailHeader.creatorName(summary)
+            if (branch != null || creator != null) {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    branch?.let { name ->
+                        val label = stringResource(R.string.booking_outlet) + ": " + name
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                            modifier = Modifier.semantics(mergeDescendants = true) { contentDescription = label },
+                        ) {
+                            Icon(Icons.Outlined.Storefront, contentDescription = null, tint = DS.Colors.TextMuted, modifier = Modifier.size(18.dp))
+                            Text(name, fontSize = DS.TextSize.Secondary, color = DS.Colors.Text, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        }
+                    }
+                    // #891 (owner): who created the order, next to the created step; no line without a name
+                    creator?.let {
+                        Text(
+                            stringResource(R.string.detail_created_by, it),
+                            fontSize = DS.TextSize.Secondary,
+                            color = DS.Colors.TextMuted,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
+                }
             }
         }
     // #1285: under the status block: the late banner (off) and "Sẵn sàng giao"
