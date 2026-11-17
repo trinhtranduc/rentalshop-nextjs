@@ -39,6 +39,8 @@ private enum WSColor {
 /// red dot while last week's summary is unopened
 final class WeeklySummaryButton: UIControl {
     private let dot = UIView()
+    private let sparkle = OVFont.label("✦", DS.TextSize.secondary, .bold, color: .white)
+    private static let twinkleKey = "weeklySummary.twinkle"
 
     var showsDot = false {
         didSet {
@@ -51,7 +53,6 @@ final class WeeklySummaryButton: UIControl {
         super.init(frame: frame)
         backgroundColor = WSColor.primary
 
-        let sparkle = OVFont.label("✦", DS.TextSize.secondary, .bold, color: .white)
         let title = OVFont.label("weeklySummary.title".localized(), DS.TextSize.secondary, .bold, color: .white)
         let row = UIStackView(arrangedSubviews: [sparkle, title])
         row.spacing = 5
@@ -92,6 +93,38 @@ final class WeeklySummaryButton: UIControl {
 
     override var isHighlighted: Bool {
         didSet { alpha = isHighlighted ? 0.8 : 1 }
+    }
+
+    override func didMoveToWindow() {
+        super.didMoveToWindow()
+        updateTwinkle()
+    }
+
+    /// #1618 (owner): the ✦ twinkles while the button is on screen (`WeeklySummaryTwinkle`); none with Reduce Motion
+    private func updateTwinkle() {
+        let layer = sparkle.layer
+        guard window != nil, WeeklySummaryTwinkle.runs(reduceMotion: UIAccessibilityIsReduceMotionEnabled()) else {
+            layer.removeAnimation(forKey: Self.twinkleKey)
+            return
+        }
+        guard layer.animation(forKey: Self.twinkleKey) == nil else { return }
+        let keyTimes = WeeklySummaryTwinkle.keyTimes.map { NSNumber(value: $0) }
+        let ease = Array(repeating: CAMediaTimingFunction(name: kCAMediaTimingFunctionEaseInEaseOut),
+                         count: keyTimes.count - 1)
+        let scale = CAKeyframeAnimation(keyPath: "transform.scale")
+        scale.values = WeeklySummaryTwinkle.scales
+        scale.keyTimes = keyTimes
+        scale.timingFunctions = ease
+        let turn = CAKeyframeAnimation(keyPath: "transform.rotation.z")
+        turn.values = WeeklySummaryTwinkle.turns
+        turn.keyTimes = keyTimes
+        turn.timingFunctions = ease
+        let group = CAAnimationGroup()
+        group.animations = [scale, turn]
+        group.duration = WeeklySummaryTwinkle.duration
+        group.repeatCount = .infinity
+        group.isRemovedOnCompletion = false // keeps running after the app comes back from the background
+        layer.add(group, forKey: Self.twinkleKey)
     }
 
     /// The pill is 34pt tall; taps within 5pt around it still count (44pt target)
