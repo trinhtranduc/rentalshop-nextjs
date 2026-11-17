@@ -27,4 +27,5 @@ Keep names and structure; no unrelated changes. iOS is the reference. Ships with
 ## Decision log
 
 - 2026-11-17 — owner: "button AI tóm tắt nên để góc phải top-right" (owner)
+- 2026-11-17 — owner: "icon ai summary nên có animation chút" → the ✦ twinkles (owner)
 - 2026-11-17 — owner asked for the branch field in order detail on web and mobile; web already has it, so apps only (agent)
