@@ -632,7 +632,8 @@
         "saleRequired": "販売価格を入力してください",
         "depositNegative": "内金はマイナスにできません",
         "stockRequired": "数量は1以上で入力してください",
-        "outletStockNegative": "数量はマイナスにできません"
+        "outletStockNegative": "数量はマイナスにできません",
+        "branchRequired": "商品を表示する店舗を1つ以上選んでください"
       },
       "noCreate": "商品を追加する権限がありません。",
       "noEdit": "商品を編集する権限がありません。",

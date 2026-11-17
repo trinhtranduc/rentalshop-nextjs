@@ -632,7 +632,8 @@
         "saleRequired": "請輸入售價",
         "depositNegative": "訂金不可為負數",
         "stockRequired": "數量必須大於 0",
-        "outletStockNegative": "數量不可為負數"
+        "outletStockNegative": "數量不可為負數",
+        "branchRequired": "請至少勾選一間上架商品的分店"
       },
       "noCreate": "您沒有新增商品的權限。",
       "noEdit": "您沒有編輯商品的權限。",

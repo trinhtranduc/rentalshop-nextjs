@@ -632,7 +632,8 @@
         "saleRequired": "판매 가격을 입력해 주세요",
         "depositNegative": "예약금은 음수일 수 없습니다",
         "stockRequired": "수량은 0보다 커야 합니다",
-        "outletStockNegative": "수량은 음수일 수 없습니다"
+        "outletStockNegative": "수량은 음수일 수 없습니다",
+        "branchRequired": "상품을 표시할 매장을 1개 이상 선택하세요"
       },
       "noCreate": "상품을 추가할 권한이 없습니다.",
       "noEdit": "상품을 수정할 권한이 없습니다.",

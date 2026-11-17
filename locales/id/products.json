@@ -632,7 +632,8 @@
         "saleRequired": "Masukkan harga jual",
         "depositNegative": "Uang muka tidak boleh negatif",
         "stockRequired": "Jumlah harus lebih dari 0",
-        "outletStockNegative": "Jumlah tidak boleh negatif"
+        "outletStockNegative": "Jumlah tidak boleh negatif",
+        "branchRequired": "Centang minimal 1 cabang untuk menampilkan produk"
       },
       "noCreate": "Anda tidak memiliki izin menambah produk.",
       "noEdit": "Anda tidak memiliki izin mengubah produk.",

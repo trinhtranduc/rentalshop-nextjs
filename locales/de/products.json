@@ -632,7 +632,8 @@
         "saleRequired": "Bitte den Verkaufspreis eingeben",
         "depositNegative": "Die Anzahlung darf nicht negativ sein",
         "stockRequired": "Die Menge muss größer als 0 sein",
-        "outletStockNegative": "Die Menge darf nicht negativ sein"
+        "outletStockNegative": "Die Menge darf nicht negativ sein",
+        "branchRequired": "Mindestens eine Filiale ankreuzen, in der der Artikel angezeigt wird"
       },
       "noCreate": "Sie haben keine Berechtigung, Artikel hinzuzufügen.",
       "noEdit": "Sie haben keine Berechtigung, Artikel zu bearbeiten.",

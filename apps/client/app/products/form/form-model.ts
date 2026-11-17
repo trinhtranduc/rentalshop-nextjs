@@ -319,12 +319,16 @@ export function setOutletListed(form: FormState, outletId: number, isListed: boo
   return { ...form, listed: { ...form.listed, [outletId]: isListed } };
 }
 
-/** #1341: the ticks to send to PUT /api/products/listing after an edit: branches whose tick differs from the saved one. */
+/**
+ * #1341: the ticks to send to PUT /api/products/listing after an edit: branches whose tick differs from the saved one.
+ * #1603: ticks go before unticks, so moving a product to another branch never leaves it shown nowhere in between
+ * (the API refuses an untick of the last branch).
+ */
 export function listingChanges(form: FormState): Array<{ outletId: number; isListed: boolean }> {
   return Object.keys(form.savedListed)
     .map(Number)
     .filter((id) => form.listed[id] !== undefined && form.listed[id] !== form.savedListed[id])
-    .sort((a, b) => a - b)
+    .sort((a, b) => Number(form.listed[b]) - Number(form.listed[a]) || a - b)
     .map((outletId) => ({ outletId, isListed: form.listed[outletId] }));
 }
 
@@ -348,19 +352,27 @@ export function setTotalStock(form: FormState, total: number): FormState {
 // Validation
 // ----------------------------------------------------------------------------
 
-export type FieldKey = 'name' | 'categoryId' | 'perRental' | 'salePrice' | 'deposit' | 'totalStock' | 'outletStock';
+export type FieldKey = 'name' | 'categoryId' | 'perRental' | 'salePrice' | 'deposit' | 'totalStock' | 'outletStock' | 'listed';
 export type ErrorCode =
   | 'nameRequired'
   | 'categoryRequired'
   | 'priceNegative'
   | 'depositNegative'
   | 'stockRequired'
-  | 'outletStockNegative';
+  | 'outletStockNegative'
+  | 'branchRequired';
 
 /** Field order on the page (first error gets focus). */
-export const FIELD_ORDER: FieldKey[] = ['name', 'perRental', 'salePrice', 'deposit', 'totalStock', 'outletStock', 'categoryId'];
+export const FIELD_ORDER: FieldKey[] = ['name', 'perRental', 'salePrice', 'deposit', 'totalStock', 'outletStock', 'listed', 'categoryId'];
 
-export function validateForm(form: FormState, opts: { canEditPricing: boolean }): Partial<Record<FieldKey, ErrorCode>> {
+/**
+ * `requireBranchAmong` (#1603): the open branches of the shop when the owner sees the ticks; one of them must be ticked.
+ * Absent (a branch role, a shop with one branch) = no check.
+ */
+export function validateForm(
+  form: FormState,
+  opts: { canEditPricing: boolean; requireBranchAmong?: number[] }
+): Partial<Record<FieldKey, ErrorCode>> {
   const errors: Partial<Record<FieldKey, ErrorCode>> = {};
   if (!form.name.trim()) errors.name = 'nameRequired';
   if (!form.categoryId) errors.categoryId = 'categoryRequired';
@@ -372,6 +384,7 @@ export function validateForm(form: FormState, opts: { canEditPricing: boolean })
   if (form.deposit < 0) errors.deposit = 'depositNegative';
   if (!(form.totalStock > 0)) errors.totalStock = 'stockRequired';
   if (form.outletStock.some((r) => r.stock < 0)) errors.outletStock = 'outletStockNegative';
+  if (opts.requireBranchAmong && !opts.requireBranchAmong.some((id) => form.listed[id] === true)) errors.listed = 'branchRequired';
   return errors;
 }
 

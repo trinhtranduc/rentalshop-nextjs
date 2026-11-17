@@ -46,7 +46,13 @@ const mockDb: any = {
     search: jest.fn(async () => ({ data: [product()], total: 1, page: 1, limit: 50, hasMore: false })),
   },
 };
-jest.mock('@rentalshop/database', () => ({ db: mockDb, prisma: {} }));
+// #1601 the owner's app list is filtered by the branch in use; a shop with one active branch is not (outlet.count)
+const mockPrisma: any = {
+  outlet: {
+    count: jest.fn(async ({ where }: any) => outlets.filter((o) => o.merchantId === where.merchantId && o.isActive === where.isActive).length),
+  },
+};
+jest.mock('@rentalshop/database', () => ({ db: mockDb, prisma: mockPrisma }));
 
 const todayFreeByOutlet: Record<number, number> = { 1: 12, 3: 8 };
 const mockBatch = jest.fn(async (products: { id: number }[], outletId: number) =>
@@ -135,6 +141,8 @@ describe('GET /api/products — mobile merchant without outletId uses the defaul
     // The list is not filtered by outlet: every outlet's stock row is still there
     expect(p.outletStock.map((s: any) => s.outlet.id)).toEqual([1, 3]);
     expect(mockDb.products.search).toHaveBeenCalledWith(expect.objectContaining({ merchantId: 2, outletId: undefined }));
+    // #1601 only the products shown at the default branch (two active branches)
+    expect(mockDb.products.search).toHaveBeenCalledWith(expect.objectContaining({ listedOutletId: 1 }));
   });
 
   it('keeps the all-outlets numbers when the merchant has no default and several outlets', async () => {
@@ -152,6 +160,8 @@ describe('GET /api/products — mobile merchant without outletId uses the defaul
     expect(mockDb.outlets.findDefaultForMerchant).not.toHaveBeenCalled();
     expect(mockBatch).not.toHaveBeenCalled();
     expect(p.available).toBe(21);
+    // #1601 the web is not filtered
+    expect(mockDb.products.search.mock.calls[0][0]).not.toHaveProperty('listedOutletId');
   });
 
   it('an explicit outletId still wins', async () => {
@@ -160,6 +170,15 @@ describe('GET /api/products — mobile merchant without outletId uses the defaul
     expect(mockDb.outlets.findDefaultForMerchant).not.toHaveBeenCalled();
     expect(mockBatch).toHaveBeenCalledWith([{ id: 11 }], 3);
     expect(p.available).toBe(8);
+    // #1601 the branch the app sends
+    expect(mockDb.products.search).toHaveBeenCalledWith(expect.objectContaining({ listedOutletId: 3 }));
+  });
+
+  it('#1601 a shop with one active branch is not filtered', async () => {
+    outlets = outlets.map((o) => (o.id === 3 ? { ...o, isActive: false } : o));
+    await firstProduct('page=1&limit=20', 'mobile');
+
+    expect(mockDb.products.search.mock.calls[0][0]).not.toHaveProperty('listedOutletId');
   });
 
   it('outlet staff keep their own outlet', async () => {

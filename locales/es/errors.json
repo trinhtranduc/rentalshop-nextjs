@@ -204,6 +204,7 @@
   "CATEGORY_NAME_EXISTS": "Ya existe una categoría con este nombre",
   "PRODUCT_NAME_EXISTS": "Ya existe un producto con este nombre. Por favor, elija otro nombre.",
   "STOCK_BELOW_RENTED": "El stock no puede ser menor que la cantidad que está en alquiler.",
+  "PRODUCT_NEEDS_ONE_BRANCH": "Un producto debe estar visible en al menos una sucursal. Para moverlo, marque primero la nueva sucursal y guarde; después desmarque la anterior.",
   "PLAN_NAME_EXISTS": "Ya existe un plan con este nombre",
   "MERCHANT_DUPLICATE": "Ya existe un negocio con este correo electrónico o teléfono. Por favor, use otro correo electrónico o teléfono.",
   "EMAIL_ALREADY_EXISTS": "El correo electrónico ya existe",

@@ -3,7 +3,8 @@
  * - Only MERCHANT (and ADMIN): OUTLET_ADMIN / OUTLET_INVENTORY / OUTLET_STAFF get 403 INSUFFICIENT_PERMISSIONS, even for
  *   their own branch.
  * - A branch outside the shop, or a closed one: 404 OUTLET_NOT_FOUND. A product outside the shop: 404 PRODUCT_NOT_FOUND.
- * - Unticking is never refused: stock, units on rent and open orders do not matter (owner 2026-10-30). No 409.
+ * - Unticking is never refused for stock, units on rent or open orders (owner 2026-10-30). No 409.
+ * - #1603: it is refused (400 PRODUCT_NEEDS_ONE_BRANCH, nothing written) when a product would be shown at no open branch.
  * - Sending the current value again is not a change and not an error.
  */
 jest.mock('next/server', () => ({
@@ -46,8 +47,15 @@ const mockPrisma: any = {
     ),
   },
   outletStock: {
+    // where: outletId (a number or { not }), productId.in, and #1603 isListed / outlet.isActive
     findMany: jest.fn(async ({ where }: any) =>
-      rows.filter((r) => r.outletId === where.outletId && (where.productId.in as number[]).includes(r.productId))
+      rows.filter(
+        (r) =>
+          (typeof where.outletId === 'object' ? r.outletId !== where.outletId.not : r.outletId === where.outletId) &&
+          (where.productId.in as number[]).includes(r.productId) &&
+          (where.isListed === undefined || r.isListed === where.isListed) &&
+          (where.outlet?.isActive === undefined || outlets[r.outletId]?.isActive === where.outlet.isActive)
+      )
     ),
     updateMany: jest.fn(async ({ where, data }: any) => {
       let count = 0;
@@ -193,7 +201,12 @@ describe('PUT /api/products/listing — what it may touch', () => {
   });
 });
 
-describe('PUT /api/products/listing — unticking is never blocked (owner 2026-10-30)', () => {
+describe('PUT /api/products/listing — unticking is never blocked by stock, rent or orders (owner 2026-10-30)', () => {
+  // #1603 both products are shown at the second branch too, so unticking the main one is not the last-branch case
+  beforeEach(() => {
+    for (const r of rows) if (r.outletId === 3) r.isListed = true;
+  });
+
   it('stock 8 with 2 on rent: unticks, 200, no 409, and stock / renting are not touched', async () => {
     const res = await put({ outletId: 1, productIds: [11], isListed: false });
     expect(res.status).toBe(200);
@@ -219,5 +232,35 @@ describe('PUT /api/products/listing — unticking is never blocked (owner 2026-1
     expect(res.status).toBe(200);
     expect(res.body.data.changed).toBe(0);
     expect(mockPrisma.outletStock.updateMany).not.toHaveBeenCalled();
+  });
+});
+
+describe('#1603 PUT /api/products/listing — a product stays shown at one open branch', () => {
+  it('unticking the last open branch: 400 PRODUCT_NEEDS_ONE_BRANCH, nothing written', async () => {
+    const res = await put({ outletId: 1, productIds: [11], isListed: false });
+    expect([res.status, res.body.code]).toEqual([400, 'PRODUCT_NEEDS_ONE_BRANCH']);
+    expect(res.body.data).toEqual({ outletId: 1, productIds: [11] });
+    expect(mockPrisma.outletStock.updateMany).not.toHaveBeenCalled();
+    expect(stateOf(11, 1)?.isListed).toBe(true);
+  });
+
+  it('a listed row at a closed branch does not count', async () => {
+    rows.push({ productId: 11, outletId: 4, isListed: true, stock: 0, renting: 0 });
+    const res = await put({ outletId: 1, productIds: [11], isListed: false });
+    expect([res.status, res.body.code]).toEqual([400, 'PRODUCT_NEEDS_ONE_BRANCH']);
+  });
+
+  it('bulk: one product left without a branch refuses the whole call', async () => {
+    stateOf(11, 3)!.isListed = true;
+    const res = await put({ outletId: 1, productIds: [11, 12], isListed: false });
+    expect([res.status, res.body.data.productIds]).toEqual([400, [12]]);
+    expect(mockPrisma.outletStock.updateMany).not.toHaveBeenCalled();
+    expect(stateOf(11, 1)?.isListed).toBe(true);
+  });
+
+  it('ticking the new branch first, then unticking the old one, moves the product', async () => {
+    expect((await put({ outletId: 3, productIds: [11], isListed: true })).status).toBe(200);
+    expect((await put({ outletId: 1, productIds: [11], isListed: false })).status).toBe(200);
+    expect([stateOf(11, 1)?.isListed, stateOf(11, 3)?.isListed]).toEqual([false, true]);
   });
 });
