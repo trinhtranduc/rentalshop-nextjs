@@ -800,6 +800,27 @@ final class ProductsV2Tests: XCTestCase {
         XCTAssertFalse(model.hasMore)
     }
 
+    /// #1614 — another branch is another list: the old branch's rows go at once (no "+" on a product the new branch
+    /// does not show), not when the new page lands
+    func testABranchSwitchDropsTheOldRowsBeforeTheNewPageLands() throws {
+        let source = FakeSource()
+        let model = ProductsHomeViewModel(dataSource: source)
+        let a = try product(#"{"id":1,"name":"A"}"#)
+        let b = try product(#"{"id":2,"name":"B"}"#)
+        model.reload()
+        source.calls[0].completion(ProductsPage(products: [a], hasMore: true), nil)
+        waitMain()
+        XCTAssertEqual(model.products.map { $0.id }, [1])
+
+        model.branchDidChange()
+        XCTAssertTrue(model.products.isEmpty, "the old branch's rows are gone at once")
+        XCTAssertFalse(model.hasMore)
+        XCTAssertTrue(model.isLoading)
+        source.calls[1].completion(ProductsPage(products: [b], hasMore: false), nil)
+        waitMain()
+        XCTAssertEqual(model.products.map { $0.id }, [2])
+    }
+
     /// #677 — after an order changed, the loaded rows take the new stock in place (same rows, same order)
     func testQuietRefreshUpdatesRowsInPlace() throws {
         let source = FakeSource()
@@ -1988,8 +2009,10 @@ final class BranchListingTests: XCTestCase {
         }
     }
 
-    func testTheOwnerNeverSendsListedSoTheOwnerSeesEveryProduct() {
-        XCTAssertFalse(BranchListing.sendsListed(role: .merchant, activeOutletCount: 3))
+    /// #1614: the owner sees only the products of the branch chosen on Home, like a branch role
+    func testTheOwnerAsksForTheChosenBranchProductsOnly() {
+        XCTAssertTrue(BranchListing.sendsListed(role: .merchant, activeOutletCount: 3))
+        XCTAssertTrue(BranchListing.sendsListed(role: .merchant, activeOutletCount: 2))
         XCTAssertFalse(BranchListing.sendsListed(role: .merchant, activeOutletCount: 1))
         XCTAssertFalse(BranchListing.sendsListed(role: nil, activeOutletCount: 3))
     }
@@ -2006,8 +2029,11 @@ final class BranchListingTests: XCTestCase {
         XCTAssertEqual(staff["limit"] as? Int, 20)
         XCTAssertEqual(staff["outletId"] as? Int, 7)
         let owner = BranchListing.listParams(base, role: .merchant, activeOutletCount: 3)
-        XCTAssertNil(owner["listed"])
-        XCTAssertEqual(owner.count, 3)
+        XCTAssertEqual(owner["listed"] as? String, "true")
+        XCTAssertEqual(owner["outletId"] as? Int, 7)
+        let oneBranchOwner = BranchListing.listParams(base, role: .merchant, activeOutletCount: 1)
+        XCTAssertNil(oneBranchOwner["listed"])
+        XCTAssertEqual(oneBranchOwner.count, 3)
     }
 
     // MARK: The header

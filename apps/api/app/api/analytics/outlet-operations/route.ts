@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withPermissions, hasPermission } from '@rentalshop/auth/server';
 import { db } from '@rentalshop/database';
+import { USER_ROLE } from '@rentalshop/constants';
 import { handleApiError, ResponseBuilder, getCalendarDayRangeInTimeZone, formatDateKeyInTimeZone } from '@rentalshop/utils';
 import { daysBetweenDateKeys, getOperationsDay, getOperationsWeek, toOperationsDateKey } from '../../../../lib/outlet-operations-day';
 import { computeOrderBalance } from '../../../../lib/order-balance';
@@ -133,7 +134,8 @@ function toRow(order: OperationsRow, todayKey: string, keyOf: (instant: Date) =>
  *
  * Access: analytics.view.dashboard.
  * - OUTLET_ADMIN / OUTLET_STAFF: own outlet only (outletIds is ignored).
- * - MERCHANT: its outlets, optionally narrowed with `outletIds=1,3`; foreign outlets → 403.
+ * - MERCHANT: its outlets, optionally narrowed with `outletIds=1,3`; foreign outlets → 403. The branch on the
+ *   owner's account (every owner who signed up has one) is not a limit (#1614).
  * - ADMIN: `merchantId` required (optionally narrowed with `outletIds`).
  * Indexed: Order(outletId, status, pickupPlanAt / returnPlanAt).
  */
@@ -147,7 +149,8 @@ export const GET = withPermissions(['analytics.view.dashboard'])(async (request,
     const requestedOutletIds = parsed.data.outletIds?.split(',').map(Number);
 
     let outletIds: number[];
-    if (userScope.outletId) {
+    // #1614: an owner's account keeps the first branch it signed up with; only a branch role is held to its branch
+    if (user.role !== USER_ROLE.MERCHANT && userScope.outletId) {
       outletIds = [userScope.outletId];
     } else {
       const merchantId = userScope.merchantId ?? parsed.data.merchantId;

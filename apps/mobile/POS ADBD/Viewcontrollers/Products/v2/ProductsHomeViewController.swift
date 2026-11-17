@@ -129,10 +129,12 @@ final class ProductsHomeViewController: BaseViewControler {
         navigationController?.pushViewController(SubscriptionViewController(), animated: true)
     }
 
-    /// #828: products and stock of the branch now in use
+    /// #828: products and stock of the branch now in use. #1614: another branch is another list: its old rows go at once
+    /// and it opens at the top
     @objc private func outletChanged() {
         updateCartBar()
-        viewModel.reload()
+        if isViewLoaded { list.setContentOffset(CGPoint(x: 0, y: -list.adjustedContentInset.top), animated: false) }
+        viewModel.branchDidChange()
     }
 
     override func viewWillAppear(_ animated: Bool) {

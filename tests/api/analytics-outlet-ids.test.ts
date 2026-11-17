@@ -210,3 +210,35 @@ describe('GET /api/analytics/income/orders', () => {
     expect(wheres()).toEqual([4]);
   });
 });
+
+// #1614: every owner who signed up has its first branch on the account (register/route.ts). For an owner that branch is
+// not a limit: the branch chosen in the app (outletIds) or every branch of the shop.
+describe('#1614 owner whose account has a branch', () => {
+  const ownerWithBranch = { user: { id: 2, role: 'MERCHANT' }, userScope: { merchantId: 2, outletId: 2 } };
+  const wheres = () => mockPrisma.order.findMany.mock.calls.map((c: any[]) => c[0].where.outletId);
+
+  it('income/orders: another branch of the shop is narrowed to, not refused', async () => {
+    ctx = ownerWithBranch;
+    const res: any = await incomeOrdersGET(req(`/api/analytics/income/orders?${DAYS}&status=all&outletIds=4`));
+    expect(res.status).toBe(200);
+    expect(wheres().length).toBeGreaterThan(1);
+    for (const w of wheres()) expect(w).toEqual({ in: [4] });
+  });
+
+  it('income/orders: no outletIds = every branch of the shop', async () => {
+    ctx = ownerWithBranch;
+    await incomeOrdersGET(req(`/api/analytics/income/orders?${DAYS}&status=new`));
+    expect(wheres()).toEqual([{ in: [2, 4, 7] }]);
+  });
+
+  it('period, overview, top-products, top-customers: the chosen branch', async () => {
+    ctx = ownerWithBranch;
+    const period: any = await periodGET(req('/api/analytics/period?startDate=2026-10-01&endDate=2026-10-06&outletIds=4'));
+    expect(period.status).toBe(200);
+    expect(reportParams().outletFilter).toEqual({ outletId: { in: [4] } });
+    for (const get of [overviewGET, topProductsGET, topCustomersGET]) {
+      const res: any = await get(req('/api/analytics/x?startDate=2026-10-01&endDate=2026-10-06&outletIds=4'));
+      expect(res.status).toBe(200);
+    }
+  });
+});

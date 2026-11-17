@@ -236,6 +236,34 @@ class OrdersHomeTest {
         assertFalse(vm.state.value.loading)
     }
 
+    /** #1614: the owner picked another branch on Home; the Orders tab must not show the old branch while it reloads */
+    @Test
+    fun `a branch switch drops the old branch rows before the new ones load`() = runTest(dispatcher) {
+        var branch = 1L
+        val answers = mutableListOf<CompletableDeferred<Result<TodayWork>>>()
+        val today = object : TodayWorkRepository {
+            override suspend fun load(): Result<TodayWork> = CompletableDeferred<Result<TodayWork>>().also { answers += it }.await()
+        }
+        val vm = OrdersHomeViewModel(today, FakeOrders(), outletVersion = { branch })
+        vm.onShown(); advanceUntilIdle()
+        answers[0].complete(Result.success(TodayWork(pickupsToday = listOf(TodayWorkRow(id = 1, orderNumber = "ORD-001-0023")))))
+        advanceUntilIdle()
+        assertEquals(listOf(1), vm.state.value.sections.flatMap { it.rows }.map { it.orderId })
+        assertEquals(1, vm.state.value.todayBadge)
+
+        branch = 2L
+        vm.onShown(); advanceUntilIdle()
+        assertTrue("old branch rows are gone at once", vm.state.value.sections.isEmpty())
+        assertEquals("no count of the old branch while the new one loads", 0, vm.state.value.todayBadge)
+        assertTrue("the spinner shows", vm.state.value.loading)
+        answers[1].complete(Result.success(TodayWork(pickupsToday = listOf(TodayWorkRow(id = 2, orderNumber = "ORD-003-0001")))))
+        advanceUntilIdle()
+        assertEquals(listOf(2), vm.state.value.sections.flatMap { it.rows }.map { it.orderId })
+
+        vm.onShown(); advanceUntilIdle()
+        assertEquals("same branch: no reload", 2, answers.size)
+    }
+
     // --- Board texts (#401) ---
 
     private fun work(id: Int, kind: WorkKind) = OrdersRow.Work(TodayWorkRow(id = id, orderNumber = "ORD-1-$id"), kind)
