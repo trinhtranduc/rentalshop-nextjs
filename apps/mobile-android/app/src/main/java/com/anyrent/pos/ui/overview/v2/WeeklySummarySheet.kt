@@ -1,5 +1,11 @@
 package com.anyrent.pos.ui.overview.v2
 
+import android.provider.Settings
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -33,11 +39,14 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
@@ -61,6 +70,7 @@ import com.anyrent.pos.domain.overview.WeeklyNumbers
 import com.anyrent.pos.domain.overview.WeeklySummary
 import com.anyrent.pos.domain.overview.WeeklySummaryLogic
 import com.anyrent.pos.domain.overview.WeeklySummaryStatus
+import com.anyrent.pos.domain.overview.WeeklySummaryTwinkle
 import com.anyrent.pos.domain.overview.WeeklyTone
 import com.anyrent.pos.ui.theme.DS
 
@@ -94,7 +104,7 @@ internal fun WeeklySummaryButton(showsDot: Boolean, onClick: () -> Unit, modifie
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(5.dp),
         ) {
-            Text("✦", color = Color.White, fontSize = DS.TextSize.Secondary, fontWeight = FontWeight.Bold)
+            TwinklingSparkle()
             Text(title, color = Color.White, fontSize = DS.TextSize.Secondary, fontWeight = FontWeight.Bold, maxLines = 1)
         }
         if (showsDot) {
@@ -105,6 +115,34 @@ internal fun WeeklySummaryButton(showsDot: Boolean, onClick: () -> Unit, modifie
             )
         }
     }
+}
+
+/** #1618 (owner): the ✦ twinkles ([WeeklySummaryTwinkle]); still when the system turns animations off (iOS Reduce Motion) */
+@Composable
+private fun TwinklingSparkle() {
+    val context = LocalContext.current
+    val runs = remember {
+        WeeklySummaryTwinkle.runs(Settings.Global.getFloat(context.contentResolver, Settings.Global.ANIMATOR_DURATION_SCALE, 1f))
+    }
+    val progress = if (runs) {
+        rememberInfiniteTransition(label = "weeklySummary.twinkle").animateFloat(
+            initialValue = 0f,
+            targetValue = 1f,
+            animationSpec = infiniteRepeatable(tween(WeeklySummaryTwinkle.DURATION_MS, easing = LinearEasing)),
+            label = "weeklySummary.twinkle.progress",
+        )
+    } else {
+        null
+    }
+    Text(
+        "✦", color = Color.White, fontSize = DS.TextSize.Secondary, fontWeight = FontWeight.Bold,
+        modifier = Modifier.graphicsLayer {
+            val (scale, turn) = WeeklySummaryTwinkle.at(progress?.value ?: 0f)
+            scaleX = scale
+            scaleY = scale
+            rotationZ = turn
+        },
+    )
 }
 
 /** Large sheet (90% of the screen, like the app's page sheets) in the Overview's light colours */
