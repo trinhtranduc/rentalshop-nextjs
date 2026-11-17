@@ -22,6 +22,7 @@ import {
   listingReminder,
   setOutletListed,
   setOutletStock,
+  validateForm,
   type ProductSource,
 } from '../apps/client/app/products/form/form-model';
 import { CLIENT_CAPABILITIES, clientCapabilitiesHeader } from '../packages/utils/src/core/client-capabilities';
@@ -181,9 +182,10 @@ describe('form: the "Hiện ở chi nhánh" ticks', () => {
     f = setOutletListed(f, 3, true);
     f = setOutletListed(f, 1, false);
     f = setOutletListed(f, 5, false); // unchanged
+    // #1603 ticks go before unticks: moving 1 -> 3 never leaves the product without a branch in between
     expect(listingChanges(f)).toEqual([
-      { outletId: 1, isListed: false },
       { outletId: 3, isListed: true },
+      { outletId: 1, isListed: false },
     ]);
     // ticking and unticking back is no change
     f = setOutletListed(f, 3, false);
@@ -193,6 +195,28 @@ describe('form: the "Hiện ở chi nhánh" ticks', () => {
 
   it('listingChanges on a new product is empty (the create call carries the ticks)', () => {
     expect(listingChanges(emptyForm(outlets, categories, '1', 3))).toEqual([]);
+  });
+});
+
+describe('#1603 form: one open branch at least is ticked', () => {
+  const ok = { canEditPricing: true };
+  const filled = (f: ReturnType<typeof emptyForm>) => ({ ...f, name: 'Áo dài', categoryId: 7, totalStock: 1 });
+  it('no ticked branch among the open ones is an error on `listed`', () => {
+    let f = filled(emptyForm(outlets, categories, '1', 3));
+    f = setOutletListed(f, 3, false);
+    expect(validateForm(f, { ...ok, requireBranchAmong: [1, 3, 5] }).listed).toBe('branchRequired');
+    f = setOutletListed(f, 5, true);
+    expect(validateForm(f, { ...ok, requireBranchAmong: [1, 3, 5] }).listed).toBeUndefined();
+  });
+  it('a tick only at a branch that is not open does not count', () => {
+    let f = filled(emptyForm(outlets, categories, '1', 3));
+    f = setOutletListed(setOutletListed(f, 3, false), 9, true);
+    expect(validateForm(f, { ...ok, requireBranchAmong: [1, 3, 5] }).listed).toBe('branchRequired');
+  });
+  it('without the option (branch role, one branch) nothing is checked', () => {
+    let f = filled(emptyForm(outlets, categories, '1', 3));
+    f = setOutletListed(f, 3, false);
+    expect(validateForm(f, ok).listed).toBeUndefined();
   });
 });
 

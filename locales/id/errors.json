@@ -204,6 +204,7 @@
   "CATEGORY_NAME_EXISTS": "Kategori dengan nama ini sudah ada",
   "PRODUCT_NAME_EXISTS": "Produk dengan nama ini sudah ada. Silakan pilih nama lain.",
   "STOCK_BELOW_RENTED": "Stok tidak boleh lebih rendah dari jumlah yang sedang disewa.",
+  "PRODUCT_NEEDS_ONE_BRANCH": "Produk harus tampil di minimal 1 cabang. Untuk memindahkannya, centang cabang baru lalu simpan dulu, kemudian hapus centang cabang lama.",
   "PLAN_NAME_EXISTS": "Paket dengan nama ini sudah ada",
   "MERCHANT_DUPLICATE": "Bisnis dengan email atau nomor telepon ini sudah ada. Silakan gunakan email atau nomor telepon lain.",
   "EMAIL_ALREADY_EXISTS": "Email sudah ada",
