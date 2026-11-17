@@ -129,9 +129,10 @@ final class ProductsHomeViewController: BaseViewControler {
         navigationController?.pushViewController(SubscriptionViewController(), animated: true)
     }
 
-    /// #828: products and stock of the branch now in use
+    /// #828: products and stock of the branch now in use. #1614: another branch is another list: it opens at the top
     @objc private func outletChanged() {
         updateCartBar()
+        if isViewLoaded { list.setContentOffset(CGPoint(x: 0, y: -list.adjustedContentInset.top), animated: false) }
         viewModel.reload()
     }
 
@@ -475,7 +476,7 @@ final class ProductsHomeViewController: BaseViewControler {
         let form = ProductFormViewController(product: nil)
         form.onSaved = { [weak self] product in
             FirstRunCoach.shared.stop() // #1411: this form covers Home without taking it off screen
-            self?.viewModel.replace(product)
+            self?.putBack(product)
         }
         V2.presentForm(form, from: self)
     }
@@ -559,9 +560,19 @@ final class ProductsHomeViewController: BaseViewControler {
     private func openDetail(_ product: Product) {
         let detail = ProductDetailViewController(product: product)
         detail.hidesBottomBarWhenPushed = true
-        detail.onSaved = { [weak self] saved in self?.viewModel.replace(saved) }
+        detail.onSaved = { [weak self] saved in self?.putBack(saved) }
         detail.onDeleted = { [weak self] id in self?.viewModel.remove(productId: id) }
         navigationController?.pushViewController(detail, animated: true)
+    }
+
+    /// #1614: a saved product goes back in its row, or leaves the list at once when it is not shown at the branch in use
+    /// (the owner just unticked it): the list holds only the products of this branch
+    private func putBack(_ product: Product) {
+        if listedHere(product) {
+            viewModel.replace(product)
+        } else {
+            viewModel.remove(productId: product.id ?? product.product_id)
+        }
     }
 
     /// #1346: false only for the owner of a shop with two or more branches, on a product the branch in use does not list
