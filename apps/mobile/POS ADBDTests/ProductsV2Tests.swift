@@ -800,6 +800,27 @@ final class ProductsV2Tests: XCTestCase {
         XCTAssertFalse(model.hasMore)
     }
 
+    /// #1614 — another branch is another list: the old branch's rows go at once (no "+" on a product the new branch
+    /// does not show), not when the new page lands
+    func testABranchSwitchDropsTheOldRowsBeforeTheNewPageLands() throws {
+        let source = FakeSource()
+        let model = ProductsHomeViewModel(dataSource: source)
+        let a = try product(#"{"id":1,"name":"A"}"#)
+        let b = try product(#"{"id":2,"name":"B"}"#)
+        model.reload()
+        source.calls[0].completion(ProductsPage(products: [a], hasMore: true), nil)
+        waitMain()
+        XCTAssertEqual(model.products.map { $0.id }, [1])
+
+        model.branchDidChange()
+        XCTAssertTrue(model.products.isEmpty, "the old branch's rows are gone at once")
+        XCTAssertFalse(model.hasMore)
+        XCTAssertTrue(model.isLoading)
+        source.calls[1].completion(ProductsPage(products: [b], hasMore: false), nil)
+        waitMain()
+        XCTAssertEqual(model.products.map { $0.id }, [2])
+    }
+
     /// #677 — after an order changed, the loaded rows take the new stock in place (same rows, same order)
     func testQuietRefreshUpdatesRowsInPlace() throws {
         let source = FakeSource()

@@ -776,6 +776,7 @@ final class OrdersHomeViewModel {
     func outletDidChange() {
         markDirty()
         snapshots.removeAll()
+        todayBadge = 0 // #1614: no count of the old branch next to the spinner
         reload()
     }
 

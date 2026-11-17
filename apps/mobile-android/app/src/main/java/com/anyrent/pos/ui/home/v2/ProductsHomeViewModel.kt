@@ -81,6 +81,15 @@ class ProductsHomeViewModel(
 
     fun reload(fromPull: Boolean = false) = load(1, fromPull)
 
+    /**
+     * #1614: another branch is another list. Its rows go at once, so no "+" is left on a product the new branch does
+     * not show, and the first page loads with the spinner.
+     */
+    fun branchDidChange() {
+        _state.value = _state.value.copy(products = emptyList(), hasMore = false)
+        reload()
+    }
+
     fun setQuery(text: String) {
         val trimmed = text.trim()
         if (trimmed == _state.value.query) return

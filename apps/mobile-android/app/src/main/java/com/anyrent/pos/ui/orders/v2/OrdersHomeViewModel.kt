@@ -220,7 +220,7 @@ class OrdersHomeViewModel(
     private fun outletDidChange() {
         snapshots.clear()
         trackers.clear()
-        _state.update { it.copy(widgetCounts = null) }
+        _state.update { it.copy(todayBadge = 0, widgetCounts = null) }
         reload()
     }
 

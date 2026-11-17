@@ -705,6 +705,19 @@ final class OrdersHomeTests: XCTestCase {
         XCTAssertTrue(ids(model).isEmpty)
     }
 
+    /// #1614: the "Việc cần làm" badge of the old branch does not stay next to the spinner while the new branch loads
+    func testOutletChangeClearsTheOldBranchTodayBadge() throws {
+        let source = FakeSource()
+        let model = OrdersHomeViewModel(dataSource: source)
+        model.reload()
+        let json = #"{"pickupsToday":{"count":1,"orders":[{"id":5,"orderNumber":"ORD-001-0023"}]}}"#
+        source.todayCompletion?(try JSONDecoder.shared.decode(TodayWork.self, from: Data(json.utf8)), nil)
+        XCTAssertEqual(model.todayBadge, 1)
+
+        model.outletDidChange()
+        XCTAssertEqual(model.todayBadge, 0, "no count of the old branch while the new one loads")
+    }
+
     func testOutletChangeDropsTheOtherSegmentsOldRows() {
         let source = FakeSource()
         let model = OrdersHomeViewModel(dataSource: source)

@@ -230,7 +230,7 @@ fun ProductsHomeScreen(
     LaunchedEffect(Unit) {
         CurrentOutlet.version.drop(1).collect {
             topAfterLoad = true
-            viewModel.reload()
+            viewModel.branchDidChange()
         }
     }
     LaunchedEffect(topAfterLoad, state.loading, state.products) {

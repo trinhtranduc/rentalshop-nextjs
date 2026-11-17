@@ -13,6 +13,7 @@ import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 
@@ -54,6 +55,30 @@ class ProductsHomeViewModelTest {
         advanceUntilIdle()
         assertEquals(listOf(2, 3), vm.state.value.products.map { it.id })
         assertFalse(vm.state.value.hasMore)
+    }
+
+    /**
+     * #1614 — another branch is another list: the old branch's rows go at once (no "+" on a product the new branch does
+     * not show), not when the new page lands
+     */
+    @Test
+    fun `a branch switch drops the old rows before the new page lands`() = runTest(dispatcher) {
+        val answers = mutableListOf<CompletableDeferred<ApiClient.PageResult<Product>>>()
+        val vm = ProductsHomeViewModel(ProductsPageSource { _, _ ->
+            CompletableDeferred<ApiClient.PageResult<Product>>().also { answers += it }.await()
+        })
+        vm.reload(); advanceUntilIdle()
+        answers[0].complete(ApiClient.PageResult(listOf(product(1), product(2)), hasMore = true, total = 3))
+        advanceUntilIdle()
+        assertEquals(listOf(1, 2), vm.state.value.products.map { it.id })
+
+        vm.branchDidChange(); advanceUntilIdle()
+        assertTrue("the old branch's rows are gone at once", vm.state.value.products.isEmpty())
+        assertFalse(vm.state.value.hasMore)
+        assertTrue(vm.state.value.loading)
+        answers[1].complete(ApiClient.PageResult(listOf(product(3)), hasMore = false, total = 1))
+        advanceUntilIdle()
+        assertEquals(listOf(3), vm.state.value.products.map { it.id })
     }
 
     /** #677 — an order change refreshes the loaded rows' stock in place, once per change */

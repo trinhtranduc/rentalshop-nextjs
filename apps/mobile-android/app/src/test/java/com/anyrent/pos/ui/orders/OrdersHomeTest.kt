@@ -249,10 +249,12 @@ class OrdersHomeTest {
         answers[0].complete(Result.success(TodayWork(pickupsToday = listOf(TodayWorkRow(id = 1, orderNumber = "ORD-001-0023")))))
         advanceUntilIdle()
         assertEquals(listOf(1), vm.state.value.sections.flatMap { it.rows }.map { it.orderId })
+        assertEquals(1, vm.state.value.todayBadge)
 
         branch = 2L
         vm.onShown(); advanceUntilIdle()
         assertTrue("old branch rows are gone at once", vm.state.value.sections.isEmpty())
+        assertEquals("no count of the old branch while the new one loads", 0, vm.state.value.todayBadge)
         assertTrue("the spinner shows", vm.state.value.loading)
         answers[1].complete(Result.success(TodayWork(pickupsToday = listOf(TodayWorkRow(id = 2, orderNumber = "ORD-003-0001")))))
         advanceUntilIdle()

@@ -133,7 +133,7 @@ final class ProductsHomeViewController: BaseViewControler {
     @objc private func outletChanged() {
         updateCartBar()
         if isViewLoaded { list.setContentOffset(CGPoint(x: 0, y: -list.adjustedContentInset.top), animated: false) }
-        viewModel.reload()
+        viewModel.branchDidChange()
     }
 
     override func viewWillAppear(_ animated: Bool) {
