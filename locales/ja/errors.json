@@ -1,4 +1,7 @@
 {
+  "AI_SUMMARY_UNAVAILABLE": "AI要約はまだ有効になっていません。",
+  "AI_SUMMARY_FAILED": "要約を作成できませんでした。もう一度お試しください。",
+  "AI_WEEKLY_SUMMARY_SUCCESS": "週間要約を取得しました",
   "_comment": "Error codes for API responses - Japanese version",
   "UNAUTHORIZED": "認証が必要です",
   "FORBIDDEN": "アクセスが拒否されました",
@@ -204,6 +207,7 @@
   "CATEGORY_NAME_EXISTS": "同じ名前のカテゴリがすでにあります",
   "PRODUCT_NAME_EXISTS": "同じ名前の商品がすでにあります。別の名前を選んでください。",
   "STOCK_BELOW_RENTED": "在庫数は現在レンタル中の数量より少なくできません。",
+  "PRODUCT_NEEDS_ONE_BRANCH": "商品は少なくとも1つの店舗で表示する必要があります。別の店舗に移すには、先に新しい店舗にチェックを入れて保存し、その後で元の店舗のチェックを外してください。",
   "PLAN_NAME_EXISTS": "同じ名前のプランがすでにあります",
   "MERCHANT_DUPLICATE": "このメールアドレスまたは電話番号の事業者が既に存在します。別のメールアドレスまたは電話番号を使用してください。",
   "EMAIL_ALREADY_EXISTS": "このメールアドレスはすでに登録されています",

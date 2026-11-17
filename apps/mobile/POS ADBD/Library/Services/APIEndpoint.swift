@@ -154,6 +154,9 @@ enum APIEndpoint {
         /// GET duration-based report: operational + revenue + growth + series + top lists
         /// Params: startDate, endDate, groupBy? (day|month), limit?
         static let analyticsPeriod = "/api/analytics/period"
+        /// #1612 AI summary of last week. GET reads it (never calls AI); POST writes it on the first open of the week.
+        /// Params: timeZone? (query). The text follows Accept-Language.
+        static let weeklySummary = "/api/analytics/weekly-summary"
         
         // Calendar
         static let calendarOrders = "/api/calendar/orders"

@@ -632,7 +632,8 @@
         "saleRequired": "Ingrese el precio de venta",
         "depositNegative": "El anticipo no puede ser negativo",
         "stockRequired": "La cantidad debe ser mayor que 0",
-        "outletStockNegative": "La cantidad no puede ser negativa"
+        "outletStockNegative": "La cantidad no puede ser negativa",
+        "branchRequired": "Marque al menos una sucursal donde mostrar el producto"
       },
       "noCreate": "No tiene permiso para agregar productos.",
       "noEdit": "No tiene permiso para editar productos.",

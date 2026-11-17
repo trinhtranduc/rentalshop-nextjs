@@ -195,6 +195,8 @@
 		04F1A0222F1B0001000A0022 /* DraftOrderNotificationCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04F1A0212F1B0001000A0021 /* DraftOrderNotificationCard.swift */; };
 		A1124B000000000000000001 /* BookingRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1124F000000000000000001 /* BookingRequest.swift */; };
 		A1515B000000000000000001 /* ReorderCart.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1515F000000000000000001 /* ReorderCart.swift */; };
+		A1612B000000000000000001 /* WeeklySummary.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1612F000000000000000001 /* WeeklySummary.swift */; };
+		A1612B000000000000000002 /* WeeklySummaryViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1612F000000000000000002 /* WeeklySummaryViews.swift */; };
 		04F1B0022F1C0101000A0001 /* InboxNotification.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04F1B0012F1C0101000A0001 /* InboxNotification.swift */; };
 		04F1B0022F1C0101000A0002 /* NotificationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04F1B0012F1C0101000A0002 /* NotificationService.swift */; };
 		04F1B0022F1C0101000A0003 /* NotificationCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04F1B0012F1C0101000A0003 /* NotificationCell.swift */; };
@@ -235,6 +237,7 @@
 		A4800480B0000000000000A1 /* CartNotePhotosTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4800480F0000000000000A1 /* CartNotePhotosTests.swift */; };
 		A1124B0000000000000000E1 /* BookingRequestTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1124F0000000000000000E1 /* BookingRequestTests.swift */; };
 		A1515B0000000000000000E1 /* ReorderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1515F0000000000000000E1 /* ReorderTests.swift */; };
+		A1612B0000000000000000E1 /* WeeklySummaryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1612F0000000000000000E1 /* WeeklySummaryTests.swift */; };
 		A4800480B0000000000000A2 /* CartStoreMultiCartTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4800480F0000000000000A2 /* CartStoreMultiCartTests.swift */; };
 		16E80097E5286FE56886EC3E /* DesignTokens.swift in Sources */ = {isa = PBXBuildFile; fileRef = FDAA71945D1F2C820062603E /* DesignTokens.swift */; };
 		17A8F15D2425531D3A98D73D /* CustomersV2Tests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F677EA40098CED48493B0C8 /* CustomersV2Tests.swift */; };
@@ -645,6 +648,8 @@
 		04F1A0212F1B0001000A0021 /* DraftOrderNotificationCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DraftOrderNotificationCard.swift; sourceTree = "<group>"; };
 		A1124F000000000000000001 /* BookingRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookingRequest.swift; sourceTree = "<group>"; };
 		A1515F000000000000000001 /* ReorderCart.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReorderCart.swift; sourceTree = "<group>"; };
+		A1612F000000000000000001 /* WeeklySummary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeeklySummary.swift; sourceTree = "<group>"; };
+		A1612F000000000000000002 /* WeeklySummaryViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeeklySummaryViews.swift; sourceTree = "<group>"; };
 		04F1B0012F1C0101000A0001 /* InboxNotification.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InboxNotification.swift; sourceTree = "<group>"; };
 		04F1B0012F1C0101000A0002 /* NotificationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationService.swift; sourceTree = "<group>"; };
 		04F1B0012F1C0101000A0003 /* NotificationCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationCell.swift; sourceTree = "<group>"; };
@@ -723,6 +728,7 @@
 		A4800480F0000000000000A1 /* CartNotePhotosTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CartNotePhotosTests.swift; sourceTree = "<group>"; };
 		A1124F0000000000000000E1 /* BookingRequestTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookingRequestTests.swift; sourceTree = "<group>"; };
 		A1515F0000000000000000E1 /* ReorderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReorderTests.swift; sourceTree = "<group>"; };
+		A1612F0000000000000000E1 /* WeeklySummaryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeeklySummaryTests.swift; sourceTree = "<group>"; };
 		A4800480F0000000000000A2 /* CartStoreMultiCartTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CartStoreMultiCartTests.swift; sourceTree = "<group>"; };
 		628848789A17EEF1ECD704C3 /* AppConfigService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AppConfigService.swift; sourceTree = "<group>"; };
 		64454969BCB62EEB55223203 /* OverviewV2.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OverviewV2.swift; sourceTree = "<group>"; };
@@ -1236,6 +1242,7 @@
 				A4800480F0000000000000A1 /* CartNotePhotosTests.swift */,
 				A1124F0000000000000000E1 /* BookingRequestTests.swift */,
 				A1515F0000000000000000E1 /* ReorderTests.swift */,
+				A1612F0000000000000000E1 /* WeeklySummaryTests.swift */,
 				A4800480F0000000000000A2 /* CartStoreMultiCartTests.swift */,
 				08477F5D06AB9AA5B68A44A5 /* CalendarOverviewSettingsV2Tests.swift */,
 				A622F0000000000000000002 /* BankQRTests.swift */,
@@ -1316,6 +1323,7 @@
 				C9EFF5B0237BF75E00A6CB57 /* Customer.swift */,
 				A1124F000000000000000001 /* BookingRequest.swift */,
 				A1515F000000000000000001 /* ReorderCart.swift */,
+				A1612F000000000000000001 /* WeeklySummary.swift */,
 				04F1B0012F1C0101000A0001 /* InboxNotification.swift */,
 				C9B0410523AC919A00DED0B3 /* DateFormatTransform.swift */,
 				8D5CE3E5F53EE1B4C04041E4 /* AppConfig.swift */,
@@ -1376,6 +1384,7 @@
 				371CA82265386D2C46D5713C /* OverviewV2ViewController.swift */,
 				A633F0000000000000000001 /* OverviewTopAllViewController.swift */,
 				A616F0000000000000000002 /* OverviewDashViews.swift */,
+				A1612F000000000000000002 /* WeeklySummaryViews.swift */,
 				B484F0000000000000000001 /* RentedOutOrdersViewController.swift */,
 			);
 			path = Chart;
@@ -2122,6 +2131,7 @@
 				A4800480B0000000000000A1 /* CartNotePhotosTests.swift in Sources */,
 				A1124B0000000000000000E1 /* BookingRequestTests.swift in Sources */,
 				A1515B0000000000000000E1 /* ReorderTests.swift in Sources */,
+				A1612B0000000000000000E1 /* WeeklySummaryTests.swift in Sources */,
 				A4800480B0000000000000A2 /* CartStoreMultiCartTests.swift in Sources */,
 				3C8CCFD0C9C51C7FB12D4CFC /* CalendarOverviewSettingsV2Tests.swift in Sources */,
 				A622B0000000000000000002 /* BankQRTests.swift in Sources */,
@@ -2184,6 +2194,8 @@
 				04A1B0112F7A000100000015 /* SubscriptionStatusInfo.swift in Sources */,
 				A1124B000000000000000001 /* BookingRequest.swift in Sources */,
 				A1515B000000000000000001 /* ReorderCart.swift in Sources */,
+				A1612B000000000000000001 /* WeeklySummary.swift in Sources */,
+				A1612B000000000000000002 /* WeeklySummaryViews.swift in Sources */,
 				04F1B0022F1C0101000A0001 /* InboxNotification.swift in Sources */,
 				04F1B0022F1C0101000A0002 /* NotificationService.swift in Sources */,
 				04F1B0022F1C0101000A0003 /* NotificationCell.swift in Sources */,

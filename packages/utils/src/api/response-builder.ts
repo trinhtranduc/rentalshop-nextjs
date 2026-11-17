@@ -140,6 +140,8 @@ const ERROR_MESSAGES: Record<string, string> = {
   'CATEGORY_NAME_EXISTS': 'Category with this name already exists',
   'PRODUCT_NAME_EXISTS': 'A product with this name already exists. Please choose a different name.',
   'STOCK_BELOW_RENTED': 'Stock cannot be lower than the number of units currently rented out.',
+  // #1603 every product is shown at one open branch at least
+  'PRODUCT_NEEDS_ONE_BRANCH': 'A product must be shown at one branch at least. To move it to another branch, tick the new branch and save first, then untick the old one.',
   
   // Business Rules
   'PRODUCT_NO_STOCK_ENTRY': 'Product must have at least one outlet stock entry',
@@ -176,6 +178,9 @@ const ERROR_MESSAGES: Record<string, string> = {
   // System Errors
   'INTERNAL_SERVER_ERROR': 'Internal server error',
   'SERVICE_UNAVAILABLE': 'Service temporarily unavailable. Please try again later.',
+  'AI_SUMMARY_UNAVAILABLE': 'AI summary is not turned on.',
+  'AI_SUMMARY_FAILED': 'Could not write the summary. Please try again.',
+  'AI_WEEKLY_SUMMARY_SUCCESS': 'Weekly summary retrieved successfully',
   'GATEWAY_ERROR': 'Gateway error. The server is temporarily unavailable.',
   'TIMEOUT_ERROR': 'Request timeout. Please try again.',
   'FETCH_MERCHANTS_FAILED': 'Failed to fetch merchants',

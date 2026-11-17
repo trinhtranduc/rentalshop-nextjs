@@ -2214,7 +2214,11 @@
     <string name="shopinfo_address_label">地址</string>
     <string name="products_listing_title">在分店顯示</string>
     <string name="products_listing_owner_only">只有店家負責人可開啟／關閉</string>
-    <string name="products_listing_current">目前選擇</string>
+    <string name="products_listing_current">目前使用的分店</string>
+    <string name="products_listing_box_title">庫存與分店顯示</string>
+    <string name="products_listing_tip">勾選的分店會顯示此商品。數量依分店分別填寫。</string>
+    <string name="products_listing_total">合計 %1$d</string>
+    <string name="products_listing_need_one">請至少勾選一間顯示商品的分店</string>
     <string name="products_listing_branch_main">%1$s（總店）</string>
     <string name="products_listing_stock">庫存 %1$d</string>
     <string name="products_listing_stock_rent">庫存 %1$d · 租借中 %2$d</string>
@@ -2512,4 +2516,24 @@
         <item>bool.true|是</item>
         <item>bool.false|否</item>
     </string-array>
+    <!-- #1612 AI weekly summary on Tổng quan (button, sheet) -->
+    <string name="weekly_summary_title">每週摘要</string>
+    <string name="weekly_summary_whole_shop">全店</string>
+    <string name="weekly_summary_loading">AI 正在讀取上週數據…</string>
+    <string name="weekly_summary_loading_hint">幾秒鐘</string>
+    <string name="weekly_summary_actions">本週待辦</string>
+    <string name="weekly_summary_orders_group">訂單與租還</string>
+    <string name="weekly_summary_rent_sale_cancel">租借 · 銷售 · 取消</string>
+    <string name="weekly_summary_out_back">已交付 · 已歸還</string>
+    <string name="weekly_summary_late_not_picked">逾期 · 未取貨</string>
+    <string name="weekly_summary_products_group">熱門商品與客戶</string>
+    <string name="weekly_summary_customers">下單客戶</string>
+    <string name="weekly_summary_new_returning">新客 · 回頭客</string>
+    <string name="weekly_summary_footer_figures">數據由 AnyRent 計算。標有 ✦ 的內容由 AI 撰寫，可能不準確。</string>
+    <string name="weekly_summary_footer_written">撰寫於 %1$s · 下次更新 %2$s</string>
+    <string name="weekly_summary_no_orders">上週沒有訂單，暫無可摘要的內容。</string>
+    <string name="weekly_summary_error">無法產生摘要。</string>
+    <plurals name="weekly_summary_times">
+        <item quantity="other">%1$d 次</item>
+    </plurals>
 </resources>

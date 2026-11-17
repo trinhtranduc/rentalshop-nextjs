@@ -2214,7 +2214,11 @@
     <string name="shopinfo_address_label">주소</string>
     <string name="products_listing_title">지점에 표시</string>
     <string name="products_listing_owner_only">사장님만 켜기/끄기 가능</string>
-    <string name="products_listing_current">선택됨</string>
+    <string name="products_listing_current">사용 중인 지점</string>
+    <string name="products_listing_box_title">재고 및 지점 표시</string>
+    <string name="products_listing_tip">선택한 지점에 상품이 표시됩니다. 수량은 지점별로 입력하세요.</string>
+    <string name="products_listing_total">합계 %1$d</string>
+    <string name="products_listing_need_one">상품을 표시할 지점을 1개 이상 선택하세요</string>
     <string name="products_listing_branch_main">%1$s (본점)</string>
     <string name="products_listing_stock">재고 %1$d</string>
     <string name="products_listing_stock_rent">재고 %1$d · 대여 중 %2$d</string>
@@ -2512,4 +2516,24 @@
         <item>bool.true|예</item>
         <item>bool.false|아니요</item>
     </string-array>
+    <!-- #1612 AI weekly summary on Tổng quan (button, sheet) -->
+    <string name="weekly_summary_title">주간 요약</string>
+    <string name="weekly_summary_whole_shop">매장 전체</string>
+    <string name="weekly_summary_loading">AI가 지난주 수치를 읽고 있습니다…</string>
+    <string name="weekly_summary_loading_hint">몇 초 정도 걸립니다</string>
+    <string name="weekly_summary_actions">이번 주 할 일</string>
+    <string name="weekly_summary_orders_group">주문과 대여·반납</string>
+    <string name="weekly_summary_rent_sale_cancel">대여 · 판매 · 취소</string>
+    <string name="weekly_summary_out_back">인도 · 반납</string>
+    <string name="weekly_summary_late_not_picked">연체 · 미수령</string>
+    <string name="weekly_summary_products_group">인기 상품과 고객</string>
+    <string name="weekly_summary_customers">주문한 고객</string>
+    <string name="weekly_summary_new_returning">신규 · 재방문</string>
+    <string name="weekly_summary_footer_figures">수치는 AnyRent가 계산합니다. ✦ 표시 줄은 AI가 작성했으며 틀릴 수 있습니다.</string>
+    <string name="weekly_summary_footer_written">작성 %1$s · 다음 요약 %2$s</string>
+    <string name="weekly_summary_no_orders">지난주에는 주문이 없어 요약할 내용이 없습니다.</string>
+    <string name="weekly_summary_error">요약을 만들지 못했습니다.</string>
+    <plurals name="weekly_summary_times">
+        <item quantity="other">%1$d회</item>
+    </plurals>
 </resources>

@@ -129,7 +129,8 @@ final class ProductsHomeViewController: BaseViewControler {
         navigationController?.pushViewController(SubscriptionViewController(), animated: true)
     }
 
-    /// #828: products and stock of the branch now in use. #1614: another branch is another list: it opens at the top
+    /// #828: products and stock of the branch now in use. #1614: another branch is another list: its old rows go at once
+    /// and it opens at the top
     @objc private func outletChanged() {
         updateCartBar()
         if isViewLoaded { list.setContentOffset(CGPoint(x: 0, y: -list.adjustedContentInset.top), animated: false) }
@@ -476,7 +477,7 @@ final class ProductsHomeViewController: BaseViewControler {
         let form = ProductFormViewController(product: nil)
         form.onSaved = { [weak self] product in
             FirstRunCoach.shared.stop() // #1411: this form covers Home without taking it off screen
-            self?.putBack(product)
+            self?.applySaved(product)
         }
         V2.presentForm(form, from: self)
     }
@@ -560,14 +561,14 @@ final class ProductsHomeViewController: BaseViewControler {
     private func openDetail(_ product: Product) {
         let detail = ProductDetailViewController(product: product)
         detail.hidesBottomBarWhenPushed = true
-        detail.onSaved = { [weak self] saved in self?.putBack(saved) }
+        detail.onSaved = { [weak self] saved in self?.applySaved(saved) }
         detail.onDeleted = { [weak self] id in self?.viewModel.remove(productId: id) }
         navigationController?.pushViewController(detail, animated: true)
     }
 
-    /// #1614: a saved product goes back in its row, or leaves the list at once when it is not shown at the branch in use
-    /// (the owner just unticked it): the list holds only the products of this branch
-    private func putBack(_ product: Product) {
+    /// #1607: a saved product the branch in use does not show leaves the list (the API no longer lists it here, #1601);
+    /// any other saved product is put back in place, or on top when it is new
+    private func applySaved(_ product: Product) {
         if listedHere(product) {
             viewModel.replace(product)
         } else {

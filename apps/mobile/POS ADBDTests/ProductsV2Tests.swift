@@ -2132,27 +2132,88 @@ final class BranchListingTests: XCTestCase {
         after[0].listed = false
         after[2].listed = true
         XCTAssertEqual(BranchListing.changes(from: before, to: after),
-                       [BranchTickChange(outletId: 1, isListed: false), BranchTickChange(outletId: 9, isListed: true)])
+                       [BranchTickChange(outletId: 9, isListed: true), BranchTickChange(outletId: 1, isListed: false)]) // #1605 ticks first
         XCTAssertEqual(BranchListing.changes(from: before, to: before), [])
     }
 
-    func testCreatingSendsTheTypedStockAtTheCurrentBranchAndZeroRowsForTheOtherTicks() {
-        var rows = BranchListing.rows(outlets: outlets, product: nil, creatingAt: 1)
-        rows[2].listed = true
-        let items = BranchListing.createStock(rows: rows, quantity: 5, at: 1)
-        XCTAssertEqual(items.map { $0.outletId }, [1, 9])
-        XCTAssertEqual(items.map { $0.stock }, [5, 0])
-        XCTAssertEqual(items.map { $0.isListed }, [true, true])
+    // MARK: #1607 one box "Tồn và hiện ở chi nhánh": a tick and a quantity per branch
+
+    func testANewProductStartsWithOneAtTheCreatingBranch() {
+        let rows = BranchListing.rows(outlets: outlets, product: nil, creatingAt: 7)
+        XCTAssertEqual(rows.map { $0.stock }, [0, 1, 0])
+        XCTAssertEqual(rows.map { $0.renting }, [0, 0, 0])
+        XCTAssertEqual(BranchListing.total(rows), 1)
     }
 
-    func testCreatingWithTheCurrentBranchUntickedStillSendsItsStock() {
+    func testEachRowHasItsOwnQuantityAndTheTotalIsTheSum() {
+        var rows = BranchListing.rows(outlets: outlets, product: nil, creatingAt: 1)
+        rows[1].stock = 2
+        rows[2].stock = 5
+        XCTAssertEqual(BranchListing.total(rows), 8)
+    }
+
+    func testABranchIsNeededWhenNoRowIsTicked() {
+        var rows = BranchListing.rows(outlets: outlets, product: nil, creatingAt: 1)
+        XCTAssertFalse(BranchListing.needsBranch(rows))
+        rows[0].listed = false
+        XCTAssertTrue(BranchListing.needsBranch(rows))
+        rows[2].listed = true
+        XCTAssertFalse(BranchListing.needsBranch(rows))
+    }
+
+    /// The bug seen on 16/11: unticking the branch in use and ticking another one put the quantity where it is not shown
+    func testCreatingSendsEveryBranchWithItsOwnQuantityAndTick() {
+        var rows = BranchListing.rows(outlets: outlets, product: nil, creatingAt: 1)
+        rows[0].listed = false
+        rows[0].stock = 0
+        rows[1].listed = true
+        rows[1].stock = 2
+        let items = BranchListing.createStock(rows: rows)
+        XCTAssertEqual(items.map { $0.outletId }, [1, 7, 9])
+        XCTAssertEqual(items.map { $0.stock }, [0, 2, 0])
+        XCTAssertEqual(items.map { $0.isListed }, [false, true, false])
+    }
+
+    func testCreatingKeepsTheQuantityOfAnUntickedBranch() {
         var rows = BranchListing.rows(outlets: outlets, product: nil, creatingAt: 1)
         rows[0].listed = false
         rows[1].listed = true
-        let items = BranchListing.createStock(rows: rows, quantity: 5, at: 1)
-        XCTAssertEqual(items.map { $0.outletId }, [1, 7])
-        XCTAssertEqual(items.map { $0.stock }, [5, 0])
-        XCTAssertEqual(items.map { $0.isListed }, [false, true])
+        let items = BranchListing.createStock(rows: rows)
+        XCTAssertEqual(items.map { $0.stock }, [1, 0, 0])
+        XCTAssertEqual(items.map { $0.isListed }, [false, true, false])
+    }
+
+    func testEditingSendsOnlyTheQuantitiesThatChanged() throws {
+        let p = try product(#"{"id":12,"name":"Áo dài gấm đỏ","outletStock":[{"outletId":1,"stock":8,"renting":2,"isListed":true},{"outletId":7,"stock":4,"renting":0,"isListed":true}]}"#)
+        let original = BranchListing.rows(outlets: outlets, product: p, creatingAt: nil)
+        var current = original
+        XCTAssertEqual(BranchListing.stockWrites(from: original, to: current).count, 0)
+        current[1].stock = 6
+        current[2].stock = 3
+        let writes = BranchListing.stockWrites(from: original, to: current)
+        XCTAssertEqual(writes.map { $0.outletId }, [7, 9])
+        XCTAssertEqual(writes.map { $0.stock }, [6, 3])
+        XCTAssertEqual(writes.map { $0.isListed }, [nil, nil], "the tick has its own route")
+    }
+
+    /// #1605: the API refuses an untick that leaves no branch (#1603), so a move A -> B ticks B first
+    func testTicksAreSentBeforeUnticks() {
+        let before = BranchListing.rows(outlets: outlets, product: nil, creatingAt: 1)
+        var after = before
+        after[0].listed = false
+        after[1].listed = true
+        after[2].listed = true
+        XCTAssertEqual(BranchListing.changes(from: before, to: after),
+                       [BranchTickChange(outletId: 7, isListed: true), BranchTickChange(outletId: 9, isListed: true),
+                        BranchTickChange(outletId: 1, isListed: false)])
+    }
+
+    func testAQuantityBelowTheUnitsOnRentIsFound() throws {
+        let p = try product(#"{"id":12,"name":"Áo","outletStock":[{"outletId":1,"stock":8,"renting":2,"isListed":true},{"outletId":7,"stock":4,"renting":3,"isListed":true}]}"#)
+        var rows = BranchListing.rows(outlets: outlets, product: p, creatingAt: nil)
+        XCTAssertNil(BranchListing.belowRented(rows))
+        rows[1].stock = 2
+        XCTAssertEqual(BranchListing.belowRented(rows)?.outletId, 7)
     }
 
     // MARK: Requests

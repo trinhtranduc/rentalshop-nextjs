@@ -212,31 +212,104 @@ class BranchListingTest {
             this[2] = this[2].copy(listed = true)
         }
         assertEquals(
-            listOf(BranchTickChange(1, false), BranchTickChange(9, true)),
+            listOf(BranchTickChange(9, true), BranchTickChange(1, false)), // #1605 ticks first
             BranchListing.changes(before, after),
         )
         assertEquals(emptyList<BranchTickChange>(), BranchListing.changes(before, before))
     }
 
+    // #1607 one box "Tồn và hiện ở chi nhánh": a tick and a quantity per branch (iOS BranchListingTests)
+
     @Test
-    fun creatingSendsTheTypedStockAtTheCurrentBranchAndZeroRowsForTheOtherTicks() {
-        val rows = BranchListing.rows(outlets, product = null, creatingAt = 1).toMutableList()
-        rows[2] = rows[2].copy(listed = true)
-        val items = BranchListing.createStock(rows, quantity = 5, at = 1)
-        assertEquals(listOf(1, 9), items.map { it.outletId })
-        assertEquals(listOf(5, 0), items.map { it.stock })
-        assertEquals(listOf<Boolean?>(true, true), items.map { it.isListed })
+    fun aNewProductStartsWithOneAtTheCreatingBranch() {
+        val rows = BranchListing.rows(outlets, product = null, creatingAt = 7)
+        assertEquals(listOf(0, 1, 0), rows.map { it.stock })
+        assertEquals(listOf(0, 0, 0), rows.map { it.renting })
+        assertEquals(1, BranchListing.total(rows))
     }
 
     @Test
-    fun creatingWithTheCurrentBranchUntickedStillSendsItsStock() {
+    fun eachRowHasItsOwnQuantityAndTheTotalIsTheSum() {
+        val rows = BranchListing.rows(outlets, product = null, creatingAt = 1).toMutableList()
+        rows[1] = rows[1].copy(stock = 2)
+        rows[2] = rows[2].copy(stock = 5)
+        assertEquals(8, BranchListing.total(rows))
+    }
+
+    @Test
+    fun aBranchIsNeededWhenNoRowIsTicked() {
+        val rows = BranchListing.rows(outlets, product = null, creatingAt = 1).toMutableList()
+        assertFalse(BranchListing.needsBranch(rows))
+        rows[0] = rows[0].copy(listed = false)
+        assertTrue(BranchListing.needsBranch(rows))
+        rows[2] = rows[2].copy(listed = true)
+        assertFalse(BranchListing.needsBranch(rows))
+    }
+
+    /** The bug seen on 16/11: unticking the branch in use and ticking another one put the quantity where it is not shown */
+    @Test
+    fun creatingSendsEveryBranchWithItsOwnQuantityAndTick() {
+        val rows = BranchListing.rows(outlets, product = null, creatingAt = 1).toMutableList()
+        rows[0] = rows[0].copy(listed = false, stock = 0)
+        rows[1] = rows[1].copy(listed = true, stock = 2)
+        val items = BranchListing.createStock(rows)
+        assertEquals(listOf(1, 7, 9), items.map { it.outletId })
+        assertEquals(listOf(0, 2, 0), items.map { it.stock })
+        assertEquals(listOf<Boolean?>(false, true, false), items.map { it.isListed })
+    }
+
+    @Test
+    fun creatingKeepsTheQuantityOfAnUntickedBranch() {
         val rows = BranchListing.rows(outlets, product = null, creatingAt = 1).toMutableList()
         rows[0] = rows[0].copy(listed = false)
         rows[1] = rows[1].copy(listed = true)
-        val items = BranchListing.createStock(rows, quantity = 5, at = 1)
-        assertEquals(listOf(1, 7), items.map { it.outletId })
-        assertEquals(listOf(5, 0), items.map { it.stock })
-        assertEquals(listOf<Boolean?>(false, true), items.map { it.isListed })
+        val items = BranchListing.createStock(rows)
+        assertEquals(listOf(1, 0, 0), items.map { it.stock })
+        assertEquals(listOf<Boolean?>(false, true, false), items.map { it.isListed })
+    }
+
+    @Test
+    fun editingSendsOnlyTheQuantitiesThatChanged() {
+        val p = product(
+            ProductOutletStock(1, 8, 2, 6, isListed = true),
+            ProductOutletStock(7, 4, 0, 4, isListed = true),
+        )
+        val original = BranchListing.rows(outlets, product = p, creatingAt = null)
+        assertEquals(0, BranchListing.stockWrites(original, original).size)
+        val current = original.toMutableList()
+        current[1] = current[1].copy(stock = 6)
+        current[2] = current[2].copy(stock = 3)
+        val writes = BranchListing.stockWrites(original, current)
+        assertEquals(listOf(7, 9), writes.map { it.outletId })
+        assertEquals(listOf(6, 3), writes.map { it.stock })
+        assertEquals(listOf<Boolean?>(null, null), writes.map { it.isListed }) // the tick has its own route
+    }
+
+    /** #1605: the API refuses an untick that leaves no branch (#1603), so a move A -> B ticks B first */
+    @Test
+    fun ticksAreSentBeforeUnticks() {
+        val before = BranchListing.rows(outlets, product = null, creatingAt = 1)
+        val after = before.toMutableList().apply {
+            this[0] = this[0].copy(listed = false)
+            this[1] = this[1].copy(listed = true)
+            this[2] = this[2].copy(listed = true)
+        }
+        assertEquals(
+            listOf(BranchTickChange(7, true), BranchTickChange(9, true), BranchTickChange(1, false)),
+            BranchListing.changes(before, after),
+        )
+    }
+
+    @Test
+    fun aQuantityBelowTheUnitsOnRentIsFound() {
+        val p = product(
+            ProductOutletStock(1, 8, 2, 6, isListed = true),
+            ProductOutletStock(7, 4, 3, 1, isListed = true),
+        )
+        val rows = BranchListing.rows(outlets, product = p, creatingAt = null).toMutableList()
+        assertNull(BranchListing.belowRented(rows))
+        rows[1] = rows[1].copy(stock = 2)
+        assertEquals(7, BranchListing.belowRented(rows)?.outletId)
     }
 
     // Requests

@@ -2214,7 +2214,11 @@
     <string name="shopinfo_address_label">Alamat</string>
     <string name="products_listing_title">Tampil di cabang</string>
     <string name="products_listing_owner_only">Hanya pemilik toko yang dapat mengaktifkan/menonaktifkan</string>
-    <string name="products_listing_current">Sedang dipilih</string>
+    <string name="products_listing_current">Cabang yang dipakai</string>
+    <string name="products_listing_box_title">Stok dan tampil di cabang</string>
+    <string name="products_listing_tip">Produk tampil di cabang yang dicentang. Isi jumlah untuk setiap cabang.</string>
+    <string name="products_listing_total">Total %1$d</string>
+    <string name="products_listing_need_one">Centang minimal 1 cabang untuk menampilkan produk</string>
     <string name="products_listing_branch_main">%1$s (utama)</string>
     <string name="products_listing_stock">Stok %1$d</string>
     <string name="products_listing_stock_rent">Stok %1$d · sedang disewa %2$d</string>
@@ -2512,4 +2516,24 @@
         <item>bool.true|Ya</item>
         <item>bool.false|Tidak</item>
     </string-array>
+    <!-- #1612 AI weekly summary on Tổng quan (button, sheet) -->
+    <string name="weekly_summary_title">Ringkasan mingguan</string>
+    <string name="weekly_summary_whole_shop">Seluruh toko</string>
+    <string name="weekly_summary_loading">AI sedang membaca angka minggu lalu…</string>
+    <string name="weekly_summary_loading_hint">Beberapa detik</string>
+    <string name="weekly_summary_actions">Yang perlu dilakukan minggu ini</string>
+    <string name="weekly_summary_orders_group">Pesanan, sewa, dan pengembalian</string>
+    <string name="weekly_summary_rent_sale_cancel">Sewa · Jual · Batal</string>
+    <string name="weekly_summary_out_back">Diantar · Dikembalikan</string>
+    <string name="weekly_summary_late_not_picked">Terlambat · Belum diambil</string>
+    <string name="weekly_summary_products_group">Barang terlaris dan pelanggan</string>
+    <string name="weekly_summary_customers">Pelanggan dengan pesanan</string>
+    <string name="weekly_summary_new_returning">Baru · Kembali</string>
+    <string name="weekly_summary_footer_figures">Angka dihitung oleh AnyRent. Baris bertanda ✦ ditulis oleh AI dan bisa keliru.</string>
+    <string name="weekly_summary_footer_written">Ditulis %1$s · berikutnya %2$s</string>
+    <string name="weekly_summary_no_orders">Minggu lalu tidak ada pesanan, jadi tidak ada yang perlu diringkas.</string>
+    <string name="weekly_summary_error">Ringkasan belum bisa dibuat.</string>
+    <plurals name="weekly_summary_times">
+        <item quantity="other">%1$d kali</item>
+    </plurals>
 </resources>

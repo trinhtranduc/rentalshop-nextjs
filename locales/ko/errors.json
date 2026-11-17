@@ -1,4 +1,7 @@
 {
+  "AI_SUMMARY_UNAVAILABLE": "AI 요약이 아직 켜져 있지 않습니다.",
+  "AI_SUMMARY_FAILED": "요약을 만들지 못했습니다. 다시 시도해 주세요.",
+  "AI_WEEKLY_SUMMARY_SUCCESS": "주간 요약을 가져왔습니다",
   "_comment": "Error codes for API responses - Korean version",
   "UNAUTHORIZED": "인증이 필요합니다",
   "FORBIDDEN": "접근이 거부되었습니다",
@@ -204,6 +207,7 @@
   "CATEGORY_NAME_EXISTS": "같은 이름의 카테고리가 이미 있습니다",
   "PRODUCT_NAME_EXISTS": "같은 이름의 상품이 이미 있습니다. 다른 이름을 선택해 주세요.",
   "STOCK_BELOW_RENTED": "재고는 현재 대여 중인 수량보다 적을 수 없습니다.",
+  "PRODUCT_NEEDS_ONE_BRANCH": "상품은 최소 1개 매장에서 표시되어야 합니다. 다른 매장으로 옮기려면 먼저 새 매장을 선택해 저장한 다음, 기존 매장의 선택을 해제하세요.",
   "PLAN_NAME_EXISTS": "같은 이름의 요금제가 이미 있습니다",
   "MERCHANT_DUPLICATE": "이 이메일 또는 전화번호를 가진 사업자가 이미 존재합니다. 다른 이메일 또는 전화번호를 사용해주세요.",
   "EMAIL_ALREADY_EXISTS": "이미 사용 중인 이메일입니다",

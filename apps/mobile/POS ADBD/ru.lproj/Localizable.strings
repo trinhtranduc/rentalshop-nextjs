@@ -2855,8 +2855,12 @@
 "shopinfo.addressRequired" = "Введите адрес.";
 "products.listing.title" = "Показывается в филиале";
 "products.listing.ownerOnly" = "Включать и отключать может только владелец магазина";
-"products.listing.current" = "Выбрано";
+"products.listing.current" = "Текущий филиал";
 "products.listing.branchMain" = "%@ (основная)";
+"products.listing.boxTitle" = "Остаток и показ по филиалам";
+"products.listing.tip" = "Товар показывается в отмеченных филиалах. Количество указывается для каждого филиала.";
+"products.listing.total" = "Всего %d";
+"products.listing.needOne" = "Отметьте хотя бы один филиал, где показывать товар";
 "products.listing.stock" = "Остаток %d";
 "products.listing.stockRent" = "Остаток %d · в аренде %d";
 "products.listing.reminder" = "В этом филиале осталось %d шт. (%d в аренде): они учитываются в общем количестве, но не предлагаются при создании заказа.";
@@ -3076,3 +3080,26 @@
 "shopinfo.emailLanguage" = "Язык писем";
 "shopinfo.emailLanguage.hint" = "Письма для подтверждения, сброса пароля и уведомления о тарифе отправляются на этом языке.";
 "shopinfo.emailLanguage.failed" = "Не удалось сохранить язык писем. Попробуйте ещё раз.";
+
+/* #1612 AI weekly summary on Tổng quan (floating button and sheet) */
+"weeklySummary.title" = "Сводка за неделю";
+"weeklySummary.wholeShop" = "Весь магазин";
+"weeklySummary.unread" = "Новая сводка";
+"weeklySummary.loading" = "ИИ читает цифры прошлой недели…";
+"weeklySummary.loadingHint" = "Несколько секунд";
+"weeklySummary.actions" = "Что сделать на этой неделе";
+"weeklySummary.aiTag" = "AI";
+"weeklySummary.ordersGroup" = "Заказы, аренда и возвраты";
+"weeklySummary.rentSaleCancel" = "Аренда · Продажа · Отмена";
+"weeklySummary.outBack" = "Выдано · Возвращено";
+"weeklySummary.lateNotPicked" = "Просрочено · Не забрано";
+"weeklySummary.byDay" = "Новые заказы по дням";
+"weeklySummary.productsGroup" = "Популярные товары и клиенты";
+"weeklySummary.customers" = "Клиенты с заказами";
+"weeklySummary.times" = "%d раз";
+"weeklySummary.times.one" = "%d раз";
+"weeklySummary.newReturning" = "Новые · Постоянные";
+"weeklySummary.footer.figures" = "Цифры считает AnyRent. Строки с ✦ пишет ИИ, в них возможны ошибки.";
+"weeklySummary.footer.written" = "Написано %1$@ · следующая %2$@";
+"weeklySummary.noOrders" = "На прошлой неделе заказов не было, сводить нечего.";
+"weeklySummary.error" = "Не удалось составить сводку.";

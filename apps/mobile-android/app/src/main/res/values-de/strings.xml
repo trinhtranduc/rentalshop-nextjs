@@ -2214,7 +2214,11 @@
     <string name="shopinfo_address_label">Adresse</string>
     <string name="products_listing_title">In dieser Filiale anzeigen</string>
     <string name="products_listing_owner_only">Nur der Geschäftsinhaber kann dies ein- oder ausschalten</string>
-    <string name="products_listing_current">Ausgewählt</string>
+    <string name="products_listing_current">Aktuelle Filiale</string>
+    <string name="products_listing_box_title">Bestand und Anzeige je Filiale</string>
+    <string name="products_listing_tip">Der Artikel wird in jeder angekreuzten Filiale angezeigt. Menge je Filiale eingeben.</string>
+    <string name="products_listing_total">Gesamt %1$d</string>
+    <string name="products_listing_need_one">Mindestens eine Filiale ankreuzen, in der der Artikel angezeigt wird</string>
     <string name="products_listing_branch_main">%1$s (Haupt)</string>
     <string name="products_listing_stock">Bestand %1$d</string>
     <string name="products_listing_stock_rent">Bestand %1$d · in Miete %2$d</string>
@@ -2512,4 +2516,25 @@
         <item>bool.true|Ja</item>
         <item>bool.false|Nein</item>
     </string-array>
+    <!-- #1612 AI weekly summary on Tổng quan (button, sheet) -->
+    <string name="weekly_summary_title">Wochenübersicht</string>
+    <string name="weekly_summary_whole_shop">Ganzer Shop</string>
+    <string name="weekly_summary_loading">KI liest die Zahlen der letzten Woche…</string>
+    <string name="weekly_summary_loading_hint">Einige Sekunden</string>
+    <string name="weekly_summary_actions">Diese Woche zu tun</string>
+    <string name="weekly_summary_orders_group">Aufträge, Vermietung und Rückgabe</string>
+    <string name="weekly_summary_rent_sale_cancel">Miete · Verkauf · Storniert</string>
+    <string name="weekly_summary_out_back">Übergeben · Zurückgenommen</string>
+    <string name="weekly_summary_late_not_picked">Verspätet · Nicht abgeholt</string>
+    <string name="weekly_summary_products_group">Beliebte Artikel und Kunden</string>
+    <string name="weekly_summary_customers">Kunden mit Aufträgen</string>
+    <string name="weekly_summary_new_returning">Neu · Wiederkehrend</string>
+    <string name="weekly_summary_footer_figures">Die Zahlen berechnet AnyRent. Zeilen mit ✦ schreibt die KI, sie können falsch sein.</string>
+    <string name="weekly_summary_footer_written">Geschrieben %1$s · nächste %2$s</string>
+    <string name="weekly_summary_no_orders">Letzte Woche gab es keine Aufträge, daher gibt es nichts zusammenzufassen.</string>
+    <string name="weekly_summary_error">Die Übersicht konnte nicht erstellt werden.</string>
+    <plurals name="weekly_summary_times">
+        <item quantity="one">%1$d-mal</item>
+        <item quantity="other">%1$d-mal</item>
+    </plurals>
 </resources>

@@ -3049,8 +3049,12 @@
 // #1346 "Hiện ở chi nhánh"
 "products.listing.title" = "Hiện ở chi nhánh";
 "products.listing.ownerOnly" = "Chỉ chủ shop bật/tắt";
-"products.listing.current" = "Đang chọn";
+"products.listing.current" = "Chi nhánh đang dùng";
 "products.listing.branchMain" = "%@ (chính)";
+"products.listing.boxTitle" = "Tồn và hiện ở chi nhánh";
+"products.listing.tip" = "Tick chi nhánh nào thì món hiện ở chi nhánh đó. Số lượng nhập theo từng chi nhánh.";
+"products.listing.total" = "Tổng %d";
+"products.listing.needOne" = "Chọn ít nhất 1 chi nhánh để hiện sản phẩm";
 "products.listing.stock" = "Tồn %d";
 "products.listing.stockRent" = "Tồn %d · đang thuê %d";
 "products.listing.reminder" = "Còn %d cái ở chi nhánh này (%d đang thuê), vẫn tính vào tổng nhưng không hiện khi tạo đơn.";
@@ -3292,3 +3296,26 @@
 "shopinfo.emailLanguage" = "Ngôn ngữ email";
 "shopinfo.emailLanguage.hint" = "Email xác thực, đặt lại mật khẩu và thông báo gói gửi bằng ngôn ngữ này.";
 "shopinfo.emailLanguage.failed" = "Không lưu được ngôn ngữ email. Vui lòng thử lại.";
+
+/* #1612 AI weekly summary on Tổng quan (floating button and sheet) */
+"weeklySummary.title" = "Tóm tắt tuần";
+"weeklySummary.wholeShop" = "Cả shop";
+"weeklySummary.unread" = "Có bản tóm tắt mới";
+"weeklySummary.loading" = "AI đang đọc số liệu tuần trước…";
+"weeklySummary.loadingHint" = "Khoảng vài giây";
+"weeklySummary.actions" = "Nên làm tuần này";
+"weeklySummary.aiTag" = "AI";
+"weeklySummary.ordersGroup" = "Đơn hàng và thuê – trả";
+"weeklySummary.rentSaleCancel" = "Thuê · Bán · Huỷ";
+"weeklySummary.outBack" = "Giao đồ · Nhận trả";
+"weeklySummary.lateNotPicked" = "Trả trễ · Chưa lấy";
+"weeklySummary.byDay" = "Đơn mới theo ngày";
+"weeklySummary.productsGroup" = "Mẫu hot và khách";
+"weeklySummary.customers" = "Khách có đơn";
+"weeklySummary.times" = "%d lượt";
+"weeklySummary.times.one" = "%d lượt";
+"weeklySummary.newReturning" = "Mới · Quay lại";
+"weeklySummary.footer.figures" = "Số do AnyRent tính. Dòng có dấu ✦ do AI viết, có thể chưa đúng.";
+"weeklySummary.footer.written" = "Viết lúc %1$@ · bản mới vào %2$@";
+"weeklySummary.noOrders" = "Tuần trước chưa có đơn nào, nên chưa có gì để tóm tắt.";
+"weeklySummary.error" = "Chưa tạo được tóm tắt.";

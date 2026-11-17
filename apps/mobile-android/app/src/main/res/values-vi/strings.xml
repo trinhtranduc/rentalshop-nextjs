@@ -2353,7 +2353,11 @@
     <!-- #1346 "Hiện ở chi nhánh" (iOS products.listing.*) -->
     <string name="products_listing_title">Hiện ở chi nhánh</string>
     <string name="products_listing_owner_only">Chỉ chủ shop bật/tắt</string>
-    <string name="products_listing_current">Đang chọn</string>
+    <string name="products_listing_current">Chi nhánh đang dùng</string>
+    <string name="products_listing_box_title">Tồn và hiện ở chi nhánh</string>
+    <string name="products_listing_tip">Tick chi nhánh nào thì món hiện ở chi nhánh đó. Số lượng nhập theo từng chi nhánh.</string>
+    <string name="products_listing_total">Tổng %1$d</string>
+    <string name="products_listing_need_one">Chọn ít nhất 1 chi nhánh để hiện sản phẩm</string>
     <string name="products_listing_branch_main">%1$s (chính)</string>
     <string name="products_listing_stock">Tồn %1$d</string>
     <string name="products_listing_stock_rent">Tồn %1$d · đang thuê %2$d</string>
@@ -2583,4 +2587,24 @@
     <string name="signup_app_language">vi</string>
     <string name="settings_email_language">Ngôn ngữ email</string>
     <string name="settings_email_language_hint">Email xác thực, đặt lại mật khẩu và thông báo gói gửi bằng ngôn ngữ này.</string>
+    <!-- #1612 AI weekly summary on Tổng quan (button, sheet) -->
+    <string name="weekly_summary_title">Tóm tắt tuần</string>
+    <string name="weekly_summary_whole_shop">Cả shop</string>
+    <string name="weekly_summary_loading">AI đang đọc số liệu tuần trước…</string>
+    <string name="weekly_summary_loading_hint">Khoảng vài giây</string>
+    <string name="weekly_summary_actions">Nên làm tuần này</string>
+    <string name="weekly_summary_orders_group">Đơn hàng và thuê – trả</string>
+    <string name="weekly_summary_rent_sale_cancel">Thuê · Bán · Huỷ</string>
+    <string name="weekly_summary_out_back">Giao đồ · Nhận trả</string>
+    <string name="weekly_summary_late_not_picked">Trả trễ · Chưa lấy</string>
+    <string name="weekly_summary_products_group">Mẫu hot và khách</string>
+    <string name="weekly_summary_customers">Khách có đơn</string>
+    <string name="weekly_summary_new_returning">Mới · Quay lại</string>
+    <string name="weekly_summary_footer_figures">Số do AnyRent tính. Dòng có dấu ✦ do AI viết, có thể chưa đúng.</string>
+    <string name="weekly_summary_footer_written">Viết lúc %1$s · bản mới vào %2$s</string>
+    <string name="weekly_summary_no_orders">Tuần trước chưa có đơn nào, nên chưa có gì để tóm tắt.</string>
+    <string name="weekly_summary_error">Chưa tạo được tóm tắt.</string>
+    <plurals name="weekly_summary_times">
+        <item quantity="other">%1$d lượt</item>
+    </plurals>
 </resources>

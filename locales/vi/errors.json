@@ -1,4 +1,7 @@
 {
+  "AI_SUMMARY_UNAVAILABLE": "Tóm tắt bằng AI chưa được bật.",
+  "AI_SUMMARY_FAILED": "Chưa tạo được tóm tắt. Vui lòng thử lại.",
+  "AI_WEEKLY_SUMMARY_SUCCESS": "Lấy tóm tắt tuần thành công",
   "_comment": "Mã lỗi cho API responses - Phiên bản tiếng Việt",
   
   "UNAUTHORIZED": "Yêu cầu xác thực",
@@ -216,6 +219,7 @@
   "CATEGORY_NAME_EXISTS": "Danh mục với tên này đã tồn tại",
   "PRODUCT_NAME_EXISTS": "Sản phẩm với tên này đã tồn tại. Vui lòng chọn tên khác.",
   "STOCK_BELOW_RENTED": "Tồn kho không được thấp hơn số lượng đang cho thuê.",
+  "PRODUCT_NEEDS_ONE_BRANCH": "Sản phẩm phải hiện ở ít nhất 1 chi nhánh. Muốn chuyển sang chi nhánh khác: tick chi nhánh mới và lưu trước, rồi bỏ tick chi nhánh cũ.",
   "PLAN_NAME_EXISTS": "Gói với tên này đã tồn tại",
   "MERCHANT_DUPLICATE": "Doanh nghiệp với email hoặc số điện thoại này đã tồn tại. Vui lòng sử dụng email hoặc số điện thoại khác.",
   "EMAIL_ALREADY_EXISTS": "Email đã tồn tại",
