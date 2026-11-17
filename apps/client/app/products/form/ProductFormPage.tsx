@@ -735,7 +735,8 @@ export function ProductFormPage({ productId }: { productId: number | null }) {
                 </ul>
                 {(errors.totalStock || errors.outletStock) && <span className="text-sm text-ar-danger">{err('totalStock') || err('outletStock')}</span>}              </div>
             ) : (
-              <Field id="pf-totalStock" label={t('form.quantity')} required={t('form.required')} hint={t('form.quantityAt', { outlet: data.outlets[0].name })} error={err('totalStock') || err('outletStock')}>
+              // #1610: one branch: no branch name under the quantity
+              <Field id="pf-totalStock" label={t('form.quantity')} required={t('form.required')} error={err('totalStock') || err('outletStock')}>
                 <CountInput id="pf-totalStock" value={form.totalStock} invalid={!!errors.totalStock} onChange={(n) => patch((f) => setTotalStock(f, n), ['totalStock', 'outletStock'])} />
               </Field>
             )}

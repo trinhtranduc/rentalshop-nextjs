@@ -1108,7 +1108,7 @@
       "customerSignature": "Unterschrift Kunde",
       "storeSignature": "Unterschrift Filiale",
       "thankYou": "Vielen Dank!",
-      "downloadApp": "AnyRent im App Store herunterladen",
+      "generatedBy": "Rechnung wurde mit der Software AnyRent erstellt",
       "units": {
         "perDay": "/Tag",
         "days": "{n} Tage",

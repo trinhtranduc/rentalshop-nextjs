@@ -1,6 +1,6 @@
 // #1124 PR6: the public shop page (products.public: catalog, booking sheet, request form, tracking page) and the
 // shop's online-booking screens (orders.web.online, settings.web.onlineBooking) had vi + en only; ja / ko / zh fell
-// back to English. Each of these subtrees must be translated for ja, ko and zh and merged over English in i18n.ts.
+// back to English. Each of these subtrees must be translated for ja, ko and zh and merged over English (#1597 appMessages).
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -40,8 +40,11 @@ describe.each(['ja', 'ko', 'zh'])('%s booking / public shop strings (#1124)', (l
     expect(problems).toEqual([]);
   });
 
-  it('i18n.ts merges the translated files over English', () => {
-    const src = fs.readFileSync(path.join(root, 'apps/client/i18n.ts'), 'utf8');
-    for (const [ns] of SUBTREES) expect(src).toContain(`../../locales/${locale}/${ns}.json`);
+  it('the app messages use the translated files over English (#1597 appMessages, was i18n.ts imports)', async () => {
+    const { appMessages } = await import('../apps/client/lib/app-messages');
+    const messages = await appMessages(locale as 'ja' | 'ko' | 'zh');
+    for (const [ns, subtree] of SUBTREES) {
+      expect(at(messages[ns as keyof typeof messages], subtree)).toEqual(at(read(`locales/${locale}/${ns}.json`), subtree));
+    }
   });
 });

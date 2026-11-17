@@ -1108,7 +1108,7 @@
       "customerSignature": "Подпись клиента",
       "storeSignature": "Подпись магазина",
       "thankYou": "Спасибо!",
-      "downloadApp": "Скачайте AnyRent в App Store",
+      "generatedBy": "Чек создан в программе AnyRent",
       "units": {
         "perDay": "/день",
         "days": "{n} дн.",

@@ -2855,8 +2855,12 @@
 "shopinfo.addressRequired" = "Bitte geben Sie die Adresse ein.";
 "products.listing.title" = "Angezeigt in Filiale";
 "products.listing.ownerOnly" = "Nur der Geschäftsinhaber kann dies ein- oder ausschalten";
-"products.listing.current" = "Ausgewählt";
+"products.listing.current" = "Aktuelle Filiale";
 "products.listing.branchMain" = "%@ (Haupt)";
+"products.listing.boxTitle" = "Bestand und Anzeige je Filiale";
+"products.listing.tip" = "Der Artikel wird in jeder angekreuzten Filiale angezeigt. Menge je Filiale eingeben.";
+"products.listing.total" = "Gesamt %d";
+"products.listing.needOne" = "Mindestens eine Filiale ankreuzen, in der der Artikel angezeigt wird";
 "products.listing.stock" = "Bestand %d";
 "products.listing.stockRent" = "Bestand %d · vermietet %d";
 "products.listing.reminder" = "%d Stück in dieser Filiale übrig (%d vermietet). Sie zählen weiterhin zur Gesamtmenge, werden aber bei der Bestellung nicht angeboten.";
@@ -3076,3 +3080,26 @@
 "shopinfo.emailLanguage" = "E-Mail-Sprache";
 "shopinfo.emailLanguage.hint" = "Bestätigungs-, Passwort-Zurücksetzungs- und Tarif-E-Mails werden in dieser Sprache gesendet.";
 "shopinfo.emailLanguage.failed" = "Die E-Mail-Sprache konnte nicht gespeichert werden. Bitte versuchen Sie es erneut.";
+
+/* #1612 AI weekly summary on Tổng quan (floating button and sheet) */
+"weeklySummary.title" = "Wochenübersicht";
+"weeklySummary.wholeShop" = "Ganzer Shop";
+"weeklySummary.unread" = "Neue Übersicht";
+"weeklySummary.loading" = "Die KI liest die Zahlen der letzten Woche…";
+"weeklySummary.loadingHint" = "Ein paar Sekunden";
+"weeklySummary.actions" = "Diese Woche zu tun";
+"weeklySummary.aiTag" = "AI";
+"weeklySummary.ordersGroup" = "Aufträge, Vermietungen und Rückgaben";
+"weeklySummary.rentSaleCancel" = "Miete · Verkauf · Storniert";
+"weeklySummary.outBack" = "Übergeben · Zurück";
+"weeklySummary.lateNotPicked" = "Verspätet · Nicht abgeholt";
+"weeklySummary.byDay" = "Neue Aufträge pro Tag";
+"weeklySummary.productsGroup" = "Beliebte Artikel und Kunden";
+"weeklySummary.customers" = "Kunden mit Aufträgen";
+"weeklySummary.times" = "%d-mal";
+"weeklySummary.times.one" = "%d-mal";
+"weeklySummary.newReturning" = "Neu · Wiederkehrend";
+"weeklySummary.footer.figures" = "Die Zahlen berechnet AnyRent. Mit ✦ markierte Zeilen schreibt die KI; sie können falsch sein.";
+"weeklySummary.footer.written" = "Erstellt %1$@ · nächste %2$@";
+"weeklySummary.noOrders" = "Letzte Woche gab es keine Aufträge, daher gibt es nichts zusammenzufassen.";
+"weeklySummary.error" = "Die Übersicht konnte nicht erstellt werden.";

@@ -244,3 +244,13 @@ describe('form: a branch role only gets its own branch from the outlet list, so 
     expect(branchShopHasSeveralBranches({})).toBe(false);
   });
 });
+
+describe('#1610 a shop with one branch sees no branch in the product form', () => {
+  // The form's outlet list (`/api/merchants/{id}/outlets`) holds the open branches only, so one entry = a one-branch shop:
+  // the single "Số lượng" box. It no longer names the branch ("Tại {branch}").
+  it('the single quantity box names no branch', () => {
+    const page = require('fs').readFileSync(require('path').resolve(__dirname, '../apps/client/app/products/form/ProductFormPage.tsx'), 'utf8');
+    expect(page).not.toMatch(/form\.quantityAt/);
+    expect(page).toMatch(/const multiOutlet = data\.outlets\.length > 1/);
+  });
+});

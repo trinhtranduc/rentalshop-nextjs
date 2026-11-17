@@ -218,18 +218,19 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({
   };
 
   // Get locale from next-intl
-  const locale = useLocale() as 'en' | 'vi' | 'zh' | 'ko' | 'ja';
+  const locale = useLocale();
   const tc = useCommonTranslations();
   
-  // Map locale to Intl locale string
+  // Map locale to Intl locale string; #1597 any other web language as is (Thai with Gregorian years, not 2569)
   const intlLocaleMap: Record<string, string> = {
     'vi': 'vi-VN',
     'en': 'en-US',
     'zh': 'zh-CN',
     'ko': 'ko-KR',
-    'ja': 'ja-JP'
+    'ja': 'ja-JP',
+    'th': 'th-TH-u-ca-gregory'
   };
-  const intlLocale = intlLocaleMap[locale] || 'vi-VN';
+  const intlLocale = intlLocaleMap[locale] || locale || 'vi-VN';
   
   // Debug: Log locale for troubleshooting (remove after testing)
   React.useEffect(() => {

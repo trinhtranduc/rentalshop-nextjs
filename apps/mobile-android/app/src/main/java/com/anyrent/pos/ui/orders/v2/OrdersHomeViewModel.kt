@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.anyrent.pos.data.ApiClient
+import com.anyrent.pos.data.CurrentOutlet
 import com.anyrent.pos.data.ApiClient.PageResult
 import com.anyrent.pos.data.model.OrderSummary
 import com.anyrent.pos.domain.RefreshPolicy
@@ -186,6 +187,8 @@ class OrdersHomeViewModel(
     private val searchDelayMs: Long = 300,
     /** App-wide "orders changed" version (#674); replaceable in tests */
     private val changes: () -> Long = { OrdersChanged.version.value },
+    /** #1614 version of the branch chosen on Home; replaceable in tests */
+    private val outletVersion: () -> Long = { CurrentOutlet.version.value },
 ) : ViewModel() {
     private val _state = MutableStateFlow(OrdersHomeState())
     val state: StateFlow<OrdersHomeState> = _state.asStateFlow()
@@ -206,6 +209,21 @@ class OrdersHomeViewModel(
     )
     private val snapshots = mutableMapOf<OrdersSegment, Snapshot>()
 
+    /** #1614 the branch the lists were loaded for */
+    private var loadedOutletVersion: Long? = null
+
+    /**
+     * #1614 (iOS `outletDidChange`): the owner picked another branch on Home. Every list and the saved segments belong
+     * to the old branch: they go at once and the current list loads with the spinner, so no row of the old branch can
+     * be tapped while the new one loads.
+     */
+    private fun outletDidChange() {
+        snapshots.clear()
+        trackers.clear()
+        _state.update { it.copy(todayBadge = 0, widgetCounts = null) }
+        reload()
+    }
+
     /** Dirty flag and last load time of each list: a segment, or the search (#674) */
     private val trackers = mutableMapOf<String, RefreshTracker>()
     private fun tracker(key: String) = trackers.getOrPut(key) { RefreshTracker(changes) }
@@ -225,6 +243,10 @@ class OrdersHomeViewModel(
 
     /** Back from a detail, tab again, or an orders-changed signal while on screen: rows and scroll stay */
     fun refreshIfNeeded() {
+        if (loadedOutletVersion != null && loadedOutletVersion != outletVersion()) {
+            outletDidChange()
+            return
+        }
         if (loadJob?.isActive == true) return
         val current = _state.value
         when {
@@ -303,6 +325,7 @@ class OrdersHomeViewModel(
      */
     fun reload(fromPull: Boolean = false, keepRows: Boolean = fromPull) {
         loadJob?.cancel()
+        loadedOutletVersion = outletVersion()
         val pages = if (keepRows) page.coerceIn(1, MAX_QUIET_PAGES) else 1
         page = 1
         loaded = emptyList()

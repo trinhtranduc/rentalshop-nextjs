@@ -338,13 +338,15 @@ final class AnyRentE2ETests: XCTestCase {
         return true
     }
 
-    /// #1346: the owner unticks the branch in use in the product form (E2E_LISTING_PRODUCT, default "Product 5 -"), saves, sees the
-    /// row on Home say "Chưa hiện ở chi nhánh này" without a +, then ticks it back. The DB is checked from outside the test.
+    /// #1346 / #1614: the owner of a shop with two branches unticks the branch in use in the product form (E2E_LISTING_PRODUCT,
+    /// default "Product 10 -", listed at both branches) and saves. Home asks `listed=true` for the chosen branch (#1614), so a
+    /// fresh search there no longer finds it. The owner switches to the other branch with the "🏬 <branch> ▾" button (#828),
+    /// finds the product there, ticks the first branch back, switches back and finds it again. The DB is checked from outside.
     func test1dBranchListingOwner() throws {
         try e2e.requireFlag("newProducts")
         try e2e.requireRole("merchant")
         try e2e.start()
-        let key = ProcessInfo.processInfo.environment["E2E_LISTING_PRODUCT"] ?? "Product 5 -"
+        let key = ProcessInfo.processInfo.environment["E2E_LISTING_PRODUCT"] ?? "Product 10 -"
         guard e2e.openProduct(named: key) else { return XCTFail("product \(key) not found") }
         XCTAssertTrue(editOpenProduct(), "owner sees Edit")
         if ProcessInfo.processInfo.environment["E2E_EXPECT_NO_TICK"] == "1" { // a shop with one active branch (Basic): no box
@@ -363,10 +365,11 @@ final class AnyRentE2ETests: XCTestCase {
         app.swipeUp()
         e2e.shot("30-listing-owner-form-ticked")
         let first = listingTicks.element(boundBy: 0)
+        let firstTickId = first.identifier // "product.form.listing.<branch in use>": the same tick on the other branch's form
         XCTAssertEqual(first.value as? String, "1", "the branch in use is ticked")
         first.tap()
         sleep(1)
-        XCTAssertEqual(listingTicks.element(boundBy: 0).value as? String, "0", "tapping unticks")
+        XCTAssertEqual(app.buttons[firstTickId].value as? String, "0", "tapping unticks")
         app.swipeUp()
         e2e.shot("31-listing-owner-form-unticked")
         let save = e2e.button(["Save changes", "Lưu thay đổi"])
@@ -375,23 +378,146 @@ final class AnyRentE2ETests: XCTestCase {
         sleep(4)
         e2e.dismissAlerts()
         e2e.goBackOnce()
-        // Home: the row is still there for the owner, marked, with no +
-        XCTAssertTrue(e2e.openProduct(named: key), "owner still finds the unticked product")
-        e2e.goBackOnce()
+        // #1614: back on Home (the same search, no reload): the saved untick drops the row at once, no "Chưa hiện ở chi nhánh này"
+        let homeSearch = e2e.field(["Search name, barcode or take a photo", "Tìm tên, mã vạch hoặc chụp ảnh", "Name, barcode…", "Tên, mã vạch…"])
+        XCTAssertTrue(homeSearch.waitForExistence(timeout: 5), "back on Home after the save")
+        e2e.note("LISTING Home after save: search=\((homeSearch.value as? String) ?? "?") cells=\(app.cells.count)")
+        let unlistedRow = app.cells.containing(NSPredicate(format: "label CONTAINS %@", key)).firstMatch
         let notShown = app.staticTexts.matching(NSPredicate(format: "label CONTAINS 'Not shown at this branch' OR label CONTAINS 'Chưa hiện ở chi nhánh này'")).firstMatch
-        e2e.soft(notShown.waitForExistence(timeout: 5), "the unticked row says it is not shown here")
-        e2e.shot("32-listing-owner-home-unlisted")
-        // Tick it back
-        XCTAssertTrue(e2e.openProduct(named: key))
-        XCTAssertTrue(editOpenProduct())
-        guard scrollToListingTicks() else { return XCTFail("ticks missing on the second edit") }
-        XCTAssertEqual(listingTicks.element(boundBy: 0).value as? String, "0", "the untick was saved")
-        listingTicks.element(boundBy: 0).tap()
+        XCTAssertTrue(unlistedRow.waitForNonExistence(timeout: 5), "#1614: the unticked \(key) row leaves Home at once after the save")
+        XCTAssertFalse(notShown.exists, "#1614: no 'Chưa hiện ở chi nhánh này' row on Home after the save")
+        e2e.shot("31b-listing-owner-home-after-save")
+        // #1614: Home asks listed=true for the branch in use, so a fresh search no longer finds the unticked product here
+        XCTAssertFalse(e2e.openProduct(named: key), "#1614: \(key) is hidden on Home at the branch in use once unticked")
+        e2e.shot("32-listing-owner-home-hidden")
+
+        // The "🏬 <branch> ▾" button (#828): an empty cart switches at once, without a question
+        let header = app.buttons["outlet.header.button"]
+        let use = app.buttons["outlet.picker.use"]
+        let otherRow = app.descendants(matching: .any).matching(NSPredicate(format: "identifier BEGINSWITH 'outlet.picker.row.'"))
+            .matching(NSPredicate(format: "NOT (label CONTAINS 'Đang chọn' OR label CONTAINS 'In use')")).firstMatch
+        func switchBranch(_ shot: String) -> Bool {
+            e2e.emptyCart()
+            e2e.tapTab(["Home", "Trang chủ"], index: 0)
+            guard header.waitForExistence(timeout: 10) else { e2e.note("no branch button on Home"); return false }
+            let before = header.label
+            header.tap()
+            guard use.waitForExistence(timeout: 5), otherRow.exists else { e2e.note("branch sheet or other branch missing"); return false }
+            otherRow.tap()
+            use.tap()
+            XCTAssertFalse(app.alerts.firstMatch.waitForExistence(timeout: 2), "empty cart: the switch asks nothing")
+            sleep(3)
+            e2e.soft(header.label != before, "the button shows the other branch (\(before) → \(header.label))")
+            e2e.note("LISTING switch: \(before) → \(header.label)")
+            e2e.shot(shot)
+            return true
+        }
+        let firstBranch = header.waitForExistence(timeout: 5) ? header.label : ""
+        guard switchBranch("32b-listing-owner-other-branch") else { return XCTFail("could not switch to the other branch") }
+        // Still listed at the other branch: found there; tick the first branch back from its form
+        XCTAssertTrue(e2e.openProduct(named: key), "\(key) is still listed at the other branch")
+        e2e.shot("32c-listing-owner-other-branch-found")
+        XCTAssertTrue(editOpenProduct(), "owner sees Edit on the other branch")
+        guard scrollToListingTicks() else { return XCTFail("ticks missing on the other branch's form") }
+        let firstTick = app.buttons[firstTickId]
+        XCTAssertEqual(firstTick.value as? String, "0", "the untick of the first branch was saved")
+        firstTick.tap()
+        sleep(1)
+        XCTAssertEqual(app.buttons[firstTickId].value as? String, "1", "tapping ticks the first branch back")
+        app.swipeUp()
+        e2e.shot("32d-listing-owner-other-form-ticked-back")
         e2e.button(["Save changes", "Lưu thay đổi"]).tap()
         sleep(4)
         e2e.dismissAlerts()
         e2e.goBackOnce()
+        // Back on the first branch: the product shows again
+        guard switchBranch("32e-listing-owner-back-first-branch") else { return XCTFail("could not switch back to the first branch") }
+        e2e.soft(header.label == firstBranch, "back on the first branch (\(header.label))")
+        XCTAssertTrue(e2e.openProduct(named: key), "ticked back: \(key) is found again on the first branch")
         e2e.shot("33-listing-owner-home-ticked-back")
+        e2e.goBackOnce()
+    }
+
+    /// #1607: the owner's box "Tồn và hiện ở chi nhánh" (shop with 2+ branches). Create: untick the branch in use, Save with no
+    /// branch (the box says so, nothing is sent), tick the other branch and move the quantity there. Edit a product whose units
+    /// at the branch in use are all on rent (E2E_RENTED_PRODUCT, default "Product 5 -"): that quantity cannot go lower.
+    func test1gBranchStockBox() throws {
+        try e2e.requireFlag("newProducts")
+        try e2e.requireRole("merchant")
+        try e2e.start()
+        e2e.tapTab(["Home", "Trang chủ"], index: 0)
+        let add = e2e.button(["Add product", "Thêm sản phẩm"])
+        guard add.waitForExistence(timeout: 8) else { return XCTFail("no Add product button") }
+        add.tap()
+        let name = app.textFields["product.form.name"]
+        XCTAssertTrue(name.waitForExistence(timeout: 8), "Add-product form opens")
+        name.tap()
+        name.typeText(ProcessInfo.processInfo.environment["E2E_BOX_PRODUCT"] ?? "SP 1607 chi nhanh 2")
+        e2e.hideKeyboard()
+        guard scrollToListingTicks() else { return XCTFail("no 'Tồn và hiện ở chi nhánh' box (a shop with 2+ branches?)") }
+        app.swipeUp()
+        sleep(1)
+        let total = app.staticTexts["product.form.stock.total"]
+        XCTAssertTrue(total.exists, "the box shows its total")
+        XCTAssertEqual(listingTicks.count, 2, "one row per open branch")
+        XCTAssertEqual(listingTicks.element(boundBy: 0).value as? String, "1", "the branch in use starts ticked")
+        e2e.note("new: total=\(total.label) ticks=\(listingTicks.allElementsBoundByIndex.map { "\($0.identifier)=\(String(describing: $0.value))" })")
+        e2e.shot("70-box-new")
+
+        // Untick the branch in use: its quantity stays, with the reminder; Save says so in the box and sends nothing
+        listingTicks.element(boundBy: 0).tap()
+        sleep(1)
+        XCTAssertTrue(app.staticTexts["product.form.listing.reminder"].exists, "an unticked branch with units shows the reminder")
+        e2e.shot("71-box-unticked-reminder")
+        app.buttons["product.form.save"].tap()
+        sleep(2)
+        let needOne = app.staticTexts["product.form.listing.error"]
+        XCTAssertTrue(needOne.waitForExistence(timeout: 3), "the box says to tick one branch")
+        XCTAssertFalse(app.alerts.firstMatch.exists, "no server alert: nothing was sent")
+        e2e.note("error: \(needOne.label)")
+        e2e.shot("72-box-need-one")
+
+        // Tick the other branch and move the quantity there: branch in use 1 -> 0, other branch 0 -> 2
+        listingTicks.element(boundBy: 1).tap()
+        sleep(1)
+        XCTAssertFalse(app.staticTexts["product.form.listing.error"].exists, "ticking a branch clears the error")
+        let steppers = app.otherElements.matching(NSPredicate(format: "identifier BEGINSWITH 'product.form.stock.' AND identifier != 'product.form.stock.total'"))
+        XCTAssertEqual(steppers.count, 2, "a quantity per branch")
+        let less = NSPredicate(format: "label IN %@", ["Bớt 1", "One less"])
+        let more = NSPredicate(format: "label IN %@", ["Thêm 1", "One more"])
+        steppers.element(boundBy: 0).buttons.matching(less).firstMatch.tap()
+        steppers.element(boundBy: 1).buttons.matching(more).firstMatch.tap()
+        sleep(1)
+        app.otherElements.matching(NSPredicate(format: "identifier BEGINSWITH 'product.form.stock.' AND identifier != 'product.form.stock.total'"))
+            .element(boundBy: 1).buttons.matching(more).firstMatch.tap()
+        sleep(1)
+        e2e.note("moved: total=\(app.staticTexts["product.form.stock.total"].label)")
+        e2e.shot("73-box-moved-to-other-branch")
+        app.buttons["product.form.save"].tap()
+        sleep(4)
+        if app.alerts.firstMatch.exists { e2e.note("alert after save: \(app.alerts.firstMatch.staticTexts.allElementsBoundByIndex.map { $0.label }.joined(separator: " | "))") }
+        e2e.dismissAlerts()
+        e2e.shot("74-home-after-save")
+
+        // Edit a product whose units at the branch in use are all on rent
+        let key = ProcessInfo.processInfo.environment["E2E_RENTED_PRODUCT"] ?? "Product 5 -"
+        guard e2e.openProduct(named: key) else { return XCTFail("product \(key) not found") }
+        XCTAssertTrue(editOpenProduct(), "owner sees Edit")
+        guard scrollToListingTicks() else { return XCTFail("no box on edit") }
+        app.swipeUp()
+        sleep(1)
+        let editSteppers = app.otherElements.matching(NSPredicate(format: "identifier BEGINSWITH 'product.form.stock.' AND identifier != 'product.form.stock.total'"))
+        let mainLess = editSteppers.element(boundBy: 0).buttons.matching(less).firstMatch
+        e2e.note("edit: total=\(app.staticTexts["product.form.stock.total"].label) less-at-branch-in-use enabled=\(mainLess.isEnabled)")
+        XCTAssertFalse(mainLess.isEnabled, "the quantity cannot go below the units on rent")
+        e2e.shot("75-box-edit-rented")
+        editSteppers.element(boundBy: 1).buttons.matching(more).firstMatch.tap()
+        sleep(1)
+        app.buttons["product.form.save"].tap()
+        sleep(4)
+        if app.alerts.firstMatch.exists { e2e.note("alert after edit: \(app.alerts.firstMatch.staticTexts.allElementsBoundByIndex.map { $0.label }.joined(separator: " | "))") }
+        e2e.dismissAlerts()
+        e2e.shot("76-edit-saved")
     }
 
     /// #1346: a branch role (manager, kho, staff) sees the dimmed tick (E2E_LISTING_PRODUCT has rows at 2+ branches), cannot change it,
@@ -2011,6 +2137,60 @@ final class AnyRentE2ETests: XCTestCase {
         app.swipeDown()
         e2e.element(labelBeginsWith: ["Today", "Hôm nay"], type: .button).tap()
         sleep(2)
+    }
+
+    /// #1612 AI weekly summary (mockup variant D): owner and branch manager get "✦ Tóm tắt tuần" bottom right, with a
+    /// red dot (button value "Có bản tóm tắt mới") until last week's summary is opened; the sheet spins while the AI
+    /// writes, then shows the summary. Staff and warehouse get no button. Screenshots 76a–76e. To see the first open
+    /// again, delete the scope's row: delete from "AiWeeklySummary" where "scopeKey" in ('m:1','o:1').
+    func test7xWeeklySummary() throws {
+        try e2e.requireFlag("newOverview")
+        try e2e.start()
+        guard e2e.tapTab(["Reports", "Báo cáo", "Overview", "Tổng quan"], index: 3) else {
+            throw XCTSkip("No Reports tab for this account")
+        }
+        let button = app.buttons["weeklySummary.button"]
+        if e2e.role == "staff" || e2e.role == "inventory" {
+            sleep(6)
+            e2e.shot("76a-overview-no-summary-button")
+            XCTAssertFalse(button.exists, "no weekly summary button for \(e2e.role)")
+            return
+        }
+        XCTAssertTrue(button.waitForExistence(timeout: 20), "✦ Tóm tắt tuần on Overview")
+        sleep(1)
+        let unread = !((button.value as? String) ?? "").isEmpty
+        e2e.note("WEEKLY button label=\(button.label) unread=\(unread)")
+        e2e.shot("76a-overview-summary-button")
+        button.tap()
+        let loading = e2e.element(labelBeginsWith: ["AI đang đọc", "AI is reading"], type: .staticText)
+        if loading.waitForExistence(timeout: 2) {
+            e2e.shot("76b-summary-loading")
+        } else {
+            e2e.note("WEEKLY no loading state (summary already written this week)")
+        }
+        let lede = app.staticTexts["weeklySummary.lede"]
+        let noOrders = e2e.element(labelBeginsWith: ["Tuần trước chưa có đơn", "There were no orders"], type: .staticText)
+        let failed = e2e.element(labelBeginsWith: ["Chưa tạo được", "Could not write"], type: .staticText)
+        let deadline = Date().addingTimeInterval(40)
+        while Date() < deadline, !lede.exists, !noOrders.exists, !failed.exists { sleep(1) }
+        sleep(1)
+        e2e.shot("76c-summary-top")
+        XCTAssertFalse(failed.exists, "the summary was written")
+        if lede.exists {
+            e2e.note("WEEKLY lede=\(lede.label)")
+            e2e.note("WEEKLY branch rows=\(app.descendants(matching: .any).matching(identifier: "weeklySummary.branch").count)")
+            let scroll = app.scrollViews["weeklySummary.scroll"]
+            for _ in 0..<4 { scroll.swipeUp() }
+            sleep(1)
+            e2e.shot("76d-summary-bottom")
+            let footer = app.staticTexts["weeklySummary.footer"]
+            e2e.soft(footer.exists, "footer at the bottom of the sheet")
+            e2e.note("WEEKLY footer=\(footer.exists ? footer.label : "-")")
+        }
+        e2e.tapIfExists(app.buttons["weeklySummary.close"], timeout: 3)
+        sleep(2)
+        e2e.shot("76e-overview-after-summary")
+        e2e.soft(((button.value as? String) ?? "").isEmpty, "red dot gone after opening the summary")
     }
 
 

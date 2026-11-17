@@ -2855,8 +2855,12 @@
 "shopinfo.addressRequired" = "Masukkan alamat.";
 "products.listing.title" = "Tampil di cabang";
 "products.listing.ownerOnly" = "Hanya pemilik toko yang dapat menyalakan/mematikan";
-"products.listing.current" = "Dipilih";
+"products.listing.current" = "Cabang yang dipakai";
 "products.listing.branchMain" = "%@ (utama)";
+"products.listing.boxTitle" = "Stok dan tampil di cabang";
+"products.listing.tip" = "Produk tampil di cabang yang dicentang. Isi jumlah untuk setiap cabang.";
+"products.listing.total" = "Total %d";
+"products.listing.needOne" = "Centang minimal 1 cabang untuk menampilkan produk";
 "products.listing.stock" = "Stok %d";
 "products.listing.stockRent" = "Stok %d · disewa %d";
 "products.listing.reminder" = "Sisa %d unit di cabang ini (%d disewa), tetap dihitung dalam total tetapi tidak ditawarkan saat membuat pesanan.";
@@ -3076,3 +3080,26 @@
 "shopinfo.emailLanguage" = "Bahasa email";
 "shopinfo.emailLanguage.hint" = "Email verifikasi, atur ulang kata sandi, dan pemberitahuan paket dikirim dalam bahasa ini.";
 "shopinfo.emailLanguage.failed" = "Bahasa email tidak tersimpan. Silakan coba lagi.";
+
+/* #1612 AI weekly summary on Tổng quan (floating button and sheet) */
+"weeklySummary.title" = "Ringkasan mingguan";
+"weeklySummary.wholeShop" = "Seluruh toko";
+"weeklySummary.unread" = "Ringkasan baru";
+"weeklySummary.loading" = "AI sedang membaca angka minggu lalu…";
+"weeklySummary.loadingHint" = "Beberapa detik";
+"weeklySummary.actions" = "Yang perlu dilakukan minggu ini";
+"weeklySummary.aiTag" = "AI";
+"weeklySummary.ordersGroup" = "Pesanan, sewa, dan pengembalian";
+"weeklySummary.rentSaleCancel" = "Sewa · Jual · Batal";
+"weeklySummary.outBack" = "Diserahkan · Dikembalikan";
+"weeklySummary.lateNotPicked" = "Terlambat · Belum diambil";
+"weeklySummary.byDay" = "Pesanan baru per hari";
+"weeklySummary.productsGroup" = "Barang terlaris dan pelanggan";
+"weeklySummary.customers" = "Pelanggan dengan pesanan";
+"weeklySummary.times" = "%d kali";
+"weeklySummary.times.one" = "%d kali";
+"weeklySummary.newReturning" = "Baru · Kembali";
+"weeklySummary.footer.figures" = "Angka dihitung oleh AnyRent. Baris bertanda ✦ ditulis oleh AI dan bisa keliru.";
+"weeklySummary.footer.written" = "Ditulis %1$@ · berikutnya %2$@";
+"weeklySummary.noOrders" = "Minggu lalu tidak ada pesanan, jadi belum ada yang bisa diringkas.";
+"weeklySummary.error" = "Ringkasan belum bisa dibuat.";

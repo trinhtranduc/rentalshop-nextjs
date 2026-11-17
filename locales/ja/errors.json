@@ -1,4 +1,7 @@
 {
+  "AI_SUMMARY_UNAVAILABLE": "AI要約はまだ有効になっていません。",
+  "AI_SUMMARY_FAILED": "要約を作成できませんでした。もう一度お試しください。",
+  "AI_WEEKLY_SUMMARY_SUCCESS": "週間要約を取得しました",
   "_comment": "Error codes for API responses - Japanese version",
   "UNAUTHORIZED": "認証が必要です",
   "FORBIDDEN": "アクセスが拒否されました",

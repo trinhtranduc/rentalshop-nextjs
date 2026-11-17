@@ -1108,7 +1108,7 @@
       "customerSignature": "Firma del cliente",
       "storeSignature": "Firma de la tienda",
       "thankYou": "¡Gracias por su preferencia!",
-      "downloadApp": "Descargue AnyRent en App Store",
+      "generatedBy": "Recibo generado por el software AnyRent",
       "units": {
         "perDay": "/día",
         "days": "{n} días",

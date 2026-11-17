@@ -17,7 +17,7 @@ import org.json.JSONObject
 /** A branch of the shop as the form lists it */
 data class BranchOutlet(val id: Int, val name: String, val isDefault: Boolean)
 
-/** One line of the "Hiện ở chi nhánh" box: a branch, its stock at this product, and the tick */
+/** One line of the "Tồn và hiện ở chi nhánh" box (#1607): a branch, its quantity (edited in the box), and the tick */
 data class BranchTickRow(
     val outletId: Int,
     val name: String,
@@ -72,9 +72,10 @@ object BranchListing {
 
     /**
      * A branch role asks for `listed=true` (a shop known to have one branch does not: the API would ignore it).
-     * The owner never does: the owner sees every product and ticks the missing ones.
+     * #1614: so does the owner, for the branch chosen on Home (`outletId`): a product not shown there is hidden.
      */
-    fun sendsListed(role: UserRole?, activeOutletCount: Int): Boolean = isBranchRole(role) && activeOutletCount != 1
+    fun sendsListed(role: UserRole?, activeOutletCount: Int): Boolean =
+        (role == UserRole.MERCHANT || isBranchRole(role)) && activeOutletCount != 1
 
     /** Query parts of the product list, with `listed=true` added when [sendsListed] */
     fun listQuery(base: List<String>, role: UserRole?, activeOutletCount: Int): List<String> =
@@ -87,8 +88,8 @@ object BranchListing {
     }
 
     /**
-     * Does a Home row count as listed at the branch in use? Only the owner of a shop with two or more branches ever sees
-     * an unlisted row (a branch role asks for `listed=true`; a one-branch shop has no tick, so nothing is hidden there).
+     * Does a Home row count as listed at the branch in use? Every list asks for `listed=true` now (#1614), so a row is
+     * unlisted only when the API ignored it; a one-branch shop has no tick, so nothing is hidden there.
      */
     fun listedForRow(product: Product, role: UserRole?, activeOutletCount: Int, outletId: Int?): Boolean =
         if (role != UserRole.MERCHANT || activeOutletCount < 2) true else isListedAt(product, outletId)
@@ -105,7 +106,10 @@ object BranchListing {
         ProductOutletStock(outletId, stock, renting, row.optInt("available", (stock - renting).coerceAtLeast(0)), listed)
     }
 
-    /** Lines of the owner's box: every active branch; a saved product follows its rows, a new one ticks the creating branch */
+    /**
+     * Lines of the owner's box: every active branch; a saved product follows its rows, a new one ticks the creating branch
+     * with quantity 1 there (#1607) and 0 elsewhere
+     */
     fun rows(outlets: List<BranchOutlet>, product: Product?, creatingAt: Int?): List<BranchTickRow> =
         outlets.map { outlet ->
             val row = product?.outletStock?.firstOrNull { it.outletId == outlet.id }
@@ -113,33 +117,45 @@ object BranchListing {
                 outletId = outlet.id,
                 name = outlet.name,
                 isDefault = outlet.isDefault,
-                stock = row?.stock ?: 0,
+                stock = if (product == null) (if (outlet.id == creatingAt) 1 else 0) else row?.stock ?: 0,
                 renting = row?.renting ?: 0,
                 listed = if (product == null) outlet.id == creatingAt else row?.isListed ?: false,
             )
         }
 
-    /** The ticks that moved between the form as opened and as saved */
+    /** #1607 "Tổng N" of the box */
+    fun total(rows: List<BranchTickRow>): Int = rows.sumOf { it.stock }
+
+    /** #1607 (#1603): the product must be shown at one branch at least; the form says so before sending anything */
+    fun needsBranch(rows: List<BranchTickRow>): Boolean = rows.none { it.listed }
+
+    /** #1607: the first row whose quantity is below its units on rent (the API refuses it: STOCK_BELOW_RENTED) */
+    fun belowRented(rows: List<BranchTickRow>): BranchTickRow? = rows.firstOrNull { it.stock < it.renting }
+
+    /**
+     * The ticks that moved between the form as opened and as saved. #1605: every tick before every untick, so a move
+     * A -> B never leaves the product shown nowhere in between (the API refuses that untick, #1603).
+     */
     fun changes(from: List<BranchTickRow>, to: List<BranchTickRow>): List<BranchTickChange> {
         val before = from.associate { it.outletId to it.listed }
-        return to.filter { before[it.outletId] != null && before[it.outletId] != it.listed }
+        val moved = to.filter { before[it.outletId] != null && before[it.outletId] != it.listed }
             .map { BranchTickChange(it.outletId, it.listed) }
+        return moved.filter { it.isListed } + moved.filter { !it.isListed }
+    }
+
+    /** #1607 `outletStock[]` of an edit: only the branches whose quantity changed (the tick has its own route) */
+    fun stockWrites(from: List<BranchTickRow>, to: List<BranchTickRow>): List<BranchOutletStockItem> {
+        val before = from.associate { it.outletId to it.stock }
+        return to.filter { before[it.outletId] != it.stock }.map { BranchOutletStockItem(it.outletId, it.stock) }
     }
 
     /** A reminder only for an unticked branch that still holds units or has some on rent */
     fun reminder(row: BranchTickRow): BranchListingReminder? =
         if (!row.listed && (row.stock > 0 || row.renting > 0)) BranchListingReminder(row.stock, row.renting) else null
 
-    /**
-     * `outletStock[]` of a new product from the owner's box: the typed quantity at the branch in use (with its tick),
-     * then a zero row for every other ticked branch. Unticked branches are left out: the API adds them unlisted.
-     */
-    fun createStock(rows: List<BranchTickRow>, quantity: Int, at: Int): List<BranchOutletStockItem> {
-        val current = rows.firstOrNull { it.outletId == at }
-        val first = BranchOutletStockItem(at, quantity, current?.listed ?: true)
-        val others = rows.filter { it.outletId != at && it.listed }.map { BranchOutletStockItem(it.outletId, 0, true) }
-        return listOf(first) + others
-    }
+    /** `outletStock[]` of a new product from the owner's box (#1607): every branch with its own quantity and tick */
+    fun createStock(rows: List<BranchTickRow>): List<BranchOutletStockItem> =
+        rows.map { BranchOutletStockItem(it.outletId, it.stock, it.listed) }
 
     /** Body of `PUT /api/products/listing` */
     fun listingBody(outletId: Int, productIds: List<Int>, isListed: Boolean): JSONObject =

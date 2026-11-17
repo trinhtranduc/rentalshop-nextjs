@@ -1,230 +1,25 @@
-import zhPublic from '../../locales/zh/public.json';
-import koPublic from '../../locales/ko/public.json';
-import jaPublic from '../../locales/ja/public.json';
-import viPublic from '../../locales/vi/public.json';
-import enPublic from '../../locales/en/public.json';
 /**
  * i18n Configuration for next-intl
- * 
+ *
  * This file is required by next-intl for App Router
  * It provides configuration for both server and client components
  */
 
 import { getRequestConfig } from 'next-intl/server';
 import { isPublicLocale } from '@rentalshop/constants';
-import { appLocaleFor } from './lib/public-content/shop-locale';
+import { APP_LOCALES, appLocaleFor, type AppLocale } from './lib/public-content/shop-locale';
 import { shopMessages } from './lib/public-content/shop-messages';
+import { appMessages } from './lib/app-messages';
 
-// Supported locales
-export const locales = ['en', 'vi', 'zh', 'ko', 'ja'] as const;
+// #1597 the web languages that are on (`webLanguages()`)
+export const locales = APP_LOCALES;
 export const defaultLocale = 'vi' as const; // ✅ Vietnamese as default (Vietnam market)
-export type Locale = typeof locales[number];
+export type Locale = AppLocale;
 
 // Validate if locale is supported
 export function isValidLocale(locale: string): locale is Locale {
-  return locales.includes(locale as Locale);
+  return (locales as readonly string[]).includes(locale);
 }
-
-// Import all locale files
-import enCommon from '../../locales/en/common.json';
-import enAuth from '../../locales/en/auth.json';
-import enDashboard from '../../locales/en/dashboard.json';
-import enOrders from '../../locales/en/orders.json';
-import enProducts from '../../locales/en/products.json';
-import enCustomers from '../../locales/en/customers.json';
-import enSettings from '../../locales/en/settings.json';
-import enValidation from '../../locales/en/validation.json';
-import enErrors from '../../locales/en/errors.json';
-import enUsers from '../../locales/en/users.json';
-import enOutlets from '../../locales/en/outlets.json';
-import enCategories from '../../locales/en/categories.json';
-import enCalendar from '../../locales/en/calendar.json';
-import enPlans from '../../locales/en/plans.json';
-import enSubscription from '../../locales/en/subscription.json';
-import enBankAccounts from '../../locales/en/bankAccounts.json';
-import enAvailability from '../../locales/en/availability.json';
-import enAttendance from '../../locales/en/attendance.json';
-import enLanding from '../../locales/en/landing.json';
-
-import viCommon from '../../locales/vi/common.json';
-import viAuth from '../../locales/vi/auth.json';
-import viDashboard from '../../locales/vi/dashboard.json';
-import viOrders from '../../locales/vi/orders.json';
-import viProducts from '../../locales/vi/products.json';
-import viCustomers from '../../locales/vi/customers.json';
-import viSettings from '../../locales/vi/settings.json';
-import viValidation from '../../locales/vi/validation.json';
-import viErrors from '../../locales/vi/errors.json';
-import viUsers from '../../locales/vi/users.json';
-import viOutlets from '../../locales/vi/outlets.json';
-import viCategories from '../../locales/vi/categories.json';
-import viCalendar from '../../locales/vi/calendar.json';
-import viPlans from '../../locales/vi/plans.json';
-import viSubscription from '../../locales/vi/subscription.json';
-import viBankAccounts from '../../locales/vi/bankAccounts.json';
-import viAvailability from '../../locales/vi/availability.json';
-import viAttendance from '../../locales/vi/attendance.json';
-import viLanding from '../../locales/vi/landing.json';
-
-// Import new locale files (Chinese, Korean, Japanese)
-import zhCommon from '../../locales/zh/common.json';
-import zhAuth from '../../locales/zh/auth.json';
-import zhLanding from '../../locales/zh/landing.json';
-import zhPlans from '../../locales/zh/plans.json';
-import zhAttendance from '../../locales/zh/attendance.json';
-import koCommon from '../../locales/ko/common.json';
-import koAuth from '../../locales/ko/auth.json';
-import koLanding from '../../locales/ko/landing.json';
-import koPlans from '../../locales/ko/plans.json';
-import koAttendance from '../../locales/ko/attendance.json';
-import jaCommon from '../../locales/ja/common.json';
-import jaAuth from '../../locales/ja/auth.json';
-import jaLanding from '../../locales/ja/landing.json';
-import jaPlans from '../../locales/ja/plans.json';
-import jaAttendance from '../../locales/ja/attendance.json';
-import zhOrders from '../../locales/zh/orders.json';
-import zhProducts from '../../locales/zh/products.json';
-import zhSettings from '../../locales/zh/settings.json';
-import koOrders from '../../locales/ko/orders.json';
-import koProducts from '../../locales/ko/products.json';
-import koSettings from '../../locales/ko/settings.json';
-import jaOrders from '../../locales/ja/orders.json';
-import jaProducts from '../../locales/ja/products.json';
-import jaSettings from '../../locales/ja/settings.json';
-
-// ja, ko, zh translate only some keys of these namespaces; the rest stays English.
-type Messages = Record<string, unknown>;
-function mergeOverEnglish(base: Messages, partial: Messages): Messages {
-  const out: Messages = { ...base };
-  for (const [key, value] of Object.entries(partial)) {
-    const current = out[key];
-    out[key] =
-      value && typeof value === 'object' && current && typeof current === 'object'
-        ? mergeOverEnglish(current as Messages, value as Messages)
-        : value;
-  }
-  return out;
-}
-
-// Combine all messages by locale
-const messages = {
-  en: {
-    common: enCommon,
-    public: enPublic,
-    auth: enAuth,
-    landing: enLanding,
-    dashboard: enDashboard,
-    orders: enOrders,
-    products: enProducts,
-    customers: enCustomers,
-    settings: enSettings,
-    validation: enValidation,
-    errors: enErrors,
-    users: enUsers,
-    outlets: enOutlets,
-    categories: enCategories,
-    calendar: enCalendar,
-    plans: enPlans,
-    subscription: enSubscription,
-    bankAccounts: enBankAccounts,
-    availability: enAvailability,
-    attendance: enAttendance,
-  },
-  vi: {
-    common: viCommon,
-    public: viPublic,
-    auth: viAuth,
-    landing: viLanding,
-    dashboard: viDashboard,
-    orders: viOrders,
-    products: viProducts,
-    customers: viCustomers,
-    settings: viSettings,
-    validation: viValidation,
-    errors: viErrors,
-    users: viUsers,
-    outlets: viOutlets,
-    categories: viCategories,
-    calendar: viCalendar,
-    plans: viPlans,
-    subscription: viSubscription,
-    bankAccounts: viBankAccounts,
-    availability: viAvailability,
-    attendance: viAttendance,
-  },
-  // Chinese (Simplified) - Landing page only
-  zh: {
-    common: zhCommon,
-    public: zhPublic,
-    auth: zhAuth,
-    landing: zhLanding,
-    plans: zhPlans,
-    // Fallback to English for other sections
-    dashboard: enDashboard,
-    orders: mergeOverEnglish(enOrders, zhOrders),
-    products: mergeOverEnglish(enProducts, zhProducts),
-    customers: enCustomers,
-    settings: mergeOverEnglish(enSettings, zhSettings),
-    validation: enValidation,
-    errors: enErrors,
-    users: enUsers,
-    outlets: enOutlets,
-    categories: enCategories,
-    calendar: enCalendar,
-    subscription: enSubscription,
-    bankAccounts: enBankAccounts,
-    availability: enAvailability,
-    attendance: zhAttendance,
-  },
-  // Korean - Landing page only
-  ko: {
-    common: koCommon,
-    public: koPublic,
-    auth: koAuth,
-    landing: koLanding,
-    plans: koPlans,
-    // Fallback to English for other sections
-    dashboard: enDashboard,
-    orders: mergeOverEnglish(enOrders, koOrders),
-    products: mergeOverEnglish(enProducts, koProducts),
-    customers: enCustomers,
-    settings: mergeOverEnglish(enSettings, koSettings),
-    validation: enValidation,
-    errors: enErrors,
-    users: enUsers,
-    outlets: enOutlets,
-    categories: enCategories,
-    calendar: enCalendar,
-    subscription: enSubscription,
-    bankAccounts: enBankAccounts,
-    availability: enAvailability,
-    attendance: koAttendance,
-  },
-  // Japanese - Landing page only
-  ja: {
-    common: jaCommon,
-    public: jaPublic,
-    auth: jaAuth,
-    landing: jaLanding,
-    plans: jaPlans,
-    // Fallback to English for other sections
-    dashboard: enDashboard,
-    orders: mergeOverEnglish(enOrders, jaOrders),
-    products: mergeOverEnglish(enProducts, jaProducts),
-    customers: enCustomers,
-    settings: mergeOverEnglish(enSettings, jaSettings),
-    validation: enValidation,
-    errors: enErrors,
-    users: enUsers,
-    outlets: enOutlets,
-    categories: enCategories,
-    calendar: enCalendar,
-    subscription: enSubscription,
-    bankAccounts: enBankAccounts,
-    availability: enAvailability,
-    attendance: jaAttendance,
-  },
-};
 
 // Export configuration for next-intl
 // This function is called by next-intl to get the configuration
@@ -240,7 +35,7 @@ export default getRequestConfig(async () => {
     try {
       const { cookies } = await import('next/headers');
       const cookieStore = await cookies();
-      // #1146: a public-only language (e.g. ru) falls back to an app language
+      // #1146: a public language that is not on for the web falls back to English
       locale = appLocaleFor(cookieStore.get('NEXT_LOCALE')?.value);
 
       // #1146: the public shop pages use the shop language the middleware picked (12 public languages)
@@ -249,9 +44,10 @@ export default getRequestConfig(async () => {
       if (isPublicLocale(shopLanguage)) {
         if (isValidLocale(shopLanguage)) locale = shopLanguage;
         else {
+          const en = await appMessages('en');
           return {
             locale: shopLanguage,
-            messages: { ...messages.en, ...shopMessages(shopLanguage, { products: enProducts, common: enCommon }) },
+            messages: { ...en, ...shopMessages(shopLanguage, { products: en.products, common: en.common }) },
             timeZone: 'Asia/Ho_Chi_Minh',
             now: new Date(),
           };
@@ -265,7 +61,8 @@ export default getRequestConfig(async () => {
 
   return {
     locale,
-    messages: messages[locale as keyof typeof messages],
+    // #1597 every namespace in the picked language, over English
+    messages: await appMessages(locale),
     timeZone: 'Asia/Ho_Chi_Minh',
     now: new Date(),
   };

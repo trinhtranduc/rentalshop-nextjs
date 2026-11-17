@@ -1,4 +1,7 @@
 {
+  "AI_SUMMARY_UNAVAILABLE": "Ringkasan AI belum diaktifkan.",
+  "AI_SUMMARY_FAILED": "Ringkasan belum bisa dibuat. Silakan coba lagi.",
+  "AI_WEEKLY_SUMMARY_SUCCESS": "Ringkasan mingguan berhasil diambil",
   "_comment": "Kode galat untuk respons API - Versi bahasa Indonesia",
   "UNAUTHORIZED": "Diperlukan autentikasi",
   "FORBIDDEN": "Akses ditolak",

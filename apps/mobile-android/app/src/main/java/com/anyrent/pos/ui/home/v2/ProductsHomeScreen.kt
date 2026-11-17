@@ -224,15 +224,32 @@ fun ProductsHomeScreen(
     // #677: "Còn N" / "Hết hôm nay" follow a created or edited order (quiet: no spinner, same rows and scroll)
     // The view model keeps the version it reflects, so a change made while this screen was away counts too.
     LaunchedEffect(Unit) { OrdersChanged.version.collect { viewModel.onOrdersVersion(it) } }
-    // #828: products and stock of the branch now in use
-    LaunchedEffect(Unit) { CurrentOutlet.version.drop(1).collect { viewModel.reload() } }
+    // #828: products and stock of the branch now in use. #1614: another branch is another list, so it opens at its first
+    // product once loaded (the list keeps the first visible row otherwise, and rows added above it stay out of sight)
+    var topAfterLoad by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) {
+        CurrentOutlet.version.drop(1).collect {
+            topAfterLoad = true
+            viewModel.branchDidChange()
+        }
+    }
+    LaunchedEffect(topAfterLoad, state.loading, state.products) {
+        if (topAfterLoad && !state.loading) {
+            listState.scrollToItem(0)
+            topAfterLoad = false
+        }
+    }
     val deleted by DeletedProducts.ids.collectAsState()
     LaunchedEffect(deleted) { deleted.forEach(viewModel::remove) }
-    // #1346: a product edited in the detail screen replaces its row
+    // #1346: a product edited in the detail screen replaces its row. #1614: one no longer shown at the branch in use
+    // (the owner just unticked it) leaves the list at once: the list holds only the products of this branch
+    val listedHere = { product: Product ->
+        BranchListing.listedForRow(product, PermissionManager.role, CurrentOutlet.outlets.size, CurrentOutlet.id)
+    }
     val saved by SavedProducts.items.collectAsState()
     LaunchedEffect(saved) {
         if (saved.isNotEmpty()) {
-            saved.values.forEach(viewModel::replaceIfPresent)
+            saved.values.forEach { if (listedHere(it)) viewModel.replaceIfPresent(it) else viewModel.remove(it.id) }
             SavedProducts.clear()
         }
     }
@@ -414,7 +431,7 @@ fun ProductsHomeScreen(
                 onSaved = {
                     showForm = false
                     FirstRunCoach.stop()
-                    viewModel.replace(it)
+                    if (listedHere(it)) viewModel.replace(it) else viewModel.remove(it.id)
                 },
             )
             FirstRunCoachOverlay(CoachScreen.PRODUCT_FORM) // #1394

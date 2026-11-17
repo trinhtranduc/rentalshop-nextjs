@@ -89,6 +89,15 @@ final class ProductsHomeViewModel {
         load(page: 1)
     }
 
+    /// #1614: another branch is another list. Its rows go at once, so no "+" is left on a product the new branch does
+    /// not show, and the first page loads.
+    func branchDidChange() {
+        products = []
+        hasMore = false
+        load(page: 1)
+        onChange?()
+    }
+
     func setQuery(_ text: String?) {
         let trimmed = text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         let next = trimmed.isEmpty ? nil : trimmed

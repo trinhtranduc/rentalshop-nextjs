@@ -1108,7 +1108,7 @@
       "customerSignature": "Tanda tangan pelanggan",
       "storeSignature": "Tanda tangan toko",
       "thankYou": "Terima kasih!",
-      "downloadApp": "Unduh AnyRent di App Store",
+      "generatedBy": "Struk dibuat oleh perangkat lunak AnyRent",
       "units": {
         "perDay": "/hari",
         "days": "{n} hari",

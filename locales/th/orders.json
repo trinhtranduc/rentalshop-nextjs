@@ -1108,7 +1108,7 @@
       "customerSignature": "ลายเซ็นลูกค้า",
       "storeSignature": "ลายเซ็นร้าน",
       "thankYou": "ขอบคุณที่ใช้บริการ!",
-      "downloadApp": "ดาวน์โหลด AnyRent จาก App Store",
+      "generatedBy": "ใบเสร็จนี้สร้างโดยซอฟต์แวร์ AnyRent",
       "units": {
         "perDay": "/วัน",
         "days": "{n} วัน",

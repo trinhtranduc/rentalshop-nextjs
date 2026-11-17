@@ -204,6 +204,8 @@ export interface ApiUrls {
     orders: string;
     income: string;
     period: string;
+    /** #1612 AI summary of last week (GET reads, POST writes once a week) */
+    weeklySummary: string;
     overview: string;
     topProducts: string;
     topOutlets: string;
@@ -792,6 +794,7 @@ function createApiUrls(): ApiUrls {
       orders: `${base}/api/analytics/orders`,
       income: `${base}/api/analytics/income`,
       period: `${base}/api/analytics/period`,
+      weeklySummary: `${base}/api/analytics/weekly-summary`,
       overview: `${base}/api/analytics/overview`,
       topProducts: `${base}/api/analytics/top-products`,
       topOutlets: `${base}/api/analytics/top-outlets`,

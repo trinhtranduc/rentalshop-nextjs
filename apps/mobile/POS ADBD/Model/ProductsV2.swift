@@ -1206,7 +1206,8 @@ struct BranchTickRow: Equatable {
     let outletId: Int
     let name: String
     let isDefault: Bool
-    let stock: Int
+    /// #1607: the quantity of this branch, edited in the box (saved value when the form opens)
+    var stock: Int
     let renting: Int
     var listed: Bool
 }
@@ -1252,9 +1253,9 @@ enum BranchListing {
     }
 
     /// A branch role asks for `listed=true` (a shop known to have one branch does not: the API would ignore it).
-    /// The owner never does: the owner sees every product and ticks the missing ones.
+    /// #1614: so does the owner, for the branch chosen on Home (`outletId`): a product not shown there is hidden.
     static func sendsListed(role: Role?, activeOutletCount: Int) -> Bool {
-        isBranchRole(role) && activeOutletCount != 1
+        (role == .merchant || isBranchRole(role)) && activeOutletCount != 1
     }
 
     /// Query of the product list, with `listed=true` added when `sendsListed`
@@ -1271,31 +1272,49 @@ enum BranchListing {
         return row.isListed ?? true
     }
 
-    /// Does a Home row count as listed at the branch in use? Only the owner of a shop with two or more branches ever sees
-    /// an unlisted row (a branch role asks for `listed=true`; a one-branch shop has no tick, so nothing is hidden there).
+    /// Does a Home row count as listed at the branch in use? Every list asks for `listed=true` now (#1614), so a row is
+    /// unlisted only when the API ignored it; a one-branch shop has no tick, so nothing is hidden there.
     static func listedForRow(_ product: Product, role: Role?, activeOutletCount: Int, outletId: Int?) -> Bool {
         guard role == .merchant, activeOutletCount >= 2 else { return true }
         return isListed(product, outletId: outletId)
     }
 
     /// Lines of the owner's box: every active branch. A saved product follows its rows (no row = not listed); a new
-    /// product ticks the branch it is created at.
+    /// product ticks the branch it is created at, with quantity 1 there (#1607) and 0 elsewhere.
     static func rows(outlets: [(id: Int, name: String, isDefault: Bool)], product: Product?, creatingAt: Int?) -> [BranchTickRow] {
         outlets.map { outlet in
             let row = product?.outletStock?.first(where: { $0.outletId == outlet.id })
             let listed = product == nil ? outlet.id == creatingAt : (row?.isListed ?? (row != nil))
+            let stock = product == nil ? (outlet.id == creatingAt ? 1 : 0) : (row?.stock ?? 0)
             return BranchTickRow(outletId: outlet.id, name: outlet.name, isDefault: outlet.isDefault,
-                                 stock: row?.stock ?? 0, renting: row?.renting ?? 0, listed: listed)
+                                 stock: stock, renting: row?.renting ?? 0, listed: listed)
         }
     }
 
-    /// The ticks that moved between the form as opened and as saved
+    /// #1607 "Tổng N" of the box
+    static func total(_ rows: [BranchTickRow]) -> Int { rows.reduce(0) { $0 + $1.stock } }
+
+    /// #1607 (#1603): the product must be shown at one branch at least; the form says so before sending anything
+    static func needsBranch(_ rows: [BranchTickRow]) -> Bool { !rows.contains { $0.listed } }
+
+    /// #1607: the first row whose quantity is below its units on rent (the API refuses it: STOCK_BELOW_RENTED)
+    static func belowRented(_ rows: [BranchTickRow]) -> BranchTickRow? { rows.first { $0.stock < $0.renting } }
+
+    /// The ticks that moved between the form as opened and as saved. #1605: every tick before every untick, so a move
+    /// A -> B never leaves the product shown nowhere in between (the API refuses that untick, #1603).
     static func changes(from original: [BranchTickRow], to current: [BranchTickRow]) -> [BranchTickChange] {
         let before = Dictionary(original.map { ($0.outletId, $0.listed) }, uniquingKeysWith: { first, _ in first })
-        return current.compactMap { row in
+        let moved = current.compactMap { row -> BranchTickChange? in
             guard let was = before[row.outletId], was != row.listed else { return nil }
             return BranchTickChange(outletId: row.outletId, isListed: row.listed)
         }
+        return moved.filter { $0.isListed } + moved.filter { !$0.isListed }
+    }
+
+    /// #1607 `outletStock[]` of an edit: only the branches whose quantity changed (the tick has its own route)
+    static func stockWrites(from original: [BranchTickRow], to current: [BranchTickRow]) -> [OutletStockItem] {
+        let before = Dictionary(original.map { ($0.outletId, $0.stock) }, uniquingKeysWith: { first, _ in first })
+        return current.filter { before[$0.outletId] != $0.stock }.map { OutletStockItem(outletId: $0.outletId, stock: $0.stock) }
     }
 
     /// A reminder only for an unticked branch that still holds units or has some on rent
@@ -1304,14 +1323,9 @@ enum BranchListing {
         return BranchListingReminder(stock: row.stock, renting: row.renting)
     }
 
-    /// `outletStock[]` of a new product from the owner's box: the typed quantity at the branch in use (with its tick),
-    /// then a zero row for every other ticked branch. Unticked branches are left out: the API adds them unlisted.
-    static func createStock(rows: [BranchTickRow], quantity: Int, at outletId: Int) -> [OutletStockItem] {
-        let current = rows.first(where: { $0.outletId == outletId })
-        let first = OutletStockItem(outletId: outletId, stock: quantity, isListed: current?.listed ?? true)
-        let others = rows.filter { $0.outletId != outletId && $0.listed }
-            .map { OutletStockItem(outletId: $0.outletId, stock: 0, isListed: true) }
-        return [first] + others
+    /// `outletStock[]` of a new product from the owner's box (#1607): every branch with its own quantity and tick
+    static func createStock(rows: [BranchTickRow]) -> [OutletStockItem] {
+        rows.map { OutletStockItem(outletId: $0.outletId, stock: $0.stock, isListed: $0.listed) }
     }
 
     /// Body of `PUT /api/products/listing`

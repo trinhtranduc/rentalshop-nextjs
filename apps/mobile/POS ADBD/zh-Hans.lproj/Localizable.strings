@@ -2855,8 +2855,12 @@
 "shopinfo.addressRequired" = "请输入地址。";
 "products.listing.title" = "在分店显示";
 "products.listing.ownerOnly" = "仅店主可开启/关闭";
-"products.listing.current" = "已选择";
+"products.listing.current" = "当前使用的分店";
 "products.listing.branchMain" = "%@（主分店）";
+"products.listing.boxTitle" = "库存与分店显示";
+"products.listing.tip" = "勾选的分店会显示该商品。数量按分店分别填写。";
+"products.listing.total" = "合计 %d";
+"products.listing.needOne" = "请至少勾选一个显示商品的分店";
 "products.listing.stock" = "库存 %d";
 "products.listing.stockRent" = "库存 %d · 租出 %d";
 "products.listing.reminder" = "本分店剩余 %d 件（%d 件租出），仍计入总数，但创建订单时不显示。";
@@ -3079,3 +3083,26 @@
 "shopinfo.emailLanguage" = "邮件语言";
 "shopinfo.emailLanguage.hint" = "验证、重置密码和套餐邮件将使用此语言发送。";
 "shopinfo.emailLanguage.failed" = "无法保存邮件语言，请重试。";
+
+/* #1612 AI weekly summary on Tổng quan (floating button and sheet) */
+"weeklySummary.title" = "每周摘要";
+"weeklySummary.wholeShop" = "整个店铺";
+"weeklySummary.unread" = "新的摘要";
+"weeklySummary.loading" = "AI 正在读取上周的数据…";
+"weeklySummary.loadingHint" = "需要几秒钟";
+"weeklySummary.actions" = "本周要做的事";
+"weeklySummary.aiTag" = "AI";
+"weeklySummary.ordersGroup" = "订单、租出与归还";
+"weeklySummary.rentSaleCancel" = "租赁 · 销售 · 取消";
+"weeklySummary.outBack" = "已交付 · 已归还";
+"weeklySummary.lateNotPicked" = "逾期 · 未取";
+"weeklySummary.byDay" = "每日新订单";
+"weeklySummary.productsGroup" = "热门商品与客户";
+"weeklySummary.customers" = "有订单的客户";
+"weeklySummary.times" = "%d 次";
+"weeklySummary.times.one" = "%d 次";
+"weeklySummary.newReturning" = "新客 · 回头客";
+"weeklySummary.footer.figures" = "数据由 AnyRent 计算。带 ✦ 的句子由 AI 撰写，可能有误。";
+"weeklySummary.footer.written" = "撰写于 %1$@ · 下一份 %2$@";
+"weeklySummary.noOrders" = "上周没有订单，因此没有可总结的内容。";
+"weeklySummary.error" = "未能生成摘要。";
