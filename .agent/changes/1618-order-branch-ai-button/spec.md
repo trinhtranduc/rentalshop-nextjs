@@ -7,7 +7,7 @@ Issue: #1618 · Status: in-progress · Intent: ./intent.md
 1. Order detail shows a branch line (store icon + `outlet.name`) when the user is MERCHANT, the shop has 2+ active branches, and the name is not blank.
 2. No branch line for a one-branch shop, for OUTLET_ADMIN / OUTLET_STAFF / OUTLET_INVENTORY, or when the name is blank.
 3. The branch line sits in the status box, above "Tạo bởi …" (or last when there is no creator).
-4. Tổng quan: the AI button is in the title row, after the date, at the right edge; shown only when GET weekly-summary says `available` (unchanged); red dot unchanged; tapping opens the same sheet.
+4. Tổng quan: the AI button is at the right end of the title row, and the date (or range) sits on its own line under the title so both fit; shown only when GET weekly-summary says `available` (unchanged); red dot unchanged; tapping opens the same sheet.
 5. Tổng quan: no extra bottom space for a floating button.
 6. The ✦ on the button twinkles: every 2.4 s a pop (×1.3) with a quarter turn, then a rest; no animation with iOS Reduce Motion or Android animations off.
 
