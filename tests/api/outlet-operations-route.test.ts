@@ -81,6 +81,20 @@ describe('GET /api/analytics/outlet-operations (#350)', () => {
     expect(mockDb.outletOperations.get).toHaveBeenCalledWith(expect.objectContaining({ outletIds: [3] }));
   });
 
+  // #1614: every owner who signed up has its first branch on the account (register/route.ts); for an owner that is
+  // not a limit, the branch chosen in the app is
+  it('#1614 merchant whose account has a branch: outletIds picks the chosen branch, none = every branch', async () => {
+    ctx = { user: { id: 2, role: 'MERCHANT', merchantId: 2, outletId: 1 }, userScope: { merchantId: 2, outletId: 1 } };
+    mockHasPermission.mockResolvedValue(true);
+    const chosen: any = await GET(req('?outletIds=3'));
+    expect(chosen.status).toBe(200);
+    expect(mockDb.outletOperations.get).toHaveBeenLastCalledWith(expect.objectContaining({ outletIds: [3] }));
+    await GET(req());
+    expect(mockDb.outletOperations.get).toHaveBeenLastCalledWith(expect.objectContaining({ outletIds: [1, 3] }));
+    const foreign: any = await GET(req('?outletIds=9'));
+    expect(foreign.status).toBe(403);
+  });
+
   it("merchant: another merchant's outlet is rejected", async () => {
     ctx = { user: { id: 2, role: 'MERCHANT', merchantId: 2 }, userScope: { merchantId: 2 } };
     mockHasPermission.mockResolvedValue(true);

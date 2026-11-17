@@ -1988,8 +1988,10 @@ final class BranchListingTests: XCTestCase {
         }
     }
 
-    func testTheOwnerNeverSendsListedSoTheOwnerSeesEveryProduct() {
-        XCTAssertFalse(BranchListing.sendsListed(role: .merchant, activeOutletCount: 3))
+    /// #1614: the owner sees only the products of the branch chosen on Home, like a branch role
+    func testTheOwnerAsksForTheChosenBranchProductsOnly() {
+        XCTAssertTrue(BranchListing.sendsListed(role: .merchant, activeOutletCount: 3))
+        XCTAssertTrue(BranchListing.sendsListed(role: .merchant, activeOutletCount: 2))
         XCTAssertFalse(BranchListing.sendsListed(role: .merchant, activeOutletCount: 1))
         XCTAssertFalse(BranchListing.sendsListed(role: nil, activeOutletCount: 3))
     }
@@ -2006,8 +2008,11 @@ final class BranchListingTests: XCTestCase {
         XCTAssertEqual(staff["limit"] as? Int, 20)
         XCTAssertEqual(staff["outletId"] as? Int, 7)
         let owner = BranchListing.listParams(base, role: .merchant, activeOutletCount: 3)
-        XCTAssertNil(owner["listed"])
-        XCTAssertEqual(owner.count, 3)
+        XCTAssertEqual(owner["listed"] as? String, "true")
+        XCTAssertEqual(owner["outletId"] as? Int, 7)
+        let oneBranchOwner = BranchListing.listParams(base, role: .merchant, activeOutletCount: 1)
+        XCTAssertNil(oneBranchOwner["listed"])
+        XCTAssertEqual(oneBranchOwner.count, 3)
     }
 
     // MARK: The header

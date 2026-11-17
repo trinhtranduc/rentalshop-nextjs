@@ -72,9 +72,11 @@ class BranchListingTest {
         }
     }
 
+    /** #1614: the owner sees only the products of the branch chosen on Home, like a branch role */
     @Test
-    fun theOwnerNeverSendsListedSoTheOwnerSeesEveryProduct() {
-        assertFalse(BranchListing.sendsListed(UserRole.MERCHANT, activeOutletCount = 3))
+    fun theOwnerAsksForTheChosenBranchProductsOnly() {
+        assertTrue(BranchListing.sendsListed(UserRole.MERCHANT, activeOutletCount = 3))
+        assertTrue(BranchListing.sendsListed(UserRole.MERCHANT, activeOutletCount = 2))
         assertFalse(BranchListing.sendsListed(UserRole.MERCHANT, activeOutletCount = 1))
         assertFalse(BranchListing.sendsListed(null, activeOutletCount = 3))
     }
@@ -88,7 +90,8 @@ class BranchListingTest {
     fun listQueryAddsListedTrueWithoutTouchingTheRest() {
         val base = listOf("page=1", "limit=20", "outletId=7")
         assertEquals(base + "listed=true", BranchListing.listQuery(base, UserRole.OUTLET_STAFF, activeOutletCount = 0))
-        assertEquals(base, BranchListing.listQuery(base, UserRole.MERCHANT, activeOutletCount = 3))
+        assertEquals(base + "listed=true", BranchListing.listQuery(base, UserRole.MERCHANT, activeOutletCount = 3))
+        assertEquals(base, BranchListing.listQuery(base, UserRole.MERCHANT, activeOutletCount = 1))
     }
 
     // The header
