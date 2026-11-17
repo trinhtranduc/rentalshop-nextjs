@@ -475,7 +475,7 @@ final class ProductsHomeViewController: BaseViewControler {
         let form = ProductFormViewController(product: nil)
         form.onSaved = { [weak self] product in
             FirstRunCoach.shared.stop() // #1411: this form covers Home without taking it off screen
-            self?.viewModel.replace(product)
+            self?.applySaved(product)
         }
         V2.presentForm(form, from: self)
     }
@@ -559,9 +559,19 @@ final class ProductsHomeViewController: BaseViewControler {
     private func openDetail(_ product: Product) {
         let detail = ProductDetailViewController(product: product)
         detail.hidesBottomBarWhenPushed = true
-        detail.onSaved = { [weak self] saved in self?.viewModel.replace(saved) }
+        detail.onSaved = { [weak self] saved in self?.applySaved(saved) }
         detail.onDeleted = { [weak self] id in self?.viewModel.remove(productId: id) }
         navigationController?.pushViewController(detail, animated: true)
+    }
+
+    /// #1607: a saved product the branch in use does not show leaves the list (the API no longer lists it here, #1601);
+    /// any other saved product is put back in place, or on top when it is new
+    private func applySaved(_ product: Product) {
+        if listedHere(product) {
+            viewModel.replace(product)
+        } else {
+            viewModel.remove(productId: product.id ?? product.product_id)
+        }
     }
 
     /// #1346: false only for the owner of a shop with two or more branches, on a product the branch in use does not list

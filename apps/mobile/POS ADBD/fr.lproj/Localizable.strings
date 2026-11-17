@@ -2855,8 +2855,12 @@
 "shopinfo.addressRequired" = "Veuillez saisir l'adresse.";
 "products.listing.title" = "Affiché dans la succursale";
 "products.listing.ownerOnly" = "Seul le propriétaire peut activer/désactiver";
-"products.listing.current" = "Sélectionné";
+"products.listing.current" = "Succursale utilisée";
 "products.listing.branchMain" = "%@ (principal)";
+"products.listing.boxTitle" = "Stock et affichage par succursale";
+"products.listing.tip" = "Le produit est affiché dans chaque succursale cochée. Saisissez la quantité par succursale.";
+"products.listing.total" = "Total %d";
+"products.listing.needOne" = "Cochez au moins une succursale où afficher le produit";
 "products.listing.stock" = "Stock %d";
 "products.listing.stockRent" = "Stock %d · en location %d";
 "products.listing.reminder" = "%d unités restantes dans cette succursale (%d en location). Elles restent comptées dans le total mais n'apparaissent pas lors de la création d'une commande.";

@@ -2855,8 +2855,12 @@
 "shopinfo.addressRequired" = "请输入地址。";
 "products.listing.title" = "在分店显示";
 "products.listing.ownerOnly" = "仅店主可开启/关闭";
-"products.listing.current" = "已选择";
+"products.listing.current" = "当前使用的分店";
 "products.listing.branchMain" = "%@（主分店）";
+"products.listing.boxTitle" = "库存与分店显示";
+"products.listing.tip" = "勾选的分店会显示该商品。数量按分店分别填写。";
+"products.listing.total" = "合计 %d";
+"products.listing.needOne" = "请至少勾选一个显示商品的分店";
 "products.listing.stock" = "库存 %d";
 "products.listing.stockRent" = "库存 %d · 租出 %d";
 "products.listing.reminder" = "本分店剩余 %d 件（%d 件租出），仍计入总数，但创建订单时不显示。";

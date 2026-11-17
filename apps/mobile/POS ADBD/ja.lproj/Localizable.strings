@@ -2855,8 +2855,12 @@
 "shopinfo.addressRequired" = "住所を入力してください。";
 "products.listing.title" = "表示する店舗";
 "products.listing.ownerOnly" = "オーナーだけが切り替えられます";
-"products.listing.current" = "選択中";
+"products.listing.current" = "使用中の店舗";
 "products.listing.branchMain" = "%@（本店）";
+"products.listing.boxTitle" = "在庫と表示する店舗";
+"products.listing.tip" = "チェックした店舗に商品が表示されます。数量は店舗ごとに入力します。";
+"products.listing.total" = "合計 %d";
+"products.listing.needOne" = "商品を表示する店舗を1つ以上選んでください";
 "products.listing.stock" = "在庫%d";
 "products.listing.stockRent" = "在庫%d · レンタル中%d";
 "products.listing.reminder" = "この店舗に%d点あります（うち%d点はレンタル中）。合計には含まれますが、注文作成時には表示されません。";

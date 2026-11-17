@@ -2383,7 +2383,11 @@
     <!-- #1346 "Hiện ở chi nhánh" (iOS products.listing.*) -->
     <string name="products_listing_title">Shown at branch</string>
     <string name="products_listing_owner_only">Only the shop owner can turn this on or off</string>
-    <string name="products_listing_current">Selected</string>
+    <string name="products_listing_current">Branch in use</string>
+    <string name="products_listing_box_title">Stock and shown at branch</string>
+    <string name="products_listing_tip">A ticked branch shows the product. Enter the quantity for each branch.</string>
+    <string name="products_listing_total">Total %1$d</string>
+    <string name="products_listing_need_one">Tick at least one branch to show the product</string>
     <string name="products_listing_branch_main">%1$s (main)</string>
     <string name="products_listing_stock">Stock %1$d</string>
     <string name="products_listing_stock_rent">Stock %1$d · on rent %2$d</string>

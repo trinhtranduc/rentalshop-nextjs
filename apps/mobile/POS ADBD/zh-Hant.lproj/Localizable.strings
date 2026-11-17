@@ -2870,8 +2870,12 @@
 "shopinfo.addressRequired" = "請輸入地址。";
 "products.listing.title" = "在分店顯示";
 "products.listing.ownerOnly" = "只有店家負責人可開啟／關閉";
-"products.listing.current" = "目前選擇";
+"products.listing.current" = "目前使用的分店";
 "products.listing.branchMain" = "%@（主要）";
+"products.listing.boxTitle" = "庫存與分店顯示";
+"products.listing.tip" = "勾選的分店會顯示此商品。數量依分店分別填寫。";
+"products.listing.total" = "合計 %d";
+"products.listing.needOne" = "請至少勾選一間顯示商品的分店";
 "products.listing.stock" = "庫存 %d";
 "products.listing.stockRent" = "庫存 %d · 租借中 %d";
 "products.listing.reminder" = "此分店剩 %d 件（%d 件租借中），仍計入總數，但建立訂單時不會顯示。";
