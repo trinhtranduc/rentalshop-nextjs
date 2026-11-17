@@ -36,7 +36,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.testTag
@@ -76,23 +75,24 @@ private object WS {
 
 private fun tone(badge: WeeklyBadge): Color = if (badge.tone == WeeklyTone.GOOD) WS.Good else WS.Bad
 
-/** Bottom space the Overview keeps under its last card while the button shows */
-internal val WeeklySummaryButtonClearance = 72.dp
-
-/** "✦ Tóm tắt tuần": floating pill above the tab bar; a red dot until this week's summary is opened */
+/**
+ * "✦ Tóm tắt tuần": small pill at the end of the Tổng quan title row (#1618, was floating above the tab bar); a red
+ * dot until this week's summary is opened
+ */
 @Composable
 internal fun WeeklySummaryButton(showsDot: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
     val title = stringResource(R.string.weekly_summary_title)
     val description = if (showsDot) "$title, ${stringResource(R.string.overview_dash_chip_new)}" else title
     Box(modifier) {
         Row(
-            Modifier.heightIn(min = DS.TouchTarget).shadow(8.dp, CircleShape).clip(CircleShape).background(DS.Colors.Primary)
+            // 34dp pill; Compose widens the touch area of a small clickable to 48dp
+            Modifier.heightIn(min = 34.dp).clip(CircleShape).background(DS.Colors.Primary)
                 .clickable(role = Role.Button, onClick = onClick)
                 .semantics(mergeDescendants = true) { contentDescription = description }
                 .testTag("overview.weeklySummary.button")
-                .padding(horizontal = 16.dp, vertical = 11.dp),
+                .padding(horizontal = 12.dp, vertical = 7.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            horizontalArrangement = Arrangement.spacedBy(5.dp),
         ) {
             Text("✦", color = Color.White, fontSize = DS.TextSize.Secondary, fontWeight = FontWeight.Bold)
             Text(title, color = Color.White, fontSize = DS.TextSize.Secondary, fontWeight = FontWeight.Bold, maxLines = 1)
