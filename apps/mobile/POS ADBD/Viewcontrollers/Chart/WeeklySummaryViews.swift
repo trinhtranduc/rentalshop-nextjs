@@ -33,9 +33,10 @@ private enum WSColor {
     static let dot = UIColor(hexString: "EF4444")
 }
 
-// MARK: - Floating button
+// MARK: - Button
 
-/// "✦ Tóm tắt tuần": blue pill bottom right, above the tab bar; red dot while last week's summary is unopened
+/// "✦ Tóm tắt tuần": small blue pill at the end of the Tổng quan title row (#1618, was floating bottom right);
+/// red dot while last week's summary is unopened
 final class WeeklySummaryButton: UIControl {
     private let dot = UIView()
 
@@ -49,22 +50,18 @@ final class WeeklySummaryButton: UIControl {
     override init(frame: CGRect) {
         super.init(frame: frame)
         backgroundColor = WSColor.primary
-        layer.shadowColor = UIColor(hexString: "0F172A").cgColor
-        layer.shadowOpacity = 0.28
-        layer.shadowRadius = 8
-        layer.shadowOffset = CGSize(width: 0, height: 6)
 
-        let sparkle = OVFont.label("✦", DS.TextSize.body, .bold, color: .white)
-        let title = OVFont.label("weeklySummary.title".localized(), DS.TextSize.body, .bold, color: .white)
+        let sparkle = OVFont.label("✦", DS.TextSize.secondary, .bold, color: .white)
+        let title = OVFont.label("weeklySummary.title".localized(), DS.TextSize.secondary, .bold, color: .white)
         let row = UIStackView(arrangedSubviews: [sparkle, title])
-        row.spacing = 6
+        row.spacing = 5
         row.alignment = .center
         row.isUserInteractionEnabled = false
         addSubview(row)
         row.snp.makeConstraints { make in
-            make.edges.equalToSuperview().inset(UIEdgeInsets(top: 11, left: 18, bottom: 11, right: 18))
+            make.edges.equalToSuperview().inset(UIEdgeInsets(top: 7, left: 12, bottom: 7, right: 12))
         }
-        snp.makeConstraints { make in make.height.greaterThanOrEqualTo(DS.touchTarget) }
+        snp.makeConstraints { make in make.height.greaterThanOrEqualTo(34) }
 
         dot.backgroundColor = WSColor.dot
         dot.layer.cornerRadius = 6
@@ -95,6 +92,11 @@ final class WeeklySummaryButton: UIControl {
 
     override var isHighlighted: Bool {
         didSet { alpha = isHighlighted ? 0.8 : 1 }
+    }
+
+    /// The pill is 34pt tall; taps within 5pt around it still count (44pt target)
+    override func point(inside point: CGPoint, with event: UIEvent?) -> Bool {
+        bounds.insetBy(dx: -5, dy: -5).contains(point)
     }
 }
 
