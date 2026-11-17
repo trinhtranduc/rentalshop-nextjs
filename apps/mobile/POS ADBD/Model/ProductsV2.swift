@@ -1252,9 +1252,9 @@ enum BranchListing {
     }
 
     /// A branch role asks for `listed=true` (a shop known to have one branch does not: the API would ignore it).
-    /// The owner never does: the owner sees every product and ticks the missing ones.
+    /// #1614: so does the owner, for the branch chosen on Home (`outletId`): a product not shown there is hidden.
     static func sendsListed(role: Role?, activeOutletCount: Int) -> Bool {
-        isBranchRole(role) && activeOutletCount != 1
+        (role == .merchant || isBranchRole(role)) && activeOutletCount != 1
     }
 
     /// Query of the product list, with `listed=true` added when `sendsListed`
@@ -1271,8 +1271,8 @@ enum BranchListing {
         return row.isListed ?? true
     }
 
-    /// Does a Home row count as listed at the branch in use? Only the owner of a shop with two or more branches ever sees
-    /// an unlisted row (a branch role asks for `listed=true`; a one-branch shop has no tick, so nothing is hidden there).
+    /// Does a Home row count as listed at the branch in use? Every list asks for `listed=true` now (#1614), so a row is
+    /// unlisted only when the API ignored it; a one-branch shop has no tick, so nothing is hidden there.
     static func listedForRow(_ product: Product, role: Role?, activeOutletCount: Int, outletId: Int?) -> Bool {
         guard role == .merchant, activeOutletCount >= 2 else { return true }
         return isListed(product, outletId: outletId)

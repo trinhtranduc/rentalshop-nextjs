@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { withPermissions } from '@rentalshop/auth/server';
 import { db, prisma } from '@rentalshop/database';
-import { ORDER_STATUS, ORDER_TYPE } from '@rentalshop/constants';
+import { ORDER_STATUS, ORDER_TYPE, USER_ROLE } from '@rentalshop/constants';
 import {
   handleApiError,
   ResponseBuilder,
@@ -139,7 +139,8 @@ export const GET = withPermissions(['analytics.view.revenue', 'analytics.view.re
 
     // Role scope once for every query below; #827 `outletIds` narrows a merchant's outlets
     let scopeOutletId: any;
-    if (userScope.outletId) {
+    // #1614: an owner's account keeps the first branch it signed up with; only a branch role is held to its branch
+    if (user.role !== USER_ROLE.MERCHANT && userScope.outletId) {
       const outletObj = await db.outlets.findById(userScope.outletId);
       if (outletObj) scopeOutletId = outletObj.id;
     } else if (userScope.merchantId) {
