@@ -54,6 +54,11 @@ final class WeeklySummaryButton: UIControl {
         backgroundColor = WSColor.primary
 
         let title = OVFont.label("weeklySummary.title".localized(), DS.TextSize.secondary, .bold, color: .white)
+        // The pill keeps its whole text; the title row gives way elsewhere (#1618)
+        for label in [sparkle, title] {
+            label.setContentCompressionResistancePriority(.required, for: .horizontal)
+            label.setContentHuggingPriority(.required, for: .horizontal)
+        }
         let row = UIStackView(arrangedSubviews: [sparkle, title])
         row.spacing = 5
         row.alignment = .center

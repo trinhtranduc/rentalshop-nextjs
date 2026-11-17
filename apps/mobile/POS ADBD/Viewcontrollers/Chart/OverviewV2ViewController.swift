@@ -108,14 +108,14 @@ final class OverviewV2ViewController: BaseViewControler {
         view.backgroundColor = OVColor.page
         let title = OVFont.label("overview.v2.title".localized(), DS.TextSize.title, .bold)
         title.accessibilityTraits = UIAccessibilityTraitHeader
-        dateLabel.textAlignment = .right
+        // #1618: the date sits under the title, so a range ("11/11/26 – 17/11/26") and the weekly button both fit
+        dateLabel.textAlignment = .natural
         dateLabel.adjustsFontSizeToFitWidth = true
         dateLabel.minimumScaleFactor = 0.8
         let header = UIStackView(arrangedSubviews: [title, dateLabel])
-        header.alignment = .firstBaseline
-        header.spacing = DS.Spacing.sm
-        title.setContentHuggingPriority(.required, for: .horizontal)
-        title.setContentCompressionResistancePriority(.required, for: .horizontal)
+        header.axis = .vertical
+        header.alignment = .leading
+        header.spacing = 2
 
         chipsRow.spacing = 6
         chipsRow.alignment = .center
