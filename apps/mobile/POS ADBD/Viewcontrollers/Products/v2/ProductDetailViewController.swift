@@ -35,6 +35,8 @@ final class ProductDetailViewController: BaseViewControler {
     private let nameLabel = V2.label(size: 22, weight: .bold, lines: 0)
     private let metaLabel = V2.label(size: DS.TextSize.secondary, color: DS.Color.textMuted, lines: 0)
     private let tiles = UIStackView()
+    /// #1621: "Theo khối giờ: 2 giờ 150.000đ · 4 giờ 250.000đ" under the price tiles (read only)
+    private let hourBlocksLabel = V2.label(size: DS.TextSize.secondary, color: DS.Color.text, lines: 0)
     private let stockLabel = V2.label(size: DS.TextSize.secondary, color: DS.Color.textMuted, lines: 0)
     /// #1346: OUTLET_STAFF has no edit form, so the greyed "Hiện ở chi nhánh" line lives here (board B5b)
     private let listingLabel = V2.label(size: DS.TextSize.secondary, color: DS.Color.textMuted, lines: 0)
@@ -179,11 +181,13 @@ final class ProductDetailViewController: BaseViewControler {
         stripRow.distribution = .fillEqually
         stripRow.spacing = 4
         stripCaption.isHidden = true
-        let info = UIStackView(arrangedSubviews: [nameLabel, metaLabel, tiles, stockLabel, listingLabel, stripRow, stripCaption])
+        hourBlocksLabel.accessibilityIdentifier = "product.detail.hourBlocks"
+        let info = UIStackView(arrangedSubviews: [nameLabel, metaLabel, tiles, hourBlocksLabel, stockLabel, listingLabel, stripRow, stripCaption])
         info.axis = .vertical
         info.spacing = 6
         info.setCustomSpacing(10, after: metaLabel)
         info.setCustomSpacing(10, after: tiles)
+        info.setCustomSpacing(10, after: hourBlocksLabel)
         info.setCustomSpacing(8, after: stockLabel)
         tiles.axis = .horizontal
         tiles.distribution = .fillEqually
@@ -295,6 +299,10 @@ final class ProductDetailViewController: BaseViewControler {
             tiles.addArrangedSubview(priceTile(title: title, value: value))
         }
         tiles.isHidden = tiles.arrangedSubviews.isEmpty
+        let hourBlocks = ProductPricing.hourBlocks(product)
+        hourBlocksLabel.isHidden = hourBlocks.isEmpty
+        hourBlocksLabel.text = hourBlocks.isEmpty ? nil
+            : "products.form.perHourBlock".localized() + ": " + HourBlocks.detailSummary(hourBlocks)
 
         // Outlet users see their outlet; a merchant without an outlet sees the totals
         let counts = ProductStock.counts(product, outletId: CurrentOutlet.shared.id)

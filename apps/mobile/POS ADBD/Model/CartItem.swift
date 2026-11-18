@@ -61,6 +61,9 @@ struct CartItem: Codable {
     var blockTable: BlockTable?
     /// #1189: currency minor unit the table is rounded to (VND 1)
     var blockCurrency: String?
+    /// #1621: the hours of the chosen hour block ("Khối 4 giờ"), or of the saved order line (`pricingSnapshot`);
+    /// nil on every other line. The line's option id is `selectedPricingOptionId`.
+    var hourBlockHours: Int?
 
     // Multiple pricing options (Phase 1: FIXED + DAILY)
     var pricingOptions: [PricingOption]?
@@ -84,6 +87,40 @@ struct CartItem: Codable {
     /// up to date by `repriceBlock`; staff do not type a price on it.
     var isBlockPricing: Bool {
         pricingType?.uppercased() == "BLOCK" && blockTable != nil
+    }
+
+    /// #1621: a line on an hour block. Priced flat like "Theo lần" (price × quantity, never × days); the price can be
+    /// changed for this order like any other.
+    var isHourBlock: Bool {
+        pricingType?.uppercased() == HourBlocks.type && hourBlockHours != nil
+    }
+
+    /// "Khối 4 giờ"; nil on a line that is not on an hour block
+    var hourBlockLabel: String? {
+        guard isHourBlock, let hours = hourBlockHours else { return nil }
+        return HourBlocks.label(hours: hours)
+    }
+
+    /// #1621: a line loaded from a saved order keeps the block it was made with, even when the product changed since
+    mutating func adoptHourBlock(_ snapshot: HourBlockSnapshot?) {
+        guard pricingType?.uppercased() == HourBlocks.type, let snapshot else { return }
+        hourBlockHours = snapshot.hours
+    }
+
+    /// #1621: the line takes the hour block of this sheet row ("HOURLY:<option id>") and its price
+    mutating func selectHourBlock(key: String) {
+        let key = key.uppercased()
+        guard let option = pricingOptions?.first(where: { option in
+                  guard let block = option.hourBlock, option.isActive != false else { return false }
+                  return CartPricingChoice.hourKey(optionId: option.id, hours: block.hours) == key
+              }),
+              let block = option.hourBlock else { return }
+        selectedPricingOptionId = option.id
+        pricingType = HourBlocks.type
+        hourBlockHours = block.hours
+        price = block.price
+        customRentPrice = block.price
+        priceMissing = false
     }
 
     /// The breakdown behind the price ("Khối 3 ngày + 2 ngày thêm"); nil on a line that is not a block line
@@ -126,7 +163,9 @@ struct CartItem: Codable {
         let active = (options ?? []).filter { $0.isActive != false }
         var fresh = self
         fresh.pricingOptions = active
-        guard CartV2Logic.offersBothModes(fresh), !CartV2Logic.offersBothModes(self) else { return }
+        // #1621: also when the product has hour blocks the line does not offer yet
+        let newBlocks = !HourBlocks.options(active).isEmpty && HourBlocks.options(pricingOptions).isEmpty
+        guard (CartV2Logic.offersBothModes(fresh) && !CartV2Logic.offersBothModes(self)) || newBlocks else { return }
         pricingOptions = active
         if selectedPricingOptionId == nil {
             let current = pricingType?.uppercased() ?? ProductPricingMode.perRental.rawValue
@@ -144,6 +183,7 @@ struct CartItem: Codable {
         guard let opt = pricingOptions?.first(where: { $0.id == optionId }) else { return }
         self.selectedPricingOptionId = optionId
         self.pricingType = opt.type
+        self.hourBlockHours = opt.hourBlock?.hours
         self.price = opt.price
         self.customRentPrice = opt.price
         self.priceMissing = false
@@ -156,26 +196,21 @@ struct CartItem: Codable {
     /// Switch between the two cart pricing modes. Products created before
     /// pricingOptions existed keep their current price as a legacy option;
     /// the missing mode is still selectable with a zero price.
+    /// #1621: `type` may be an hour-block row of the sheet ("HOURLY:<option id>")
     mutating func selectPricingType(_ type: String) {
         let normalizedType = type.uppercased()
         let currentType = pricingType?.uppercased() ?? "FIXED"
-
-        // #951: a mode without a price is not kept as a 0đ option for the way back
-        if !priceMissing, pricingOptions?.contains(where: { $0.type.uppercased() == currentType }) != true {
-            let legacyOption = PricingOption(
-                id: selectedPricingOptionId,
-                type: currentType,
-                price: price,
-                isDefault: true,
-                isActive: true
-            )
-            if pricingOptions == nil {
-                pricingOptions = []
-            }
-            pricingOptions?.append(legacyOption)
+        if CartPricingChoice.isHourKey(normalizedType) {
+            // The line's own block (an order being edited) stays as it is; the sheet then applies its price
+            if normalizedType == CartV2Logic.currentChoiceKey(self) { return }
+            keepCurrentForTheWayBack(currentType)
+            selectHourBlock(key: normalizedType)
+            return
         }
 
-        let option = pricingOptions?.first(where: { $0.type.uppercased() == normalizedType })
+        keepCurrentForTheWayBack(currentType)
+        hourBlockHours = nil
+        let option = pricingOptions?.first(where: { $0.type.uppercased() == normalizedType && $0.hourBlock == nil })
         selectedPricingOptionId = option?.id
         pricingType = normalizedType
         let typed: Double?
@@ -194,6 +229,29 @@ struct CartItem: Codable {
             blockTable = table
             repriceBlock()
         }
+    }
+
+    /// The line's mode stays offered after a switch: a line loaded from an order (no options yet) keeps its own price,
+    /// and its hour block (#1621) as that block. #951: a mode without a price is not kept as a 0đ option for the way back.
+    private mutating func keepCurrentForTheWayBack(_ currentType: String) {
+        let hours = isHourBlock ? hourBlockHours : nil
+        let offered = pricingOptions?.contains(where: { option in
+            guard option.type.uppercased() == currentType else { return false }
+            return hours == nil ? option.hourBlock == nil : option.id == selectedPricingOptionId && option.hourBlock != nil
+        }) == true
+        guard !priceMissing, !offered else { return }
+        let legacyOption = PricingOption(
+            id: selectedPricingOptionId,
+            type: currentType,
+            price: price,
+            isDefault: hours == nil,
+            isActive: true,
+            hours: hours
+        )
+        if pricingOptions == nil {
+            pricingOptions = []
+        }
+        pricingOptions?.append(legacyOption)
     }
 
     /// Save a manual rental price for the currently selected pricing mode.
@@ -219,7 +277,15 @@ struct CartItem: Codable {
         } else if currentType == "FIXED" {
             customFixedPrice = nil
         }
-        let option = pricingOptions?.first(where: { $0.type.uppercased() == currentType && $0.isActive != false })
+        // #1621: an hour-block line goes back to its block's price (a block no longer on the product keeps the price)
+        if isHourBlock {
+            let block = pricingOptions?.first(where: { $0.id == selectedPricingOptionId && $0.hourBlock != nil })?.price
+            price = block ?? price
+            priceMissing = false
+            customRentPrice = price
+            return
+        }
+        let option = pricingOptions?.first(where: { $0.type.uppercased() == currentType && $0.isActive != false && $0.hourBlock == nil })
         price = option?.price ?? 0
         priceMissing = option == nil
         customRentPrice = option?.price
@@ -364,5 +430,6 @@ struct CartItem: Codable {
         selectedPricingOptionId = try c.decodeIfPresent(Int.self, forKey: .selectedPricingOptionId)
         blockTable = try c.decodeIfPresent(BlockTable.self, forKey: .blockTable)
         blockCurrency = try c.decodeIfPresent(String.self, forKey: .blockCurrency)
+        hourBlockHours = try c.decodeIfPresent(Int.self, forKey: .hourBlockHours)
     }
 }

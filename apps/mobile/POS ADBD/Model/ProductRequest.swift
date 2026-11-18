@@ -50,7 +50,7 @@ struct OutletStockItem: Codable {
 
 // MARK: - Pricing Option Request Model (Phase 1: FIXED + DAILY)
 struct PricingOptionRequest: Codable {
-    let type: String        // "FIXED" | "DAILY" | "BLOCK"
+    let type: String        // "FIXED" | "DAILY" | "BLOCK" | "HOURLY" (#1621 hour block)
     let price: Double
     let isDefault: Bool
     // #1189: only on a BLOCK option (`price` = day-1 price); left out of the JSON otherwise
@@ -58,6 +58,9 @@ struct PricingOptionRequest: Codable {
     var blockStartDay: Int? = nil
     var blockExtraMode: String? = nil
     var blockExtraPrice: Double? = nil
+    // #1621: only on an hour block (`unit` "HOUR", `blockSize` = hours, `price` = the whole block)
+    var unit: String? = nil
+    var blockSize: Int? = nil
 
     init(type: String, price: Double, isDefault: Bool) {
         self.type = type
@@ -72,16 +75,26 @@ struct PricingOptionRequest: Codable {
         blockExtraMode = table.extraMode
         blockExtraPrice = table.extraPrice
     }
+
+    /// #1621: an hour block is never the default price
+    init(hourBlock: HourBlock) {
+        self.init(type: HourBlocks.type, price: hourBlock.price, isDefault: false)
+        unit = HourBlocks.unit
+        blockSize = hourBlock.hours
+    }
 }
 
 extension PricingOptionRequest {
-    /// The option as the form-data JSON of the product routes; block fields only on a BLOCK option
+    /// The option as the form-data JSON of the product routes; block fields only on a BLOCK option, `unit` and
+    /// `blockSize` only on an hour block
     var formDictionary: [String: Any] {
         var dict: [String: Any] = ["type": type, "price": price, "isDefault": isDefault]
         if let blockTiers { dict["blockTiers"] = blockTiers }
         if let blockStartDay { dict["blockStartDay"] = blockStartDay }
         if let blockExtraMode { dict["blockExtraMode"] = blockExtraMode }
         if let blockExtraPrice { dict["blockExtraPrice"] = blockExtraPrice }
+        if let unit { dict["unit"] = unit }
+        if let blockSize { dict["blockSize"] = blockSize }
         return dict
     }
 }

@@ -265,6 +265,7 @@
 		57EF666653966B684CA1B360 /* ProductFormViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C4FED6C8BE1ED927725D6E7F /* ProductFormViewController.swift */; };
 		158F1A299C9A80A5D33F422D /* BlockTableEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C27B8AC73B5299F43E9087DA /* BlockTableEditorView.swift */; };
 		AB1249000000000000000001 /* BlockPriceViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB1249000000000000000002 /* BlockPriceViewController.swift */; };
+		A1621B000000000000000002 /* HourBlocksViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1621F000000000000000002 /* HourBlocksViewController.swift */; };
 		A632B0000000000000000001 /* CategoryManageViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A632F0000000000000000001 /* CategoryManageViewController.swift */; };
 		607E5D13DAD404F7F526AA2C /* CustomersV2ListViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2CE94C9E2F100D5921C64A3F /* CustomersV2ListViewController.swift */; };
 		61800AE4201230EA1EED530E /* TodayWork.swift in Sources */ = {isa = PBXBuildFile; fileRef = B07CC0B0BF772BE52542D13E /* TodayWork.swift */; };
@@ -281,6 +282,7 @@
 		F1A6145500000000000000A1 /* AppStartRoute.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A5145500000000000000A1 /* AppStartRoute.swift */; };
 		F1A6E1114F02A9DBB08660EB /* FirstRunCoach.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A5E1114F02A9DBB08660EB /* FirstRunCoach.swift */; };
 		2543C36694AE4244E84EA1A2 /* BlockPricing.swift in Sources */ = {isa = PBXBuildFile; fileRef = 670B7FA34C073AFBF963CEA7 /* BlockPricing.swift */; };
+		A1621B000000000000000001 /* HourBlocks.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1621F000000000000000001 /* HourBlocks.swift */; };
 		780386B06493ECFA69CB2577 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B854361D12543F58020DE847 /* Foundation.framework */; };
 		80854D02D5E837AF0AFAF047 /* OverviewV2ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 371CA82265386D2C46D5713C /* OverviewV2ViewController.swift */; };
 		A633B0000000000000000001 /* OverviewTopAllViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A633F0000000000000000001 /* OverviewTopAllViewController.swift */; };
@@ -289,6 +291,7 @@
 		81725EFBC11C4491BE1358CC /* OrderStatusTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 32451210261D4A00E83FEBAA /* OrderStatusTests.swift */; };
 		818ADE5C1D452A24842B4EB1 /* ProductsV2Tests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9D519264475F354D9CEEAC99 /* ProductsV2Tests.swift */; };
 		5E74715D050E5F0CEB1FAA81 /* BlockPricingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0BFD44494C2A147ACDF44AF /* BlockPricingTests.swift */; };
+		A1621B000000000000000003 /* HourBlocksTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1621F000000000000000003 /* HourBlocksTests.swift */; };
 		83BD6AF23E08F2BB98957B98 /* OrderExtendSheetViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 86280F425E9CFE10BADD903B /* OrderExtendSheetViewController.swift */; };
 		85ABA05A8130F520F4EEDAC2 /* CustomersV2Views.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81CCD2C1B543D4537FE68B48 /* CustomersV2Views.swift */; };
 		881802B021BE5AEF00D1E366 /* UnixTime.swift in Sources */ = {isa = PBXBuildFile; fileRef = 881802AF21BE5AEF00D1E366 /* UnixTime.swift */; };
@@ -748,6 +751,7 @@
 		F1A5145500000000000000A1 /* AppStartRoute.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppStartRoute.swift; sourceTree = "<group>"; };
 		F1A5E1114F02A9DBB08660EB /* FirstRunCoach.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirstRunCoach.swift; sourceTree = "<group>"; };
 		670B7FA34C073AFBF963CEA7 /* BlockPricing.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = BlockPricing.swift; sourceTree = "<group>"; };
+		A1621F000000000000000001 /* HourBlocks.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HourBlocks.swift; sourceTree = "<group>"; };
 		86280F425E9CFE10BADD903B /* OrderExtendSheetViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OrderExtendSheetViewController.swift; sourceTree = "<group>"; };
 		881802AF21BE5AEF00D1E366 /* UnixTime.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = UnixTime.swift; sourceTree = "<group>"; };
 		8841914121CA5C9E00C442C3 /* NavigationTabbarController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NavigationTabbarController.swift; sourceTree = "<group>"; };
@@ -806,6 +810,7 @@
 		9C7E52D8C56398199335E3DA /* EditCustomerViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = EditCustomerViewController.swift; sourceTree = "<group>"; };
 		9D519264475F354D9CEEAC99 /* ProductsV2Tests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ProductsV2Tests.swift; sourceTree = "<group>"; };
 		A0BFD44494C2A147ACDF44AF /* BlockPricingTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = BlockPricingTests.swift; sourceTree = "<group>"; };
+		A1621F000000000000000003 /* HourBlocksTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HourBlocksTests.swift; sourceTree = "<group>"; };
 		A4B110012F1E0101000011 /* DraftOrderAttributes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DraftOrderAttributes.swift; sourceTree = "<group>"; };
 		A4B110012F1E0101000012 /* DraftOrderLiveActivityView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DraftOrderLiveActivityView.swift; sourceTree = "<group>"; };
 		A4B110012F1E0101000013 /* DraftOrderLiveActivityWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DraftOrderLiveActivityWidget.swift; sourceTree = "<group>"; };
@@ -838,6 +843,7 @@
 		C4FED6C8BE1ED927725D6E7F /* ProductFormViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ProductFormViewController.swift; sourceTree = "<group>"; };
 		C27B8AC73B5299F43E9087DA /* BlockTableEditorView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = BlockTableEditorView.swift; sourceTree = "<group>"; };
 		AB1249000000000000000002 /* BlockPriceViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = BlockPriceViewController.swift; sourceTree = "<group>"; };
+		A1621F000000000000000002 /* HourBlocksViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HourBlocksViewController.swift; sourceTree = "<group>"; };
 		A632F0000000000000000001 /* CategoryManageViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CategoryManageViewController.swift; sourceTree = "<group>"; };
 		C68665233AF9D666CE7E723C /* Phase8Tests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Phase8Tests.swift; sourceTree = "<group>"; };
 		596F0A0B0C0D0E0F10111213 /* ShopTimeZoneTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ShopTimeZoneTests.swift; sourceTree = "<group>"; };
@@ -1210,6 +1216,7 @@
 				C4FED6C8BE1ED927725D6E7F /* ProductFormViewController.swift */,
 				C27B8AC73B5299F43E9087DA /* BlockTableEditorView.swift */,
 				AB1249000000000000000002 /* BlockPriceViewController.swift */,
+				A1621F000000000000000002 /* HourBlocksViewController.swift */,
 				A632F0000000000000000001 /* CategoryManageViewController.swift */,
 				A587878FD2FE67429CE2F3CF /* CartV2ViewController.swift */,
 			);
@@ -1226,6 +1233,7 @@
 				32451210261D4A00E83FEBAA /* OrderStatusTests.swift */,
 				9D519264475F354D9CEEAC99 /* ProductsV2Tests.swift */,
 				A0BFD44494C2A147ACDF44AF /* BlockPricingTests.swift */,
+				A1621F000000000000000003 /* HourBlocksTests.swift */,
 				380F46BEEBA5D54F9ADE7AD5 /* OnboardingV2Tests.swift */,
 				6CEC7771A7BBA6686179EC8A /* ChangeHistoryTests.swift */,
 				A640F0000000000000000003 /* OrderShareImageTests.swift */,
@@ -1334,6 +1342,7 @@
 				F1A5145500000000000000A1 /* AppStartRoute.swift */,
 				F1A5E1114F02A9DBB08660EB /* FirstRunCoach.swift */,
 				670B7FA34C073AFBF963CEA7 /* BlockPricing.swift */,
+				A1621F000000000000000001 /* HourBlocks.swift */,
 				B07CC0B0BF772BE52542D13E /* TodayWork.swift */,
 				A1375FB5DB4972E11406B404 /* TodayWidgetData.swift */,
 				16733093F5AD2CBACB593E6B /* CalendarV2.swift */,
@@ -2115,6 +2124,7 @@
 				81725EFBC11C4491BE1358CC /* OrderStatusTests.swift in Sources */,
 				818ADE5C1D452A24842B4EB1 /* ProductsV2Tests.swift in Sources */,
 				5E74715D050E5F0CEB1FAA81 /* BlockPricingTests.swift in Sources */,
+				A1621B000000000000000003 /* HourBlocksTests.swift in Sources */,
 				419D80D878DE73F1E2127347 /* OnboardingV2Tests.swift in Sources */,
 				884E755F9E351B781B16CDB6 /* ChangeHistoryTests.swift in Sources */,
 				A640B0000000000000000003 /* OrderShareImageTests.swift in Sources */,
@@ -2384,6 +2394,7 @@
 				F1A6145500000000000000A1 /* AppStartRoute.swift in Sources */,
 				F1A6E1114F02A9DBB08660EB /* FirstRunCoach.swift in Sources */,
 				2543C36694AE4244E84EA1A2 /* BlockPricing.swift in Sources */,
+				A1621B000000000000000001 /* HourBlocks.swift in Sources */,
 				9385935FF10F75C67D1265EA /* ProductsHomeViewModel.swift in Sources */,
 				219F5B5BC02CC3E14401DD74 /* ProductsV2Views.swift in Sources */,
 				C63E672C7A520CC43025F3D5 /* ProductsHomeViewController.swift in Sources */,
@@ -2395,6 +2406,7 @@
 				57EF666653966B684CA1B360 /* ProductFormViewController.swift in Sources */,
 				158F1A299C9A80A5D33F422D /* BlockTableEditorView.swift in Sources */,
 				AB1249000000000000000001 /* BlockPriceViewController.swift in Sources */,
+				A1621B000000000000000002 /* HourBlocksViewController.swift in Sources */,
 				A632B0000000000000000001 /* CategoryManageViewController.swift in Sources */,
 				4162665B07AA33775A3B5298 /* CartV2ViewController.swift in Sources */,
 				61800AE4201230EA1EED530E /* TodayWork.swift in Sources */,

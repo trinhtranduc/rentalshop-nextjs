@@ -3103,3 +3103,26 @@
 "weeklySummary.footer.written" = "Ditulis %1$@ · berikutnya %2$@";
 "weeklySummary.noOrders" = "Minggu lalu tidak ada pesanan, jadi belum ada yang bisa diringkas.";
 "weeklySummary.error" = "Ringkasan belum bisa dibuat.";
+
+/* #1621 Theo khối giờ (hour blocks) */
+"products.form.perHourBlock" = "Per blok jam";
+"products.form.error.hourBlocksNeedPrice" = "Blok jam juga memerlukan harga per sewa atau per hari.";
+"hourBlock.title" = "Harga per blok jam";
+"hourBlock.intro" = "Setiap blok jam punya satu harga. Di keranjang, blok yang dipilih menentukan harganya.";
+"hourBlock.section" = "Blok jam";
+"hourBlock.unit" = "jam";
+"hourBlock.add" = "+ Tambah blok";
+"hourBlock.remove" = "Hapus blok %d";
+"hourBlock.hoursOf" = "Jam blok %d";
+"hourBlock.priceOf" = "Harga blok %d";
+"hourBlock.max" = "Paling banyak %d blok.";
+"hourBlock.save" = "Simpan tabel harga";
+"hourBlock.turnOff" = "Matikan harga per blok jam";
+"hourBlock.error.hours" = "Jam harus bilangan bulat 1 sampai 24.";
+"hourBlock.error.repeated" = "Setiap jumlah jam hanya untuk satu blok.";
+"hourBlock.error.price" = "Isi harga untuk setiap blok (0 boleh).";
+"hourBlock.summary" = "%1$d blok: %2$@ jam";
+"hourBlock.summary.one" = "%1$d blok: %2$@ jam";
+"hourBlock.label" = "Blok %d jam";
+"hourBlock.detail" = "%1$d jam %2$@";
+"HOUR_BLOCKS_INVALID" = "Harga per blok jam tidak valid. Gunakan jam bulat 1 sampai 24, setiap jumlah jam sekali saja, harga 0 atau lebih, paling banyak 10 blok, dan tetap sertakan harga per sewa atau per hari.";

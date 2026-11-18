@@ -131,6 +131,11 @@ enum ProductPricing {
         activeOptions(product).compactMap { $0.blockTable }.first
     }
 
+    /// #1621: the hour blocks of the product ("Theo khối giờ"), shortest first; empty when it has none
+    static func hourBlocks(_ product: Product) -> [HourBlock] {
+        HourBlocks.of(product.pricingOptions)
+    }
+
     static func sale(_ product: Product) -> Double? {
         let price = product.salePrice ?? product.sale
         return price > 0 ? price : nil
@@ -143,8 +148,9 @@ enum ProductPricing {
     }
 
     /// Options sent on save. The API keeps one default and copies its price into `rentPrice`.
-    /// A default without a price falls back to the mode that has one.
-    static func options(perRental: Double?, perDay: Double?, defaultMode: ProductPricingMode, block: BlockTable? = nil) -> [PricingOptionRequest] {
+    /// A default without a price falls back to the mode that has one. #1621: hour blocks go last, never the default.
+    static func options(perRental: Double?, perDay: Double?, defaultMode: ProductPricingMode, block: BlockTable? = nil,
+                        hourBlocks: [HourBlock] = []) -> [PricingOptionRequest] {
         // #951: an empty box (nil) is no price; 0 is a 0đ price
         let fixed = (perRental ?? -1) >= 0 ? perRental : nil
         let daily = (perDay ?? -1) >= 0 ? perDay : nil
@@ -168,6 +174,10 @@ enum ProductPricing {
         // #1189: `price` of a BLOCK option is the day-1 price; the API keeps the table only with `pricingSchemaVersion: 2`
         if let block {
             result.append(PricingOptionRequest(type: ProductPricingMode.block.rawValue, price: block.tiers.first ?? 0, isDefault: mode == .block, table: block))
+        }
+        // #1621: this build sends `hour-blocks`, so the API replaces the stored blocks with these: always send them all
+        for hourBlock in hourBlocks.sorted(by: { $0.hours < $1.hours }) {
+            result.append(PricingOptionRequest(hourBlock: hourBlock))
         }
         return result
     }
@@ -364,18 +374,22 @@ struct ProductPriceDraft: Equatable {
     var perDay: Double?
     /// The day table; nil = "Chưa cài"
     var block: BlockTable?
+    /// #1621 "Theo khối giờ", shortest first; empty = "Chưa cài"
+    var hourBlocks: [HourBlock]
 
-    init(perRental: Double? = nil, perDay: Double? = nil, block: BlockTable? = nil) {
+    init(perRental: Double? = nil, perDay: Double? = nil, block: BlockTable? = nil, hourBlocks: [HourBlock] = []) {
         self.perRental = perRental
         self.perDay = perDay
         self.block = block
+        self.hourBlocks = hourBlocks
     }
 
     /// New product: three empty prices. Saved product: each saved price fills its own row; an old DAILY price stays a
     /// DAILY price, it is never turned into a table.
     init(product: Product?) {
         guard let product else { self.init(); return }
-        self.init(perRental: ProductPricing.perRental(product), perDay: ProductPricing.perDay(product), block: ProductPricing.block(product))
+        self.init(perRental: ProductPricing.perRental(product), perDay: ProductPricing.perDay(product), block: ProductPricing.block(product),
+                  hourBlocks: ProductPricing.hourBlocks(product))
     }
 
     /// "Lưu bảng giá" on the setup screen
@@ -384,9 +398,16 @@ struct ProductPriceDraft: Equatable {
     /// "Tắt giá theo khối ngày": the table goes ("Chưa cài"); the other two prices stay
     mutating func turnOffTable() { block = nil }
 
-    /// FIXED + DAILY (when its box has a price) + BLOCK (when a table is set). FIXED is the default whenever it has a price.
+    /// #1621 "Lưu bảng giá" on the hour-block screen
+    mutating func saveHourBlocks(_ blocks: [HourBlock]) { hourBlocks = blocks.sorted { $0.hours < $1.hours } }
+
+    /// #1621 "Tắt giá theo khối giờ": every block goes ("Chưa cài")
+    mutating func turnOffHourBlocks() { hourBlocks = [] }
+
+    /// FIXED + DAILY (when its box has a price) + BLOCK (when a table is set) + one HOURLY per hour block.
+    /// FIXED is the default whenever it has a price.
     var options: [PricingOptionRequest] {
-        ProductPricing.options(perRental: perRental, perDay: perDay, defaultMode: .perRental, block: block)
+        ProductPricing.options(perRental: perRental, perDay: perDay, defaultMode: .perRental, block: block, hourBlocks: hourBlocks)
     }
 
     var rentPrice: Double { options.first(where: { $0.isDefault })?.price ?? 0 }
@@ -399,6 +420,8 @@ struct ProductFormInput {
     var defaultMode: ProductPricingMode
     /// #1249: the day table "Theo ngày" sends; nil = none
     var block: BlockTable? = nil
+    /// #1621: the hour blocks; empty = none
+    var hourBlocks: [HourBlock] = []
     var salePrice: Double?
     var deposit: Double?
     var quantity: Int
@@ -412,6 +435,8 @@ enum ProductFormIssue: Equatable {
     case nameRequired
     case negativeAmount
     case perDayDefaultNeedsPrice
+    /// #1621: a block is never the default, so the product keeps a per-rental, per-day or day-block price next to it
+    case hourBlocksNeedPrice
     case negativeQuantity
     case quantityBelowRented(Int)
     case tooManyPhotos(Int)
@@ -421,6 +446,7 @@ enum ProductFormIssue: Equatable {
         case .nameRequired: return "products.form.error.name".localized()
         case .negativeAmount: return "products.form.error.negative".localized()
         case .perDayDefaultNeedsPrice: return "products.form.error.dailyDefault".localized()
+        case .hourBlocksNeedPrice: return "products.form.error.hourBlocksNeedPrice".localized()
         case .negativeQuantity: return "products.form.error.quantity".localized()
         case .quantityBelowRented(let rented): return String(format: "products.form.error.belowRented".localized(), rented)
         case .tooManyPhotos(let max): return String(format: "products.form.error.photos".localized(), max)
@@ -451,6 +477,9 @@ enum ProductFormValidator {
         if input.showsPrices && input.defaultMode == .perDay && input.perDay == nil {
             issues.append(.perDayDefaultNeedsPrice)
         }
+        if input.showsPrices && !input.hourBlocks.isEmpty && input.perRental == nil && input.perDay == nil && input.block == nil {
+            issues.append(.hourBlocksNeedPrice)
+        }
         if input.quantity < 0 {
             issues.append(.negativeQuantity)
         } else if input.quantity < input.rented {
@@ -470,6 +499,21 @@ enum ProductFormValidator {
 struct CartPricingChoice: Equatable {
     let type: String
     let catalogPrice: Double?
+    /// #1621: the option id and hours of an hour block ("Khối 4 giờ"); nil on every other row
+    var optionId: Int? = nil
+    var hours: Int? = nil
+
+    /// What the sheet selects and hands back: the type ("FIXED", "BLOCK"), or "HOURLY:<option id>" for an hour block,
+    /// because a product has several blocks of one type
+    var key: String { hours.map { CartPricingChoice.hourKey(optionId: optionId, hours: $0) } ?? type }
+
+    static let hourPrefix = HourBlocks.type + ":"
+
+    static func hourKey(optionId: Int?, hours: Int) -> String {
+        hourPrefix + (optionId.map(String.init) ?? "H\(hours)")
+    }
+
+    static func isHourKey(_ key: String) -> Bool { key.uppercased().hasPrefix(hourPrefix) }
 }
 
 struct CartLineCalc: Equatable {
@@ -618,17 +662,25 @@ enum CartV2Logic {
     }
 
     /// The rows of the sheet: Theo lần and Theo ngày always, then every other active option type of the product, each
-    /// with its catalog price (nil = "Nhập giá")
+    /// with its catalog price (nil = "Nhập giá"). #1621: then one row per hour block, shortest first ("Khối 2 giờ"),
+    /// and the line's own block when the product no longer has it (an order being edited).
     static func pricingChoices(_ item: CartItem) -> [CartPricingChoice] {
         let options = (item.pricingOptions ?? []).filter { $0.isActive != false }
         var types = [ProductPricingMode.perRental.rawValue, ProductPricingMode.perDay.rawValue]
-        for option in options where !types.contains(option.type.uppercased()) {
+        for option in options where option.hourBlock == nil && !types.contains(option.type.uppercased()) {
             types.append(option.type.uppercased())
         }
-        return types.map { type in
-            let price = options.first { $0.type.uppercased() == type && $0.price >= 0 }?.price
+        var choices = types.map { type in
+            let price = options.first { $0.type.uppercased() == type && $0.hourBlock == nil && $0.price >= 0 }?.price
             return CartPricingChoice(type: type, catalogPrice: price)
         }
+        for option in HourBlocks.options(options) {
+            choices.append(CartPricingChoice(type: HourBlocks.type, catalogPrice: option.price, optionId: option.id, hours: option.blockSize))
+        }
+        if let hours = item.hourBlockHours, item.isHourBlock, !choices.contains(where: { $0.key == currentChoiceKey(item) }) {
+            choices.append(CartPricingChoice(type: HourBlocks.type, catalogPrice: item.price, optionId: item.selectedPricingOptionId, hours: hours))
+        }
+        return choices
     }
 
     /// The line's pricing type (FIXED when it has none)
@@ -636,12 +688,23 @@ enum CartV2Logic {
         item.pricingType?.uppercased() ?? ProductPricingMode.perRental.rawValue
     }
 
-    /// Price the field shows for a row: the line's price for its own mode, a price typed earlier for that mode, the
-    /// catalog price; nil (an empty field) when there is none. #951: a 0đ price shows "0".
+    /// The sheet row of the line: its type, or "HOURLY:<option id>" on an hour-block line (#1621)
+    static func currentChoiceKey(_ item: CartItem) -> String {
+        guard let hours = item.hourBlockHours, item.isHourBlock else { return currentType(item) }
+        return CartPricingChoice.hourKey(optionId: item.selectedPricingOptionId, hours: hours)
+    }
+
+    /// "Theo lần", "Theo ngày", "Theo khối", "Khối 4 giờ"
+    static func choiceLabel(_ choice: CartPricingChoice) -> String {
+        choice.hours.map { HourBlocks.label(hours: $0) } ?? pricingLabel(choice.type)
+    }
+
+    /// Price the field shows for a row (`type` is the row's key): the line's price for its own mode, a price typed
+    /// earlier for that mode, the catalog price; nil (an empty field) when there is none. #951: a 0đ price shows "0".
     static func startPrice(_ item: CartItem, type: String) -> Double? {
         let type = type.uppercased()
-        if type == currentType(item) { return item.priceMissing ? nil : item.price }
-        let catalog = pricingChoices(item).first { $0.type == type }?.catalogPrice
+        if type == currentChoiceKey(item) { return item.priceMissing ? nil : item.price }
+        let catalog = pricingChoices(item).first { $0.key == type }?.catalogPrice
         switch type {
         case ProductPricingMode.perDay.rawValue: return item.customDailyPrice ?? catalog
         case ProductPricingMode.perRental.rawValue: return item.customFixedPrice ?? catalog
@@ -657,6 +720,7 @@ enum CartV2Logic {
     /// The chip of a line: "Theo ngày" + "150.000đ/ngày × 2 ngày" ("Giá bán" on a sale); price nil = "Nhập giá".
     /// #684 (Dòng gọn): the chip carries the line's numbers, so a daily price over several days shows the days too
     static func chip(_ item: CartItem, orderType: OrderType) -> (label: String, price: String?) {
+        if orderType == .rent, let label = item.hourBlockLabel { return (label, money(item.price)) }
         let label = orderType == .sale ? "products.cart.pricing.sale".localized() : pricingLabel(currentType(item))
         guard showsPrice(item, orderType: orderType) else { return (label, nil) }
         var price = priceText(item.price, type: currentType(item), orderType: orderType)
@@ -689,9 +753,14 @@ enum CartV2Logic {
         return parts.amount + " / " + parts.unit
     }
 
-    /// Bottom line of an order detail item: "1 × 400.000đ × 3 ngày" (days only for a daily rent), the total sits on the right
-    static func orderItemQuantityLine(quantity: Int, unitPrice: Double, pricingType: String?, rentalDays: Int?, orderType: OrderType) -> String {
+    /// Bottom line of an order detail item: "1 × 400.000đ × 3 ngày" (days only for a daily rent), the total sits on the right.
+    /// #1621: an hour-block line reads "Khối 4 giờ · 1 × 250.000đ" (`hours` from its snapshot)
+    static func orderItemQuantityLine(quantity: Int, unitPrice: Double, pricingType: String?, rentalDays: Int?, orderType: OrderType,
+                                      hours: Int? = nil) -> String {
         let money = money(unitPrice)
+        if orderType == .rent, let hours, pricingType?.uppercased() == HourBlocks.type {
+            return HourBlocks.label(hours: hours) + " · \(quantity) × \(money)"
+        }
         let type = pricingType?.uppercased() ?? ProductPricingMode.perRental.rawValue
         guard orderType == .rent, type == ProductPricingMode.perDay.rawValue else { return "\(quantity) × \(money)" }
         let days = max(1, rentalDays ?? 1)
@@ -710,8 +779,13 @@ enum CartV2Logic {
         return String(format: "products.cart.pricing.perDaySuffix".localized(), money(price))
     }
 
-    /// Live preview under the field: "130.000đ × 3 ngày × 1" and its total (days only for a daily rent price)
-    static func pricePreview(type: String, price: Double, days: Int, quantity: Int, orderType: OrderType) -> (text: String, total: Double) {
+    /// Live preview under the field: "130.000đ × 3 ngày × 1" and its total (days only for a daily rent price).
+    /// #1621: an hour block reads "Khối 4 giờ × 1" (`hours` of the chosen row); never × days
+    static func pricePreview(type: String, price: Double, days: Int, quantity: Int, orderType: OrderType,
+                             hours: Int? = nil) -> (text: String, total: Double) {
+        if orderType == .rent, let hours {
+            return (HourBlocks.label(hours: hours) + " × \(quantity)", price * Double(quantity))
+        }
         if orderType == .rent && type.uppercased() == ProductPricingMode.perDay.rawValue {
             let days = max(1, days)
             let dayText = PluralText.format("products.cart.days", count: days, days)

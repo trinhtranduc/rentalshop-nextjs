@@ -3103,3 +3103,26 @@
 "weeklySummary.footer.written" = "Rédigé %1$@ · prochain %2$@";
 "weeklySummary.noOrders" = "Aucune commande la semaine dernière, rien à résumer.";
 "weeklySummary.error" = "Impossible de rédiger le résumé.";
+
+/* #1621 Theo khối giờ (hour blocks) */
+"products.form.perHourBlock" = "Par tranche d'heures";
+"products.form.error.hourBlocksNeedPrice" = "Les tranches d'heures demandent aussi un prix par location ou par jour.";
+"hourBlock.title" = "Prix par tranche d'heures";
+"hourBlock.intro" = "Un prix par tranche d'heures. Dans le panier, la tranche choisie donne le prix.";
+"hourBlock.section" = "Tranches d'heures";
+"hourBlock.unit" = "h";
+"hourBlock.add" = "+ Ajouter une tranche";
+"hourBlock.remove" = "Supprimer la tranche %d";
+"hourBlock.hoursOf" = "Heures de la tranche %d";
+"hourBlock.priceOf" = "Prix de la tranche %d";
+"hourBlock.max" = "%d tranches au maximum.";
+"hourBlock.save" = "Enregistrer la grille tarifaire";
+"hourBlock.turnOff" = "Désactiver le prix par tranche d'heures";
+"hourBlock.error.hours" = "Les heures doivent être un nombre entier de 1 à 24.";
+"hourBlock.error.repeated" = "Chaque durée ne peut servir qu'à une seule tranche.";
+"hourBlock.error.price" = "Saisissez un prix pour chaque tranche (0 est accepté).";
+"hourBlock.summary" = "%1$d tranches : %2$@ h";
+"hourBlock.summary.one" = "%1$d tranche : %2$@ h";
+"hourBlock.label" = "Tranche de %d heures";
+"hourBlock.detail" = "%1$d h %2$@";
+"HOUR_BLOCKS_INVALID" = "Les tarifs par tranche d'heures ne sont pas valides. Utilisez des heures entières de 1 à 24, chaque durée une seule fois, des prix à partir de 0, au plus 10 tranches, et gardez un prix par location ou par jour.";

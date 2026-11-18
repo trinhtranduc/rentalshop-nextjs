@@ -3103,3 +3103,26 @@
 "weeklySummary.footer.written" = "เขียนเมื่อ %1$@ · ฉบับถัดไป %2$@";
 "weeklySummary.noOrders" = "สัปดาห์ที่แล้วไม่มีออเดอร์ จึงยังไม่มีอะไรให้สรุป";
 "weeklySummary.error" = "สร้างสรุปไม่สำเร็จ";
+
+/* #1621 Theo khối giờ (hour blocks) */
+"products.form.perHourBlock" = "แบบเป็นช่วงชั่วโมง";
+"products.form.error.hourBlocksNeedPrice" = "ช่วงชั่วโมงต้องมีราคาต่อครั้งหรือต่อวันด้วย";
+"hourBlock.title" = "ราคาตามช่วงชั่วโมง";
+"hourBlock.intro" = "แต่ละช่วงชั่วโมงมีราคาเดียว ในตะกร้า เลือกช่วงไหนก็คิดราคาช่วงนั้น";
+"hourBlock.section" = "ช่วงชั่วโมง";
+"hourBlock.unit" = "ชั่วโมง";
+"hourBlock.add" = "+ เพิ่มช่วง";
+"hourBlock.remove" = "ลบช่วงที่ %d";
+"hourBlock.hoursOf" = "จำนวนชั่วโมงของช่วงที่ %d";
+"hourBlock.priceOf" = "ราคาของช่วงที่ %d";
+"hourBlock.max" = "ได้สูงสุด %d ช่วง";
+"hourBlock.save" = "บันทึกตารางราคา";
+"hourBlock.turnOff" = "ปิดการคิดราคาตามช่วงชั่วโมง";
+"hourBlock.error.hours" = "จำนวนชั่วโมงต้องเป็นจำนวนเต็ม 1 ถึง 24";
+"hourBlock.error.repeated" = "จำนวนชั่วโมงแต่ละค่าใช้ได้กับช่วงเดียว";
+"hourBlock.error.price" = "กรอกราคาให้ทุกช่วง (0 ได้)";
+"hourBlock.summary" = "%1$d ช่วง: %2$@ ชั่วโมง";
+"hourBlock.summary.one" = "%1$d ช่วง: %2$@ ชั่วโมง";
+"hourBlock.label" = "ช่วง %d ชั่วโมง";
+"hourBlock.detail" = "%1$d ชั่วโมง %2$@";
+"HOUR_BLOCKS_INVALID" = "ราคาตามช่วงชั่วโมงไม่ถูกต้อง ใช้จำนวนชั่วโมงเต็ม 1 ถึง 24 แต่ละค่าเพียงครั้งเดียว ราคาตั้งแต่ 0 ขึ้นไป ไม่เกิน 10 ช่วง และต้องมีราคาต่อครั้งหรือต่อวันด้วย";

@@ -3103,3 +3103,26 @@
 "weeklySummary.footer.written" = "Erstellt %1$@ · nächste %2$@";
 "weeklySummary.noOrders" = "Letzte Woche gab es keine Aufträge, daher gibt es nichts zusammenzufassen.";
 "weeklySummary.error" = "Die Übersicht konnte nicht erstellt werden.";
+
+/* #1621 Theo khối giờ (hour blocks) */
+"products.form.perHourBlock" = "Nach Stundenblock";
+"products.form.error.hourBlocksNeedPrice" = "Stundenblöcke brauchen zusätzlich einen Preis pro Vermietung oder pro Tag.";
+"hourBlock.title" = "Stundenblockpreise";
+"hourBlock.intro" = "Jeder Stundenblock hat einen Preis. Im Warenkorb gilt der Preis des gewählten Blocks.";
+"hourBlock.section" = "Stundenblöcke";
+"hourBlock.unit" = "Std.";
+"hourBlock.add" = "+ Block hinzufügen";
+"hourBlock.remove" = "Block %d entfernen";
+"hourBlock.hoursOf" = "Stunden von Block %d";
+"hourBlock.priceOf" = "Preis von Block %d";
+"hourBlock.max" = "Höchstens %d Blöcke.";
+"hourBlock.save" = "Preisliste speichern";
+"hourBlock.turnOff" = "Stundenblockpreise deaktivieren";
+"hourBlock.error.hours" = "Die Stunden müssen eine ganze Zahl von 1 bis 24 sein.";
+"hourBlock.error.repeated" = "Jede Stundenzahl darf nur für einen Block verwendet werden.";
+"hourBlock.error.price" = "Geben Sie für jeden Block einen Preis ein (0 ist erlaubt).";
+"hourBlock.summary" = "%1$d Blöcke: %2$@ Std.";
+"hourBlock.summary.one" = "%1$d Block: %2$@ Std.";
+"hourBlock.label" = "%d-Stunden-Block";
+"hourBlock.detail" = "%1$d Std. %2$@";
+"HOUR_BLOCKS_INVALID" = "Die Preise nach Stundenblock sind ungültig. Verwenden Sie ganze Stunden von 1 bis 24, jede Stundenzahl nur einmal, Preise ab 0, höchstens 10 Blöcke, und behalten Sie einen Preis pro Vermietung oder pro Tag.";
