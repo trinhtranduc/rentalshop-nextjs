@@ -1,6 +1,6 @@
 # Spec — Giá theo khối giờ (Theo khối giờ)
 
-Issue: #1621 · Status: in-progress (PR 1 API + web #1622 đã merge; PR 2 iOS) · Intent: ./intent.md · Mockup: https://claude.ai/artifact/9b56KwErJWiGpiyFEfyEY4 (tab "★ Thuê theo giờ", v285, đã chốt 2026-11-18)
+Issue: #1621 · Status: in-progress (PR 1 API + web #1622 đã merge; PR 2 iOS #1624; PR 3 Android) · Intent: ./intent.md · Mockup: https://claude.ai/artifact/9b56KwErJWiGpiyFEfyEY4 (tab "★ Thuê theo giờ", v285, đã chốt 2026-11-18)
 
 PR này (PR 1): **API + web**. iOS (PR 2) và Android (PR 3) làm sau theo thứ tự chủ shop chốt.
 

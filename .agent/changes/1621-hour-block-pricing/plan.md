@@ -1,6 +1,6 @@
 # Plan — Giá theo khối giờ, PR 1 (API + web)
 
-Issue: #1621 · Status: in-progress (PR 1 API + web #1622 đã merge; PR 2 iOS đang làm; Android sau) · Spec: ./spec.md · Branch: `feat/1621-hour-block-pricing` (từ `origin/dev`, worktree riêng)
+Issue: #1621 · Status: in-progress (PR 1 API + web #1622 đã merge; PR 2 iOS #1624; PR 3 Android đang làm) · Spec: ./spec.md · Branch: `feat/1621-hour-block-pricing` (từ `origin/dev`, worktree riêng)
 
 Skills: `api-route-standard`, `api-compat-review`, `i18n-keys`, `timezone-dates` (chỉ để chắc không đổi ngày), `mobile-parity` (ghi PR 2/3), `verify-change`.
 
@@ -40,6 +40,15 @@ Skills: `api-route-standard`, `api-compat-review`, `i18n-keys`, `timezone-dates`
 - Chuỗi: 12 file `Localizable.strings` (lấy đúng câu của web), mã lỗi `HOUR_BLOCKS_INVALID`.
 - Test: `POS ADBDTests/HourBlocksTests.swift` (ví dụ tiền đã chốt, payload, sheet, sửa đơn, header); UI test có cửa sổ `AnyRentE2ETests.test7sHourBlockPricing` trên simulator riêng + API máy :3197.
 
-## PR 3: Android
+## PR 3: Android (`feat/1621-hour-blocks-android`)
 
-Làm giống iOS (iOS là bản chuẩn): gửi `hour-blocks`, form "Theo khối giờ" + màn cài, form cũ gửi lại khối đã lưu, lựa chọn trong sheet "Cách tính giá" theo id, nhãn dòng đơn / in / chia sẻ, chuỗi, test. Khi đã gửi `hour-blocks` thì mọi lần lưu sản phẩm phải gửi đủ các dòng HOURLY.
+Giống iOS (iOS là bản chuẩn):
+- Header: `ClientCapabilities.TOKENS` thêm `hour-blocks` (`domain/deposit/DepositPlan.kt`).
+- Logic mới `domain/products/HourBlocks.kt`: `HourBlock`, `HourBlocks` (khối của option, sắp theo giờ, khoá dòng sheet `HOURLY:<id>`, đọc `pricingSnapshot`, `parse` cho màn cài), `HourBlockText` (chữ "Khối 4 giờ", "3 khối: 2 · 4 · 8 giờ"…), `OrderItem.hourBlockLabel` / `pricingLines` (in, chia sẻ).
+- Model: `PricingOption.blockSize`, `OrderItem.pricingOptionId` + `hourBlock`, `CartLine.hourOptionId` + `hourBlockHours` (`isHourBlock`, giá dòng = giá khối, không nhân ngày); đọc ở `ApiClient`, lưu nháp ở `CartStore`, nạp đơn sửa ở `CartStore.loadFromOrderDetail`.
+- Form: `PriceForm` (`hourBlocks`, `saveHourBlocks`, `turnOffHourBlocks`), `ProductPricing.options(..., hourBlocks)` luôn gửi đủ khối với `unit HOUR` + `blockSize` (`ProductsV2Api`), lỗi `HourBlocksNeedPrice`; dòng "Theo khối giờ" trong `ProductFormV2Screen`, màn mới `ui/home/v2/HourBlocksScreen.kt`. Form cũ: `ApiParity.updateProductFull(..., hourBlocks)` gửi lại các khối đã lưu.
+- Chi tiết sản phẩm (`ProductDetailScreen`): dòng "Theo khối giờ: …".
+- Giỏ: `CartV2Logic.pricingChoices` / `currentKey` / `sheetStartPrice` / `applyPricing` theo khoá; link dòng và sheet trong `CartV2Screen`; payload `HOURLY` + `pricingOptionId` (`CartOrderSubmit.lineExtras`, `ApiClient.createOrder/updateOrder`).
+- Đơn: `OrderDetailV2Screen` ("Khối 4 giờ · 1 × 250.000"), `ThermalPrinter`, `OrderReceiptShare`, ảnh chia sẻ giỏ.
+- Chuỗi: 12 thư mục `values*` (câu của web), `api_error_hour_blocks_invalid` + `ApiErrorMessages`.
+- Test: `domain/products/HourBlocksTest.kt`, `data/CartHourBlocksTest.kt`; e2e có cửa sổ trên AVD riêng `anyrent_norawerrors` (cổng 5570) với API máy :3197.
