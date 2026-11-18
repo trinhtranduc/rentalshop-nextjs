@@ -35,7 +35,7 @@ extension Array where Element: Copying {
 /// A single rental pricing option for a product (Phase 1: FIXED + DAILY)
 struct PricingOption: Codable {
     var id: Int?
-    var type: String        // "FIXED" | "DAILY" | "BLOCK" (#1189: only when the request sends `X-Client-Capabilities: block-pricing`)
+    var type: String        // "FIXED" | "DAILY" | "BLOCK" (#1189: only when the request sends `X-Client-Capabilities: block-pricing`) | "HOURLY" (#1621: an hour block, only with `hour-blocks`)
     var price: Double
     var isDefault: Bool?
     var isActive: Bool?
@@ -44,8 +44,14 @@ struct PricingOption: Codable {
     var blockStartDay: Int? = nil
     var blockExtraMode: String? = nil
     var blockExtraPrice: Double? = nil
+    /// #1621: "HOUR" and the hours of an hour block (an HOURLY option); nil on every other option
+    var unit: String? = nil
+    var blockSize: Int? = nil
 
     var isDailyType: Bool { return type.uppercased() == "DAILY" }
+
+    /// #1621: the hour block of an HOURLY option ("Khối 4 giờ"); nil for other types
+    var hourBlock: HourBlock? { HourBlocks.block(self) }
 
     /// The table of a BLOCK option; nil for other types or a table that is not usable
     var blockTable: BlockTable? {
@@ -56,10 +62,10 @@ struct PricingOption: Codable {
     }
 
     private enum CodingKeys: String, CodingKey {
-        case id, type, price, isDefault, isActive, blockTiers, blockStartDay, blockExtraMode, blockExtraPrice
+        case id, type, price, isDefault, isActive, blockTiers, blockStartDay, blockExtraMode, blockExtraPrice, unit, blockSize
     }
 
-    init(id: Int?, type: String, price: Double, isDefault: Bool?, isActive: Bool?, table: BlockTable? = nil) {
+    init(id: Int?, type: String, price: Double, isDefault: Bool?, isActive: Bool?, table: BlockTable? = nil, hours: Int? = nil) {
         self.id = id
         self.type = type
         self.price = price
@@ -69,6 +75,10 @@ struct PricingOption: Codable {
         blockStartDay = table?.startDay
         blockExtraMode = table?.extraMode
         blockExtraPrice = table?.extraPrice
+        if let hours {
+            unit = HourBlocks.unit
+            blockSize = hours
+        }
     }
 
     init(from decoder: Decoder) throws {
@@ -82,6 +92,8 @@ struct PricingOption: Codable {
         blockStartDay = (try? c.decodeIfPresent(Int.self, forKey: .blockStartDay)) ?? nil
         blockExtraMode = (try? c.decodeIfPresent(String.self, forKey: .blockExtraMode)) ?? nil
         blockExtraPrice = BlockJSON.double(c, .blockExtraPrice)
+        unit = (try? c.decodeIfPresent(String.self, forKey: .unit)) ?? nil
+        blockSize = ((try? c.decodeIfPresent(Int.self, forKey: .blockSize)) ?? nil) ?? BlockJSON.double(c, .blockSize).map { Int($0) }
     }
 }
 

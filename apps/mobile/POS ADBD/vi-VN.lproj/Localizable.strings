@@ -3319,3 +3319,26 @@
 "weeklySummary.footer.written" = "Viết lúc %1$@ · bản mới vào %2$@";
 "weeklySummary.noOrders" = "Tuần trước chưa có đơn nào, nên chưa có gì để tóm tắt.";
 "weeklySummary.error" = "Chưa tạo được tóm tắt.";
+
+/* #1621 Theo khối giờ (hour blocks) */
+"products.form.perHourBlock" = "Theo khối giờ";
+"products.form.error.hourBlocksNeedPrice" = "Khối giờ cần thêm giá Theo lần hoặc Theo ngày.";
+"hourBlock.title" = "Giá theo khối giờ";
+"hourBlock.intro" = "Mỗi khối giờ một giá. Ở giỏ, chọn khối nào thì tính giá khối đó.";
+"hourBlock.section" = "Khối giờ";
+"hourBlock.unit" = "giờ";
+"hourBlock.add" = "+ Thêm khối";
+"hourBlock.remove" = "Xoá khối %d";
+"hourBlock.hoursOf" = "Số giờ của khối %d";
+"hourBlock.priceOf" = "Giá của khối %d";
+"hourBlock.max" = "Tối đa %d khối.";
+"hourBlock.save" = "Lưu bảng giá";
+"hourBlock.turnOff" = "Tắt giá theo khối giờ";
+"hourBlock.error.hours" = "Số giờ là số nguyên từ 1 đến 24.";
+"hourBlock.error.repeated" = "Mỗi số giờ chỉ dùng cho một khối.";
+"hourBlock.error.price" = "Nhập giá cho mọi khối (0đ cũng được).";
+"hourBlock.summary" = "%1$d khối: %2$@ giờ";
+"hourBlock.summary.one" = "%1$d khối: %2$@ giờ";
+"hourBlock.label" = "Khối %d giờ";
+"hourBlock.detail" = "%1$d giờ %2$@";
+"HOUR_BLOCKS_INVALID" = "Giá theo khối giờ không hợp lệ. Số giờ là số nguyên từ 1 đến 24, mỗi số giờ một dòng, giá từ 0 trở lên, tối đa 10 khối, và sản phẩm vẫn cần giá Theo lần hoặc Theo ngày.";

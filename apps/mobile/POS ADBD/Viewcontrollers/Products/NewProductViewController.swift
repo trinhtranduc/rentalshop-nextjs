@@ -998,6 +998,11 @@ class NewProductViewController: BaseViewControler {
                 ))
             }
         }
+        // #1621: this build sends `hour-blocks`, so the API replaces the stored hour blocks with what we send. This old
+        // form has no hour-block row: send the product's blocks back unchanged so a save here never drops them.
+        for block in product.map(ProductPricing.hourBlocks) ?? [] {
+            options.append(PricingOptionRequest(hourBlock: block))
+        }
         return options
     }
 

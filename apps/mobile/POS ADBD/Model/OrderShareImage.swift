@@ -82,7 +82,7 @@ struct OrderShareSource {
         var note: String? = nil
         /// #1189: "120.000 (3 ngày) + 2 × 20.000 = 160.000" of a day-block line
         var formula: String? = nil
-        /// #1252: "Khối 3 ngày + 2 ngày thêm" of a day-block line
+        /// #1252: "Khối 3 ngày + 2 ngày thêm" of a day-block line; #1621: "Khối 4 giờ" of an hour-block line
         var blockSummary: String? = nil
     }
 
@@ -555,7 +555,7 @@ extension OrderShareSource {
             pickup: detail.pickupPlanAt, returnDate: detail.returnPlanAt,
             rentalDays: Self.rentalDays(pickup: detail.pickupPlanAt, return: detail.returnPlanAt, stored: detail.rentalDuration),
             createdAt: detail.createdAt,
-            items: detail.orderItems.map { Item(name: $0.productName, quantity: $0.quantity, total: $0.totalPrice, note: $0.notes, formula: $0.blockLines?.formula, blockSummary: detail.orderType == .rent ? $0.blockLines?.summary : nil) },
+            items: detail.orderItems.map { Item(name: $0.productName, quantity: $0.quantity, total: $0.totalPrice, note: $0.notes, formula: $0.blockLines?.formula, blockSummary: detail.orderType == .rent ? $0.pricingLines?.summary : nil) },
             discount: detail.discountAmount, total: detail.totalAmount, deposit: detail.depositAmount,
             collateralPapers: detail.collateralDetails, collateralMoney: detail.securityDeposit,
             hasDepositPlan: detail.hasDepositPlan, stages: detail.installments, stageSummary: detail.installmentSummary
@@ -574,7 +574,7 @@ extension OrderShareSource {
             pickup: order.pickupPlanAt, returnDate: order.returnPlanAt,
             rentalDays: Self.rentalDays(pickup: order.pickupPlanAt, return: order.returnPlanAt, stored: order.rentalDuration),
             createdAt: order.createdAt,
-            items: order.orderItems.map { Item(name: $0.productName, quantity: $0.quantity, total: $0.totalPrice, note: $0.notes, formula: $0.blockLines?.formula, blockSummary: order.orderType == .rent ? $0.blockLines?.summary : nil) },
+            items: order.orderItems.map { Item(name: $0.productName, quantity: $0.quantity, total: $0.totalPrice, note: $0.notes, formula: $0.blockLines?.formula, blockSummary: order.orderType == .rent ? $0.pricingLines?.summary : nil) },
             discount: order.discountAmount, total: order.totalAmount, deposit: order.depositAmount,
             collateralPapers: order.collateralDetails, collateralMoney: order.securityDeposit,
             hasDepositPlan: order.hasDepositPlan, stages: order.stages, stageSummary: order.stageSummary
@@ -598,7 +598,7 @@ extension OrderShareSource {
             createdAt: now,
             items: cart.items.map { Item(name: $0.productName ?? "", quantity: $0.quantity, total: $0.subTotal(for: cart.orderType),
                                          formula: cart.orderType == .rent ? $0.blockDetail.flatMap { $0.extraDays > 0 ? BlockPricing.formula($0) : nil } : nil,
-                                         blockSummary: cart.orderType == .rent ? $0.blockDetail.map(BlockPricing.summary) : nil) },
+                                         blockSummary: cart.orderType == .rent ? ($0.blockDetail.map(BlockPricing.summary) ?? $0.hourBlockLabel) : nil) },
             discount: cart.discountAmount, total: cart.totalAmount,
             deposit: cart.orderType == .rent ? cart.depositAmount : 0,
             collateralPapers: cart.orderType == .rent ? cart.collateralDetails : nil,

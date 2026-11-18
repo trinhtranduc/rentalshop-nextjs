@@ -253,8 +253,9 @@ extension OrderItem {
             return ("\(quantity) × " + BlockPricing.summary(detail),
                     detail.extraDays > 0 ? BlockPricing.formula(detail, showTotal: false) : nil)
         }
+        // #1621: "Khối 4 giờ · 1 × 250.000đ"
         return (CartV2Logic.orderItemQuantityLine(quantity: quantity, unitPrice: unitPrice, pricingType: pricingType,
-                                                  rentalDays: rentalDays, orderType: orderType), nil)
+                                                  rentalDays: rentalDays, orderType: orderType, hours: hourBlockSnapshot?.hours), nil)
     }
 }
 

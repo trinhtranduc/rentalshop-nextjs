@@ -3103,3 +3103,26 @@
 "weeklySummary.footer.written" = "作成 %1$@ · 次回 %2$@";
 "weeklySummary.noOrders" = "先週は注文がなかったため、まとめる内容がありません。";
 "weeklySummary.error" = "まとめを作成できませんでした。";
+
+/* #1621 Theo khối giờ (hour blocks) */
+"products.form.perHourBlock" = "時間ブロック";
+"products.form.error.hourBlocksNeedPrice" = "時間ブロックのほかに、1回ごとまたは1日ごとの料金も必要です。";
+"hourBlock.title" = "時間ブロック料金";
+"hourBlock.intro" = "時間ブロックごとに1つの料金です。カートで選んだブロックの料金になります。";
+"hourBlock.section" = "時間ブロック";
+"hourBlock.unit" = "時間";
+"hourBlock.add" = "+ ブロックを追加";
+"hourBlock.remove" = "ブロック%dを削除";
+"hourBlock.hoursOf" = "ブロック%dの時間";
+"hourBlock.priceOf" = "ブロック%dの料金";
+"hourBlock.max" = "最大%dブロックです。";
+"hourBlock.save" = "料金表を保存";
+"hourBlock.turnOff" = "時間ブロック料金をオフにする";
+"hourBlock.error.hours" = "時間は1〜24の整数で入力してください。";
+"hourBlock.error.repeated" = "同じ時間数は1つのブロックにだけ使えます。";
+"hourBlock.error.price" = "すべてのブロックに料金を入力してください（0も可）。";
+"hourBlock.summary" = "%1$dブロック：%2$@時間";
+"hourBlock.summary.one" = "%1$dブロック：%2$@時間";
+"hourBlock.label" = "%d時間ブロック";
+"hourBlock.detail" = "%1$d時間 %2$@";
+"HOUR_BLOCKS_INVALID" = "時間ブロックの料金が正しくありません。1〜24の整数時間を各1回、0以上の金額、最大10ブロックで設定し、1回ごとまたは1日ごとの料金も残してください。";

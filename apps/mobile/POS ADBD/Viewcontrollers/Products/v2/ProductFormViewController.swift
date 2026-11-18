@@ -35,6 +35,11 @@ final class ProductFormViewController: BaseViewControler {
     private let blockSummaryRange = V2.label(size: DS.TextSize.secondary, color: DS.Color.textMuted)
     private var blockRowView: UIView?
     private let blockNotSet = V2.label("products.form.block.notSet".localized(), size: DS.TextSize.input, color: DS.Color.textMuted)
+    /// #1621 "Theo khối giờ": "3 khối: 2 · 4 · 8 giờ" + "150.000 – 400.000", or "Chưa cài"
+    private let hourSummaryTitle = V2.label(size: DS.TextSize.input, weight: .bold)
+    private let hourSummaryRange = V2.label(size: DS.TextSize.secondary, color: DS.Color.textMuted)
+    private var hourRowView: UIView?
+    private let hourNotSet = V2.label("products.form.block.notSet".localized(), size: DS.TextSize.input, color: DS.Color.textMuted)
     private var keyboardManagerWasEnabled = true
 
     private let scroll = UIScrollView()
@@ -264,6 +269,8 @@ final class ProductFormViewController: BaseViewControler {
             form.addArrangedSubview(prices)
             form.addArrangedSubview(blockRow())
             renderBlock()
+            form.addArrangedSubview(hourRow())
+            renderHourBlocks()
             configure(saleField, placeholder: "products.form.notForSale".localized(), numeric: true)
             configure(depositField, placeholder: "0", numeric: true)
             form.addArrangedSubview(pair(field(title: "products.form.salePrice".localized(), required: false, input: saleField),
@@ -499,6 +506,7 @@ final class ProductFormViewController: BaseViewControler {
         if let deposit = product.deposit, deposit > 0 { depositField.text = MoneyInput.display(deposit) }
         if let cost = product.costPrice, cost > 0 { costField.text = MoneyInput.display(cost) }
         renderBlock()
+        renderHourBlocks()
         photos = (product.images?.isEmpty == false ? product.images! : [product.image_url].compactMap { $0 })
             .filter { !$0.isEmpty }.map { .remote($0) }
         renderStock()
@@ -681,6 +689,66 @@ final class ProductFormViewController: BaseViewControler {
         navigationController?.pushViewController(screen, animated: true)
     }
 
+    /// #1621 "Theo khối giờ" under "Theo khối ngày", the same bordered row; a tap opens the hour-block screen
+    private func hourRow() -> UIView {
+        let title = V2.label("products.form.perHourBlock".localized(), size: DS.TextSize.body, weight: .bold)
+        hourSummaryTitle.numberOfLines = 1
+        let texts = UIStackView(arrangedSubviews: [hourSummaryTitle, hourSummaryRange, hourNotSet])
+        texts.axis = .vertical
+        texts.spacing = 2
+        let chevron = UIImageView(image: DS.symbol("chevron.right", 14, weight: .semibold))
+        chevron.tintColor = DS.Color.textMuted
+        chevron.setContentHuggingPriority(.required, for: .horizontal)
+        let row = UIStackView(arrangedSubviews: [texts, UIView(), chevron])
+        row.alignment = .center
+        row.isLayoutMarginsRelativeArrangement = true
+        row.layoutMargins = UIEdgeInsets(top: 8, left: 12, bottom: 8, right: 12)
+        row.layer.cornerRadius = 12
+        row.layer.borderWidth = 1
+        row.layer.borderColor = V2.border.cgColor
+        row.snp.makeConstraints { make in make.height.greaterThanOrEqualTo(48) }
+        row.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(openHourBlocks)))
+        row.isAccessibilityElement = true
+        row.accessibilityTraits = UIAccessibilityTraitButton
+        row.accessibilityIdentifier = "product.form.hourSummary"
+        row.accessibilityLabel = title.text
+        hourRowView = row
+        let stack = UIStackView(arrangedSubviews: [title, row])
+        stack.axis = .vertical
+        stack.spacing = 6
+        return padded(stack, top: 0, bottom: 8)
+    }
+
+    /// The blocks, or "Chưa cài"
+    private func renderHourBlocks() {
+        guard showsPrices else { return }
+        let blocks = priceDraft.hourBlocks
+        hourSummaryTitle.isHidden = blocks.isEmpty
+        hourSummaryRange.isHidden = blocks.isEmpty
+        hourNotSet.isHidden = !blocks.isEmpty
+        hourRowView?.accessibilityValue = blocks.isEmpty ? hourNotSet.text : HourBlocks.rowSummary(blocks)
+        if !blocks.isEmpty {
+            hourSummaryTitle.text = HourBlocks.rowSummary(blocks)
+            hourSummaryRange.text = HourBlocks.rangeSummary(blocks)
+        }
+    }
+
+    /// The hour-block screen. Back without saving leaves the draft as it was.
+    @objc private func openHourBlocks() {
+        view.endEditing(true)
+        syncDraftFromBoxes()
+        let screen = HourBlocksViewController(blocks: priceDraft.hourBlocks)
+        screen.onSave = { [weak self] blocks in
+            self?.priceDraft.saveHourBlocks(blocks)
+            self?.renderHourBlocks()
+        }
+        screen.onTurnOff = { [weak self] in
+            self?.priceDraft.turnOffHourBlocks()
+            self?.renderHourBlocks()
+        }
+        navigationController?.pushViewController(screen, animated: true)
+    }
+
     private func syncDraftFromBoxes() {
         guard showsPrices else { return }
         priceDraft.perRental = MoneyInput.parse(perRentalField.text)
@@ -818,6 +886,7 @@ final class ProductFormViewController: BaseViewControler {
             perDay: priceDraft.perDay,
             defaultMode: .perRental,
             block: priceDraft.block,
+            hourBlocks: priceDraft.hourBlocks,
             salePrice: MoneyInput.parse(saleField.text),
             deposit: MoneyInput.parse(depositField.text),
             quantity: boxed ? BranchListing.total(tickRows) : quantityStepper.value,

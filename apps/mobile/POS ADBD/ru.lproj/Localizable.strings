@@ -3103,3 +3103,26 @@
 "weeklySummary.footer.written" = "Написано %1$@ · следующая %2$@";
 "weeklySummary.noOrders" = "На прошлой неделе заказов не было, сводить нечего.";
 "weeklySummary.error" = "Не удалось составить сводку.";
+
+/* #1621 Theo khối giờ (hour blocks) */
+"products.form.perHourBlock" = "Блок часов";
+"products.form.error.hourBlocksNeedPrice" = "Для блоков часов нужна ещё цена за аренду или за день.";
+"hourBlock.title" = "Цены по блокам часов";
+"hourBlock.intro" = "У каждого блока часов своя цена. В корзине берётся цена выбранного блока.";
+"hourBlock.section" = "Блоки часов";
+"hourBlock.unit" = "ч";
+"hourBlock.add" = "+ Добавить блок";
+"hourBlock.remove" = "Удалить блок %d";
+"hourBlock.hoursOf" = "Часы блока %d";
+"hourBlock.priceOf" = "Цена блока %d";
+"hourBlock.max" = "Не более %d блоков.";
+"hourBlock.save" = "Сохранить цены";
+"hourBlock.turnOff" = "Выключить цены по блокам часов";
+"hourBlock.error.hours" = "Часы — целое число от 1 до 24.";
+"hourBlock.error.repeated" = "Каждое количество часов можно указать только в одном блоке.";
+"hourBlock.error.price" = "Укажите цену для каждого блока (0 допускается).";
+"hourBlock.summary" = "Блоков: %1$d · %2$@ ч";
+"hourBlock.summary.one" = "%1$d блок: %2$@ ч";
+"hourBlock.label" = "Блок %d ч";
+"hourBlock.detail" = "%1$d ч %2$@";
+"HOUR_BLOCKS_INVALID" = "Цены по блокам часов некорректны. Используйте целые часы от 1 до 24, каждое значение один раз, цены от 0, не более 10 блоков, и оставьте цену за аренду или за день.";

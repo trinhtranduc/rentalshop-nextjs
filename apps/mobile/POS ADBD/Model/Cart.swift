@@ -498,6 +498,7 @@ class Cart {
             cartItem.rentalDays = max(1, orderItem.rentalDays ?? 1)
             cartItem.selectedPricingOptionId = orderItem.pricingOptionId
             cartItem.adoptSnapshot(orderItem.pricingSnapshot)
+            cartItem.adoptHourBlock(orderItem.hourBlockSnapshot)
             return cartItem
         }
         cart.editOriginal = CartEditOriginal.capture(cart, orderNumber: orderDetail.orderNumber,
@@ -619,7 +620,8 @@ class Cart {
                     productDeposit: cartItem.deposit,
                     rentalDays: orderType == .rent ? cartItem.rentalDays : nil,
                     pricingType: orderType == .rent ? (cartItem.pricingType ?? "FIXED") : nil,
-                    pricingOptionId: cartItem.selectedPricingOptionId
+                    pricingOptionId: cartItem.selectedPricingOptionId,
+                    hourBlockSnapshot: orderType == .rent ? cartItem.hourBlockHours.map { HourBlockSnapshot(hours: $0, price: cartItem.price) } : nil
                 )
             },
             payments: []
@@ -697,6 +699,7 @@ class Cart {
             cartItem.rentalDays = max(1, orderItem.rentalDays ?? 1)
             cartItem.selectedPricingOptionId = orderItem.pricingOptionId
             cartItem.adoptSnapshot(orderItem.pricingSnapshot)
+            cartItem.adoptHourBlock(orderItem.hourBlockSnapshot)
             return cartItem
         }
         cart.editOriginal = CartEditOriginal.capture(cart, orderNumber: order.orderNumber, paid: order.totalPaid,

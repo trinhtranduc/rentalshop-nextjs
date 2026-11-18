@@ -3106,3 +3106,26 @@
 "weeklySummary.footer.written" = "撰写于 %1$@ · 下一份 %2$@";
 "weeklySummary.noOrders" = "上周没有订单，因此没有可总结的内容。";
 "weeklySummary.error" = "未能生成摘要。";
+
+/* #1621 Theo khối giờ (hour blocks) */
+"products.form.perHourBlock" = "按小时档位";
+"products.form.error.hourBlocksNeedPrice" = "使用小时档位时，还需要按次或按天价格。";
+"hourBlock.title" = "按小时档位计价";
+"hourBlock.intro" = "每个小时档位一个价格。在购物车中选择哪个档位，就按该档位计价。";
+"hourBlock.section" = "小时档位";
+"hourBlock.unit" = "小时";
+"hourBlock.add" = "+ 添加档位";
+"hourBlock.remove" = "删除第 %d 档";
+"hourBlock.hoursOf" = "第 %d 档的小时数";
+"hourBlock.priceOf" = "第 %d 档的价格";
+"hourBlock.max" = "最多 %d 个档位。";
+"hourBlock.save" = "保存价格表";
+"hourBlock.turnOff" = "关闭按小时档位计价";
+"hourBlock.error.hours" = "小时数须为 1 到 24 的整数。";
+"hourBlock.error.repeated" = "每个小时数只能用于一个档位。";
+"hourBlock.error.price" = "请为每个档位填写价格（可为 0）。";
+"hourBlock.summary" = "%1$d 个档位：%2$@ 小时";
+"hourBlock.summary.one" = "%1$d 个档位：%2$@ 小时";
+"hourBlock.label" = "%d 小时档";
+"hourBlock.detail" = "%1$d 小时 %2$@";
+"HOUR_BLOCKS_INVALID" = "按小时块价格无效。小时数需为 1 到 24 的整数且不重复，价格需为 0 或以上，最多 10 个块，并保留按次或按天价格。";

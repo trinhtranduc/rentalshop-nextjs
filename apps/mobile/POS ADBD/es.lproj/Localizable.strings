@@ -3106,3 +3106,26 @@ Abra el Calendario y lo verá.";
 "weeklySummary.footer.written" = "Escrito %1$@ · el próximo %2$@";
 "weeklySummary.noOrders" = "La semana pasada no hubo pedidos, así que no hay nada que resumir.";
 "weeklySummary.error" = "No se pudo crear el resumen.";
+
+/* #1621 Theo khối giờ (hour blocks) */
+"products.form.perHourBlock" = "Por bloque de horas";
+"products.form.error.hourBlocksNeedPrice" = "Los bloques de horas también necesitan un precio por alquiler o por día.";
+"hourBlock.title" = "Precio por bloque de horas";
+"hourBlock.intro" = "Cada bloque de horas tiene un precio. En el carrito se cobra el precio del bloque elegido.";
+"hourBlock.section" = "Bloques de horas";
+"hourBlock.unit" = "h";
+"hourBlock.add" = "+ Agregar bloque";
+"hourBlock.remove" = "Eliminar bloque %d";
+"hourBlock.hoursOf" = "Horas del bloque %d";
+"hourBlock.priceOf" = "Precio del bloque %d";
+"hourBlock.max" = "Como máximo %d bloques.";
+"hourBlock.save" = "Guardar tabla de precios";
+"hourBlock.turnOff" = "Desactivar precios por bloque de horas";
+"hourBlock.error.hours" = "Las horas deben ser un número entero de 1 a 24.";
+"hourBlock.error.repeated" = "Cada cantidad de horas solo puede usarse en un bloque.";
+"hourBlock.error.price" = "Ingrese un precio para cada bloque (se permite 0).";
+"hourBlock.summary" = "%1$d bloques: %2$@ h";
+"hourBlock.summary.one" = "%1$d bloque: %2$@ h";
+"hourBlock.label" = "Bloque de %d horas";
+"hourBlock.detail" = "%1$d h %2$@";
+"HOUR_BLOCKS_INVALID" = "Los precios por bloque de horas no son válidos. Use horas enteras de 1 a 24, cada cantidad de horas una sola vez, precios de 0 o más, como máximo 10 bloques, y mantenga un precio por alquiler o por día.";

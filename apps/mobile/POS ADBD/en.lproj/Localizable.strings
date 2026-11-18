@@ -3321,3 +3321,26 @@
 "weeklySummary.footer.written" = "Written %1$@ · next one %2$@";
 "weeklySummary.noOrders" = "There were no orders last week, so there is nothing to summarize.";
 "weeklySummary.error" = "Could not write the summary.";
+
+/* #1621 Theo khối giờ (hour blocks) */
+"products.form.perHourBlock" = "Per hour-block";
+"products.form.error.hourBlocksNeedPrice" = "Hour blocks also need a per-rental or per-day price.";
+"hourBlock.title" = "Hour-block pricing";
+"hourBlock.intro" = "One price for each block of hours. In the cart, the block you pick sets the price.";
+"hourBlock.section" = "Hour blocks";
+"hourBlock.unit" = "h";
+"hourBlock.add" = "+ Add block";
+"hourBlock.remove" = "Remove block %d";
+"hourBlock.hoursOf" = "Hours of block %d";
+"hourBlock.priceOf" = "Price of block %d";
+"hourBlock.max" = "At most %d blocks.";
+"hourBlock.save" = "Save price list";
+"hourBlock.turnOff" = "Turn off hour-block pricing";
+"hourBlock.error.hours" = "Hours must be a whole number from 1 to 24.";
+"hourBlock.error.repeated" = "Each number of hours can be used for one block only.";
+"hourBlock.error.price" = "Enter a price for every block (0 is allowed).";
+"hourBlock.summary" = "%1$d blocks: %2$@ h";
+"hourBlock.summary.one" = "%1$d block: %2$@ h";
+"hourBlock.label" = "%d-hour block";
+"hourBlock.detail" = "%1$d h %2$@";
+"HOUR_BLOCKS_INVALID" = "The hour-block prices are not valid. Use whole hours from 1 to 24, each number of hours once, prices of 0 or more, at most 10 blocks, and keep a per-rental or per-day price.";

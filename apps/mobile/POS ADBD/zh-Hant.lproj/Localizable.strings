@@ -3121,3 +3121,26 @@ App 會事先提醒。";
 "weeklySummary.footer.written" = "撰寫於 %1$@ · 下一份 %2$@";
 "weeklySummary.noOrders" = "上週沒有訂單，因此沒有可摘要的內容。";
 "weeklySummary.error" = "無法產生摘要。";
+
+/* #1621 Theo khối giờ (hour blocks) */
+"products.form.perHourBlock" = "依小時區間計價";
+"products.form.error.hourBlocksNeedPrice" = "使用小時區間時，還需要按次或按日價格。";
+"hourBlock.title" = "依小時區間計價";
+"hourBlock.intro" = "每個小時區間一個價格。在購物車選擇哪個區間，就套用該區間的價格。";
+"hourBlock.section" = "小時區間";
+"hourBlock.unit" = "小時";
+"hourBlock.add" = "+ 新增區間";
+"hourBlock.remove" = "刪除第 %d 個區間";
+"hourBlock.hoursOf" = "第 %d 個區間的小時數";
+"hourBlock.priceOf" = "第 %d 個區間的價格";
+"hourBlock.max" = "最多 %d 個區間。";
+"hourBlock.save" = "儲存價目表";
+"hourBlock.turnOff" = "關閉依小時區間計價";
+"hourBlock.error.hours" = "小時數須為 1 至 24 的整數。";
+"hourBlock.error.repeated" = "每個小時數只能用於一個區間。";
+"hourBlock.error.price" = "請為每個區間輸入價格（可為 0）。";
+"hourBlock.summary" = "%1$d 個區間：%2$@ 小時";
+"hourBlock.summary.one" = "%1$d 個區間：%2$@ 小時";
+"hourBlock.label" = "%d 小時區間";
+"hourBlock.detail" = "%1$d 小時 %2$@";
+"HOUR_BLOCKS_INVALID" = "依小時區間價格無效。小時數需為 1 至 24 的整數且不可重複，價格需為 0 以上，最多 10 個區間，並保留按次或按日價格。";

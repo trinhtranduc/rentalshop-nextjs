@@ -3618,6 +3618,131 @@ final class AnyRentE2ETests: XCTestCase {
         e2e.shot("74-order-detail-block")
     }
 
+    /// #1621 "Theo khối giờ" with the owner's examples (mockup tab "★ Thuê theo giờ"): Váy cưới trắng gets 2 giờ 150.000 · 4 giờ
+    /// 250.000 · 8 giờ 400.000 on the form's own screen; Vest nam đen already has 2 giờ 80.000 · 8 giờ 200.000. Cart: Váy on
+    /// "Khối 4 giờ", Vest on "Khối 2 giờ" = 330.000, still 330.000 over 3 days (a block is charged once); the order detail
+    /// reads "Khối 4 giờ · 1 × 250.000đ". Needs both products in the shop (local e2e DB of #1621).
+    func test7sHourBlockPricing() throws {
+        try e2e.requireFlag("newProducts")
+        try e2e.requireRole("merchant")
+        try e2e.start()
+        let vay = "Váy cưới", vest = "Vest nam"
+        guard e2e.openProduct(named: vay) else { return XCTFail("\(vay) not found") }
+        let edit = e2e.button(["Edit product", "Sửa sản phẩm", "Edit", "Sửa"])
+        XCTAssertTrue(edit.waitForExistence(timeout: 5), "product detail has Sửa")
+        edit.tap()
+        let hourRow = app.descendants(matching: .any)["product.form.hourSummary"]
+        XCTAssertTrue(e2e.scrollTo(hourRow), "the form has the Theo khối giờ row under Theo khối ngày")
+        e2e.shot("90a-form-hour-row")
+        // A product that already has blocks: the screen lists them; "Tắt giá theo khối giờ" clears them ("Chưa cài")
+        if !blockNotSetTexts.contains(hourRow.value as? String ?? "") {
+            hourRow.tap()
+            XCTAssertTrue(app.textFields["hourBlock.hours.1"].waitForExistence(timeout: 5), "the row opens Giá theo khối giờ")
+            e2e.shot("90b-hour-screen-saved")
+            app.buttons["hourBlock.turnOff"].tap()
+            XCTAssertTrue(hourRow.waitForExistence(timeout: 5), "Tắt giá theo khối giờ: back on the form")
+            XCTAssertTrue(blockNotSetTexts.contains(hourRow.value as? String ?? ""), "turned off: Chưa cài (\(hourRow.value ?? ""))")
+            e2e.scrollTo(hourRow)
+        }
+        hourRow.tap()
+        let firstHours = app.textFields["hourBlock.hours.1"]
+        XCTAssertTrue(firstHours.waitForExistence(timeout: 5), "Giá theo khối giờ opens with one empty row")
+        e2e.shot("90c-hour-screen-empty")
+        func typeRow(_ index: Int, hours: String, price: String) {
+            for (id, value) in [("hourBlock.hours.\(index)", hours), ("hourBlock.price.\(index)", price)] {
+                let box = app.textFields[id]
+                XCTAssertTrue(e2e.scrollTo(box), id)
+                box.tap()
+                box.typeText(value)
+            }
+            e2e.hideKeyboard()
+        }
+        // typed out of order: the saved list is sorted by hours
+        typeRow(1, hours: "4", price: "250000")
+        for (index, hours, price) in [(2, "2", "150000"), (3, "8", "400000")] {
+            let add = app.buttons["hourBlock.add"]
+            XCTAssertTrue(e2e.scrollTo(add), "+ Thêm khối \(index)")
+            add.tap()
+            typeRow(index, hours: hours, price: price)
+        }
+        XCTAssertEqual(app.textFields["hourBlock.price.1"].value as? String, "250.000", "the price box groups the digits")
+        e2e.shot("90d-hour-screen-filled")
+        app.buttons["hourBlock.save"].tap()
+        XCTAssertTrue(hourRow.waitForExistence(timeout: 5), "Lưu bảng giá: back on the form")
+        let summary = hourRow.value as? String ?? ""
+        XCTAssertTrue(summary.contains("2 · 4 · 8"), "the row reads 3 khối: 2 · 4 · 8 giờ (\(summary))")
+        e2e.shot("90e-form-hour-summary")
+        let saveProduct = e2e.button(["Save changes", "Lưu thay đổi"])
+        e2e.scrollTo(saveProduct)
+        saveProduct.tap()
+        sleep(3)
+        e2e.dismissAlerts()
+        XCTAssertTrue(e2e.button(["Add to cart", "Thêm vào giỏ"]).waitForExistence(timeout: 10), "saved, back on the product detail")
+        let detailBlocks = app.staticTexts["product.detail.hourBlocks"]
+        XCTAssertTrue(detailBlocks.waitForExistence(timeout: 5), "product detail lists the blocks")
+        XCTAssertTrue(detailBlocks.label.contains("250.000"), "product detail: \(detailBlocks.label)")
+        e2e.shot("90f-product-detail-hour-blocks")
+        e2e.goBackOnce()
+
+        // Cart: Váy on Khối 4 giờ, Vest on Khối 2 giờ
+        e2e.emptyCart()
+        XCTAssertTrue(addFromHome(vay), "add Váy cưới trắng")
+        XCTAssertTrue(addFromHome(vest), "add Vest nam đen")
+        XCTAssertTrue(openCart(), "open the cart")
+        e2e.tapIfExists(e2e.button(["Rent", "Thuê"]))
+        func pick(_ product: String, block: String, money: String, shot: String) {
+            let chip = app.buttons.matching(NSPredicate(format: "(label BEGINSWITH 'Đổi cách tính giá' OR label BEGINSWITH 'Change pricing') AND label CONTAINS %@", product)).firstMatch
+            XCTAssertTrue(chip.waitForExistence(timeout: 5), "\(product) has the pricing link")
+            chip.tap()
+            let row = e2e.element(labelBeginsWith: [block], type: .button)
+            XCTAssertTrue(row.waitForExistence(timeout: 5), "the sheet lists \(block)")
+            row.tap()
+            sleep(1)
+            e2e.shot(shot)
+            e2e.tapIfExists(e2e.button(["Apply", "Áp dụng"]), timeout: 2)
+            sleep(1)
+            let value = chip.value as? String ?? ""
+            XCTAssertTrue(value.contains(block) && value.contains(money), "\(product) reads \(block) · \(money) (\(value))")
+        }
+        pick(vay, block: "Khối 4 giờ", money: "250.000", shot: "91a-sheet-hour-blocks")
+        pick(vest, block: "Khối 2 giờ", money: "80.000", shot: "91b-sheet-vest")
+        // the money row is one element "Tiền thuê, 330.000" (label or value), not a plain text
+        let rentTotal = NSPredicate(format: "label CONTAINS '330.000' OR value CONTAINS '330.000'")
+        XCTAssertTrue(app.descendants(matching: .any).matching(rentTotal).firstMatch.waitForExistence(timeout: 5), "Tiền thuê 330.000")
+        e2e.shot("91c-cart-330000")
+
+        // Three days: still 330.000 (a block is charged once, never × days)
+        let dates = app.descendants(matching: .any)["cart.datesRow"]
+        if dates.waitForExistence(timeout: 5) {
+            dates.tap()
+            sleep(1)
+            e2e.pickTodayInDateSheet()
+            if !e2e.button(["Confirm", "Xác nhận"]).isEnabled { e2e.pickTodayInDateSheet() }
+            let end = Calendar.current.component(.day, from: Date()) + 2
+            let texts = app.collectionViews.staticTexts.matching(NSPredicate(format: "label == %@", "\(end)"))
+            let byCell = app.collectionViews.cells.matching(NSPredicate(format: "label == %@ OR label BEGINSWITH %@", "\(end)", "\(end) "))
+            let cells = byCell.count > 0 ? byCell : texts
+            let target = end < 15 ? cells.element(boundBy: 0) : cells.element(boundBy: max(0, cells.count - 1))
+            if target.exists && target.isHittable { target.tap() } else { e2e.note("day \(end) not hittable") }
+            sleep(1)
+            e2e.tapIfExists(e2e.button(["Confirm", "Xác nhận"]), timeout: 3)
+            sleep(2)
+        }
+        let onThreeDays = NSPredicate(format: "label CONTAINS '3 ngày' OR label CONTAINS '3 days' OR value CONTAINS '3 ngày' OR value CONTAINS '3 days'")
+        XCTAssertTrue(app.descendants(matching: .any).matching(onThreeDays).firstMatch.waitForExistence(timeout: 5), "the cart is on 3 days")
+        XCTAssertTrue(app.descendants(matching: .any).matching(rentTotal).firstMatch.waitForExistence(timeout: 5), "3 days: still 330.000")
+        e2e.shot("91d-cart-3-days-330000")
+
+        _ = e2e.pickFirstCustomer()
+        guard e2e.createOrderFromCart(cta: ["Create order", "Tạo đơn"], shotPrefix: "92-cart-hour", openOrder: true) else {
+            return XCTFail("Hour-block order was not created (last alert: \(e2e.lastAlert ?? "none"))")
+        }
+        let line = app.staticTexts.matching(NSPredicate(format: "label CONTAINS 'Khối 4 giờ' AND label CONTAINS '250.000'")).firstMatch
+        XCTAssertTrue(line.waitForExistence(timeout: 10), "order detail reads Khối 4 giờ · 1 × 250.000đ")
+        XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label CONTAINS 'Khối 2 giờ'")).firstMatch.exists, "and Khối 2 giờ for the Vest")
+        e2e.shot("93-order-detail-hour-blocks")
+    }
+
     /// #1249 (mockup v179): Theo lần, Theo mỗi ngày and Theo block ngày exist together. New product: three prices, block
     /// "Chưa cài"; the row opens the setup screen, back keeps the day price; the table is typed by hand; "Lưu bảng giá"
     /// shows the summary and the day price box stays. Old per-day product and a product with a table open right.

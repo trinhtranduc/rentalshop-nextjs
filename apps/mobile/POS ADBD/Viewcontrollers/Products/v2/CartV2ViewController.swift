@@ -860,6 +860,9 @@ final class CartV2ViewController: BaseViewControler {
         let button: UIButton
         if cart.orderType == .rent, let detail = item.blockDetail {
             button = Self.pricingLinkButton(amount: BlockPricing.summary(detail), unit: CartV2Logic.money(item.price), separator: " · ")
+        } else if cart.orderType == .rent, let label = item.hourBlockLabel {
+            // #1621 (mockup "Giỏ: mỗi món một khối"): "Khối 4 giờ · 250.000đ"
+            button = Self.pricingLinkButton(amount: label, unit: CartV2Logic.money(item.price), separator: " · ")
         } else {
             button = Self.pricingLinkButton(amount: link.amount, unit: link.unit)
         }
@@ -1589,15 +1592,17 @@ private extension UIView {
 // MARK: - Cách tính giá (#482, board Gio-hang-chon-gia)
 
 /// Bottom sheet of one cart line: the pricing options as radio rows, the price for this order, a live preview and
-/// "Áp dụng". Only the cart line changes, never the product's price.
+/// "Áp dụng". Only the cart line changes, never the product's price. #1621: each hour block is its own row.
 final class CartPricingSheetViewController: UIViewController, UITextFieldDelegate {
-    /// pricing type (nil on a sale line) and the unit price for this order (#951: nil = the box left empty, 0 = free)
+    /// the chosen row's key (a type, or "HOURLY:<option id>"; nil on a sale line) and the unit price for this order
+    /// (#951: nil = the box left empty, 0 = free)
     var onApply: ((String?, Double?) -> Void)?
 
     private let item: CartItem
     private let orderType: OrderType
     private let days: Int
     private let choices: [CartPricingChoice]
+    /// The chosen row's key (`CartPricingChoice.key`)
     private var selectedType: String
     private let radioStack = UIStackView()
     private let priceField = UITextField()
@@ -1617,7 +1622,7 @@ final class CartPricingSheetViewController: UIViewController, UITextFieldDelegat
         self.orderType = orderType
         self.days = max(1, days)
         choices = orderType == .rent ? CartV2Logic.pricingChoices(item) : []
-        selectedType = CartV2Logic.currentType(item)
+        selectedType = CartV2Logic.currentChoiceKey(item)
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -1719,7 +1724,7 @@ final class CartPricingSheetViewController: UIViewController, UITextFieldDelegat
     private func renderChoices() {
         radioStack.arrangedSubviews.forEach { $0.removeFromSuperview() }
         for (index, choice) in choices.enumerated() {
-            let selected = choice.type == selectedType
+            let selected = choice.key == selectedType
             let row = UIControl()
             row.tag = index
             row.layer.cornerRadius = 12
@@ -1733,7 +1738,7 @@ final class CartPricingSheetViewController: UIViewController, UITextFieldDelegat
             dot.layer.borderWidth = selected ? 6 : 1.5
             dot.layer.borderColor = UIColor(hexString: selected ? "1D4ED8" : "94A3B8").cgColor
             dot.snp.makeConstraints { make in make.size.equalTo(20) }
-            let label = V2.label(CartV2Logic.pricingLabel(choice.type), size: DS.TextSize.input, weight: .bold)
+            let label = V2.label(CartV2Logic.choiceLabel(choice), size: DS.TextSize.input, weight: .bold)
             label.setContentHuggingPriority(.defaultLow, for: .horizontal)
             var priceText = choice.catalogPrice.map { CartV2Logic.priceText($0, type: choice.type, orderType: orderType) }
             if choice.type == ProductPricingMode.block.rawValue, let table = blockTable { priceText = BlockPricing.rowSummary(table) }
@@ -1752,13 +1757,14 @@ final class CartPricingSheetViewController: UIViewController, UITextFieldDelegat
             row.isAccessibilityElement = true
             row.accessibilityTraits = selected ? (UIAccessibilityTraitButton | UIAccessibilityTraitSelected) : UIAccessibilityTraitButton
             row.accessibilityLabel = [label.text, price.text].compactMap { $0 }.joined(separator: ", ")
+            row.accessibilityIdentifier = "cart.pricing.choice." + choice.key
             radioStack.addArrangedSubview(row)
         }
     }
 
     @objc private func choiceTapped(_ sender: UIControl) {
         guard sender.tag < choices.count else { return }
-        selectedType = choices[sender.tag].type
+        selectedType = choices[sender.tag].key
         renderChoices()
         setPrice(CartV2Logic.startPrice(item, type: selectedType))
     }
@@ -1793,7 +1799,9 @@ final class CartPricingSheetViewController: UIViewController, UITextFieldDelegat
             previewTotal.text = CartV2Logic.money(detail.total * Double(item.quantity))
             return
         }
-        let preview = CartV2Logic.pricePreview(type: selectedType, price: price ?? 0, days: days, quantity: item.quantity, orderType: orderType)
+        let hours = choices.first { $0.key == selectedType }?.hours
+        let preview = CartV2Logic.pricePreview(type: selectedType, price: price ?? 0, days: days, quantity: item.quantity, orderType: orderType,
+                                               hours: hours)
         previewText.text = preview.text
         previewTotal.text = CartV2Logic.money(preview.total)
     }

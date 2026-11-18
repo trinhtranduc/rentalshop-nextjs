@@ -3103,3 +3103,26 @@
 "weeklySummary.footer.written" = "작성 %1$@ · 다음 요약 %2$@";
 "weeklySummary.noOrders" = "지난주에는 주문이 없어 요약할 내용이 없습니다.";
 "weeklySummary.error" = "요약을 만들지 못했습니다.";
+
+/* #1621 Theo khối giờ (hour blocks) */
+"products.form.perHourBlock" = "시간 블록";
+"products.form.error.hourBlocksNeedPrice" = "시간 블록 외에 1회 또는 1일 요금도 필요합니다.";
+"hourBlock.title" = "시간 블록 요금";
+"hourBlock.intro" = "시간 블록마다 요금이 하나씩 있습니다. 장바구니에서 고른 블록의 요금이 적용됩니다.";
+"hourBlock.section" = "시간 블록";
+"hourBlock.unit" = "시간";
+"hourBlock.add" = "+ 블록 추가";
+"hourBlock.remove" = "블록 %d 삭제";
+"hourBlock.hoursOf" = "블록 %d의 시간";
+"hourBlock.priceOf" = "블록 %d의 요금";
+"hourBlock.max" = "최대 %d개 블록입니다.";
+"hourBlock.save" = "요금표 저장";
+"hourBlock.turnOff" = "시간 블록 요금 끄기";
+"hourBlock.error.hours" = "시간은 1~24 사이의 정수여야 합니다.";
+"hourBlock.error.repeated" = "같은 시간은 한 블록에만 쓸 수 있습니다.";
+"hourBlock.error.price" = "모든 블록에 요금을 입력하세요(0도 가능).";
+"hourBlock.summary" = "%1$d개 블록: %2$@시간";
+"hourBlock.summary.one" = "%1$d개 블록: %2$@시간";
+"hourBlock.label" = "%d시간 블록";
+"hourBlock.detail" = "%1$d시간 %2$@";
+"HOUR_BLOCKS_INVALID" = "시간 블록 요금이 올바르지 않습니다. 1~24의 정수 시간을 한 번씩, 0 이상의 금액, 최대 10개 블록으로 설정하고 1회 또는 1일 요금도 유지하세요.";
