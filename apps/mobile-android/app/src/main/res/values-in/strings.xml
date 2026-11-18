@@ -2536,4 +2536,25 @@
     <plurals name="weekly_summary_times">
         <item quantity="other">%1$d kali</item>
     </plurals>
+    <!-- #1621 Theo khối giờ (hour blocks) -->
+    <string name="v2_form_per_hour_block">Per blok jam</string>
+    <string name="v2_form_error_hour_blocks_need_price">Blok jam juga memerlukan harga per sewa atau per hari.</string>
+    <string name="hour_block_title">Harga per blok jam</string>
+    <string name="hour_block_intro">Setiap blok jam punya satu harga. Di keranjang, blok yang dipilih menentukan harganya.</string>
+    <string name="hour_block_section">Blok jam</string>
+    <string name="hour_block_unit">jam</string>
+    <string name="hour_block_add">+ Tambah blok</string>
+    <string name="hour_block_remove">Hapus blok %1$d</string>
+    <string name="hour_block_max">Paling banyak %1$d blok.</string>
+    <string name="hour_block_save">Simpan tabel harga</string>
+    <string name="hour_block_turn_off">Matikan harga per blok jam</string>
+    <string name="hour_block_error_hours">Jam harus bilangan bulat 1 sampai 24.</string>
+    <string name="hour_block_error_repeated">Setiap jumlah jam hanya untuk satu blok.</string>
+    <string name="hour_block_error_price">Isi harga untuk setiap blok (0 boleh).</string>
+    <string name="hour_block_label">Blok %1$d jam</string>
+    <string name="hour_block_detail">%1$d jam %2$s</string>
+    <string name="api_error_hour_blocks_invalid">Harga per blok jam tidak valid. Gunakan jam bulat 1 sampai 24, setiap jumlah jam sekali saja, harga 0 atau lebih, paling banyak 10 blok, dan tetap sertakan harga per sewa atau per hari.</string>
+    <plurals name="hour_block_summary">
+        <item quantity="other">%1$d blok: %2$s jam</item>
+    </plurals>
 </resources>

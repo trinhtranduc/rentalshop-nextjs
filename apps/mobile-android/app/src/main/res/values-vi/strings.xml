@@ -2607,4 +2607,25 @@
     <plurals name="weekly_summary_times">
         <item quantity="other">%1$d lượt</item>
     </plurals>
+    <!-- #1621 Theo khối giờ (hour blocks) -->
+    <string name="v2_form_per_hour_block">Theo khối giờ</string>
+    <string name="v2_form_error_hour_blocks_need_price">Khối giờ cần thêm giá Theo lần hoặc Theo ngày.</string>
+    <string name="hour_block_title">Giá theo khối giờ</string>
+    <string name="hour_block_intro">Mỗi khối giờ một giá. Ở giỏ, chọn khối nào thì tính giá khối đó.</string>
+    <string name="hour_block_section">Khối giờ</string>
+    <string name="hour_block_unit">giờ</string>
+    <string name="hour_block_add">+ Thêm khối</string>
+    <string name="hour_block_remove">Xoá khối %1$d</string>
+    <string name="hour_block_max">Tối đa %1$d khối.</string>
+    <string name="hour_block_save">Lưu bảng giá</string>
+    <string name="hour_block_turn_off">Tắt giá theo khối giờ</string>
+    <string name="hour_block_error_hours">Số giờ là số nguyên từ 1 đến 24.</string>
+    <string name="hour_block_error_repeated">Mỗi số giờ chỉ dùng cho một khối.</string>
+    <string name="hour_block_error_price">Nhập giá cho mọi khối (0đ cũng được).</string>
+    <string name="hour_block_label">Khối %1$d giờ</string>
+    <string name="hour_block_detail">%1$d giờ %2$s</string>
+    <string name="api_error_hour_blocks_invalid">Giá theo khối giờ không hợp lệ. Số giờ là số nguyên từ 1 đến 24, mỗi số giờ một dòng, giá từ 0 trở lên, tối đa 10 khối, và sản phẩm vẫn cần giá Theo lần hoặc Theo ngày.</string>
+    <plurals name="hour_block_summary">
+        <item quantity="other">%1$d khối: %2$s giờ</item>
+    </plurals>
 </resources>

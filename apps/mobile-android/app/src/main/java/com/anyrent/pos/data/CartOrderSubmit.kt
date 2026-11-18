@@ -144,7 +144,9 @@ object CartOrderSubmit {
             OrderLineExtra(
                 pricingType = line.pricingType, rentalDays = line.rentalDays, deposit = line.product.deposit, note = line.note,
                 blockPriced = block,
-                pricingOptionId = if (block) line.product.pricingOptions.firstOrNull { it.type.equals("BLOCK", true) }?.id else null,
+                // #1621: an hour-block line sends its block's id (null for a block gone from the product: the API keeps the saved one)
+                pricingOptionId = if (block) line.product.pricingOptions.firstOrNull { it.type.equals("BLOCK", true) }?.id
+                else if (line.isHourBlock) line.hourOptionId else null,
             )
         }
 

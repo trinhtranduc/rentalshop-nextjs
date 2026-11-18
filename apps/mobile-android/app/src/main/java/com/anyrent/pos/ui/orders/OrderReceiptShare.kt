@@ -6,6 +6,7 @@ import com.anyrent.pos.data.SessionStore
 import com.anyrent.pos.data.model.OrderDetail
 import com.anyrent.pos.domain.orders.OrderShareModel
 import com.anyrent.pos.domain.products.blockLines
+import com.anyrent.pos.domain.products.pricingLines
 import com.anyrent.pos.print.ThermalPrinter
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -28,7 +29,8 @@ internal suspend fun shareOrderReceipt(context: Context, order: OrderDetail) {
         printBankQr = printBankQr,
         bankAccount = account,
         blockFormula = { it.blockLines(context.resources)?.second },
-        blockSummary = { it.blockLines(context.resources)?.first },
+        // #1621: "Khối 4 giờ" of an hour-block line
+        blockSummary = { it.pricingLines(context.resources)?.first },
         showOrderNote = SessionStore.shareOrderNote,
     )
     shareOrderImage(context, model, subject = order.summary.orderNumber)

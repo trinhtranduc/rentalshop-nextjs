@@ -104,6 +104,7 @@ import com.anyrent.pos.domain.products.BarcodeMatch
 import com.anyrent.pos.domain.products.BlockPricing
 import com.anyrent.pos.domain.products.BlockTable
 import com.anyrent.pos.domain.products.BlockText
+import com.anyrent.pos.domain.products.HourBlockText
 import com.anyrent.pos.domain.products.PriceForm
 import com.anyrent.pos.domain.products.PriceFormState
 import com.anyrent.pos.domain.products.ProductBarcode
@@ -173,7 +174,10 @@ fun ProductFormV2Screen(
     var perDay by remember { mutableStateOf(MoneyInput.display(opened.perDay)) }
     var block by remember { mutableStateOf(opened.block) }
     var showBlockScreen by remember { mutableStateOf(false) }
-    fun priceState() = PriceFormState(MoneyInput.parse(perRental), MoneyInput.parse(perDay), block)
+    // #1621 "Theo khối giờ": the blocks, set up on their own screen
+    var hourBlocks by remember { mutableStateOf(opened.hourBlocks) }
+    var showHourScreen by remember { mutableStateOf(false) }
+    fun priceState() = PriceFormState(MoneyInput.parse(perRental), MoneyInput.parse(perDay), block, hourBlocks)
     var sale by remember { mutableStateOf(MoneyInput.display(initial?.let { ProductPricing.sale(it) })) }
     var deposit by remember { mutableStateOf(MoneyInput.display(initial?.deposit?.takeIf { it > 0 })) }
     // #887: Giá vốn (optional, prices only)
@@ -209,6 +213,7 @@ fun ProductFormV2Screen(
         "name" to stringResource(R.string.v2_form_error_name),
         "negative" to stringResource(R.string.v2_form_error_negative),
         "daily" to stringResource(R.string.v2_form_error_daily_default),
+        "hourBlocks" to stringResource(R.string.v2_form_error_hour_blocks_need_price),
         "quantity" to stringResource(R.string.v2_form_error_quantity),
         "outlet" to stringResource(R.string.v2_form_error_outlet),
     )
@@ -256,6 +261,7 @@ fun ProductFormV2Screen(
             perDay = price.perDay,
             defaultMode = PricingMode.PER_RENTAL,
             block = price.block,
+            hourBlocks = price.hourBlocks,
             salePrice = MoneyInput.parse(sale),
             deposit = MoneyInput.parse(deposit),
             quantity = if (boxed) BranchListing.total(tickRows) else quantity,
@@ -271,6 +277,7 @@ fun ProductFormV2Screen(
                     ProductFormIssue.NameRequired -> issueText.getValue("name")
                     ProductFormIssue.NegativeAmount -> issueText.getValue("negative")
                     ProductFormIssue.PerDayDefaultNeedsPrice -> issueText.getValue("daily")
+                    ProductFormIssue.HourBlocksNeedPrice -> issueText.getValue("hourBlocks")
                     ProductFormIssue.NegativeQuantity -> issueText.getValue("quantity")
                     is ProductFormIssue.QuantityBelowRented -> belowRented.format(issue.rented)
                     is ProductFormIssue.TooManyPhotos -> tooManyPhotos.format(issue.max)
@@ -505,6 +512,31 @@ fun ProductFormV2Screen(
                         Icon(Icons.AutoMirrored.Outlined.KeyboardArrowRight, contentDescription = null, tint = Color(0xFF94A3B8), modifier = Modifier.size(20.dp))
                     }
                 }
+                // #1621 "Theo khối giờ" under "Theo khối ngày", the same bordered row; a tap opens the hour-block screen
+                Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp).padding(bottom = 8.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Text(stringResource(R.string.v2_form_per_hour_block), fontSize = DS.TextSize.Secondary, fontWeight = FontWeight.Bold)
+                    val res = LocalContext.current.resources
+                    val notSet = stringResource(R.string.v2_form_block_not_set)
+                    val summary = if (hourBlocks.isEmpty()) notSet else HourBlockText.rowSummary(res, hourBlocks)
+                    Row(
+                        Modifier.fillMaxWidth().heightIn(min = 52.dp)
+                            .border(1.dp, Color(0xFFCBD5E1), RoundedCornerShape(10.dp))
+                            .clip(RoundedCornerShape(10.dp))
+                            .clickable(onClickLabel = stringResource(R.string.hour_block_title)) { showHourScreen = true }
+                            .padding(horizontal = 14.dp, vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Column(Modifier.weight(1f)) {
+                            if (hourBlocks.isNotEmpty()) {
+                                Text(summary, fontSize = DS.TextSize.Input, fontWeight = FontWeight.Bold)
+                                Text(HourBlockText.rangeSummary(hourBlocks), fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted)
+                            } else {
+                                Text(notSet, fontSize = DS.TextSize.Input, color = DS.Colors.TextMuted)
+                            }
+                        }
+                        Icon(Icons.AutoMirrored.Outlined.KeyboardArrowRight, contentDescription = null, tint = Color(0xFF94A3B8), modifier = Modifier.size(20.dp))
+                    }
+                }
                 Row {
                     FormField(stringResource(R.string.v2_form_sale_price), value = sale, onChange = { sale = MoneyInput.display(MoneyInput.parse(it)) },
                         placeholder = stringResource(R.string.v2_form_not_for_sale), numeric = true, modifier = Modifier.weight(1f), end = 6.dp)
@@ -621,6 +653,16 @@ fun ProductFormV2Screen(
                     checkBarcode(code)
                 },
                 embeddedInSheet = true,
+            )
+        }
+    }
+    if (showHourScreen) {
+        AppFormSheet(onDismiss = { showHourScreen = false }, fullScreen = true, nested = true) {
+            HourBlocksScreen(
+                initial = hourBlocks,
+                onSave = { blocks -> hourBlocks = PriceForm.saveHourBlocks(priceState(), blocks).hourBlocks; showHourScreen = false },
+                onTurnOff = { hourBlocks = PriceForm.turnOffHourBlocks(priceState()).hourBlocks; showHourScreen = false },
+                onClose = { showHourScreen = false },
             )
         }
     }

@@ -129,6 +129,7 @@ import com.anyrent.pos.ui.common.formatDayShort
 import com.anyrent.pos.ui.common.formatMoneyVnd
 import com.anyrent.pos.domain.products.CartV2Logic
 import com.anyrent.pos.domain.products.blockDetailLines
+import com.anyrent.pos.domain.products.hourBlockLabel
 import com.anyrent.pos.ui.home.v2.orderItemPricingParts
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -1553,7 +1554,10 @@ private fun orderItemQuantityLine(quantity: Int, unitPrice: Double, pricingType:
 @Composable
 private fun ItemRow(item: OrderItem, orderType: String, divider: Boolean) {
     val isRent = orderType.equals("RENT", ignoreCase = true)
-    val block = if (isRent) item.blockDetailLines(LocalContext.current.resources) else null
+    val block = if (isRent) item.blockDetailLines(LocalContext.current.resources)
+        // #1621: "Khối 4 giờ · 1 × 250.000đ"
+        ?: item.hourBlockLabel(LocalContext.current.resources)?.let { "$it · ${item.quantity} × ${formatMoneyVnd(item.unitPrice)}" to null }
+    else null
     Row(
         Modifier.fillMaxWidth().padding(vertical = 10.dp),
         verticalAlignment = Alignment.Top,

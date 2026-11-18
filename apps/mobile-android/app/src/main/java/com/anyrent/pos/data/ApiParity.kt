@@ -553,6 +553,8 @@ object ApiParity {
         deposit: Double,
         categoryId: Int?,
         imageFile: File?,
+        /** #1621: the product's saved hour blocks. This old form has no row for them but the app sends `hour-blocks`, so it sends them back unchanged */
+        hourBlocks: List<com.anyrent.pos.domain.products.HourBlock> = emptyList(),
     ): Result<Product> = runCatching {
         val outletId = CurrentOutlet.id
         val data = JSONObject()
@@ -564,7 +566,12 @@ object ApiParity {
                 // #951: the typed rent price as a per-rental option, so a 0đ price is kept as 0đ (the API reads a
                 // product without options and rentPrice 0 as "no price")
                 if (rentPrice >= 0) {
-                    put("pricingOptions", JSONArray().put(JSONObject().put("type", "FIXED").put("price", rentPrice).put("isDefault", true)))
+                    put("pricingOptions", JSONArray().put(JSONObject().put("type", "FIXED").put("price", rentPrice).put("isDefault", true)).apply {
+                        hourBlocks.forEach { block ->
+                            put(JSONObject().put("type", "HOURLY").put("price", block.price).put("isDefault", false)
+                                .put("unit", com.anyrent.pos.domain.products.HourBlocks.UNIT).put("blockSize", block.hours))
+                        }
+                    })
                 }
                 if (salePrice != null) put("salePrice", salePrice)
                 if (!barcode.isNullOrBlank()) put("barcode", barcode)

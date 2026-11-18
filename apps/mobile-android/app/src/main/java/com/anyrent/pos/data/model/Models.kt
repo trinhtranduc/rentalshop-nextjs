@@ -50,6 +50,8 @@ data class PricingOption(
     val isDefault: Boolean = false,
     /** #1189: the day-block table of a BLOCK option; null on every other option and on payloads from before #1189 */
     val blockTable: com.anyrent.pos.domain.products.BlockTable? = null,
+    /** #1621: the hours of an hour block (an HOURLY option, `unit` HOUR); null on every other option */
+    val blockSize: Int? = null,
 )
 
 data class Product(
@@ -151,6 +153,10 @@ data class OrderItem(
     val pricingType: String = "FIXED",
     /** #1189: the table and the days a BLOCK line was priced with (null on every other line and on old orders) */
     val pricingSnapshot: com.anyrent.pos.domain.products.BlockSnapshot? = null,
+    /** #1621: the option the line was priced from (an hour block); null when the API sent none */
+    val pricingOptionId: Int? = null,
+    /** #1621: the hour block an HOURLY line was made with (its `pricingSnapshot`); null on every other line */
+    val hourBlock: com.anyrent.pos.domain.products.HourBlock? = null,
 )
 
 data class OrderDetail(
@@ -273,7 +279,17 @@ data class CartLine(
     /** #1189: the table a line loaded from a saved order was priced with (`pricingSnapshot`); wins over the product's */
     val savedBlockTable: com.anyrent.pos.domain.products.BlockTable? = null,
     val blockCurrency: String? = null,
+    /**
+     * #1621: the hour block of an HOURLY line ("Khối 4 giờ"): its option id (null when the block is gone from the
+     * product) and its hours. Null on every other line.
+     */
+    val hourOptionId: Int? = null,
+    val hourBlockHours: Int? = null,
 ) {
+    /** #1621: a rent line on an hour block; priced flat (price × quantity, never × days) */
+    val isHourBlock: Boolean
+        get() = !isSale && hourBlockHours != null && pricingType.equals(com.anyrent.pos.domain.products.HourBlocks.TYPE, ignoreCase = true)
+
     /** #1189: the day-block table of a BLOCK rent line (the order's saved one, else the product's BLOCK option) */
     val blockTable: com.anyrent.pos.domain.products.BlockTable?
         get() = if (isSale || !pricingType.equals("BLOCK", ignoreCase = true)) null
@@ -292,9 +308,12 @@ data class CartLine(
         // #1189: a block line takes its price from the table; staff do not type one on it
         get() = blockDetail?.total ?: unitPriceOverride ?: if (isSale) {
             product.salePrice ?: product.rentPrice
+        } else if (isHourBlock) {
+            // #1621: the price of the line's own block
+            product.pricingOptions.firstOrNull { it.id == hourOptionId && it.blockSize != null }?.price ?: 0.0
         } else {
             product.pricingOptions.firstOrNull {
-                it.type.equals(pricingType, ignoreCase = true)
+                it.type.equals(pricingType, ignoreCase = true) && it.blockSize == null
             }?.price ?: if (product.pricingType.equals(pricingType, ignoreCase = true)) {
                 product.rentPrice
             } else {

@@ -750,6 +750,9 @@ object CartStore {
                 // #1189: a block line keeps its saved table, so a changed date prices it again; a hand-typed price stays a plain price
                 savedBlockTable = item.pricingSnapshot?.takeIf { !it.overridden && item.pricingType.equals("BLOCK", true) }?.table,
                 blockCurrency = item.pricingSnapshot?.currency,
+                // #1621: an hour-block line keeps its block (its option may be gone from the product: the id is then null)
+                hourOptionId = item.pricingOptionId.takeIf { item.hourBlock != null },
+                hourBlockHours = item.hourBlock?.takeIf { item.pricingType.equals("HOURLY", true) }?.hours,
             )
         }
 
@@ -934,6 +937,7 @@ object CartStore {
                                 put("blockTiers", JSONArray(t.tiers)); put("blockStartDay", t.startDay)
                                 put("blockExtraMode", t.extraMode); t.extraPrice?.let { e -> put("blockExtraPrice", e) }
                             }
+                            option.blockSize?.let { put("blockSize", it) }
                         },
                 )
             }
@@ -970,6 +974,9 @@ object CartStore {
                             put("savedBlock", BlockPricing.optionJson(t, false))
                             line.blockCurrency?.let { c -> put("blockCurrency", c) }
                         }
+                        // #1621: the line's hour block
+                        line.hourBlockHours?.let { put("hourBlockHours", it) }
+                        line.hourOptionId?.let { put("hourOptionId", it) }
                     }
                     .put("product", product),
             )
@@ -1037,6 +1044,7 @@ object CartStore {
                     price = option.optDouble("price", 0.0),
                     isDefault = option.optBoolean("isDefault"),
                     blockTable = BlockPricing.tableFrom(option),
+                    blockSize = option.optInt("blockSize", 0).takeIf { it > 0 },
                 )
             }
             val salePrice = if (productJson.isNull("salePrice")) null else productJson.optDouble("salePrice")
@@ -1073,6 +1081,8 @@ object CartStore {
                 unitPriceOverride = override,
                 savedBlockTable = line.optJSONObject("savedBlock")?.let { BlockPricing.tableFrom(it) },
                 blockCurrency = line.optString("blockCurrency").takeIf { it.isNotBlank() && it != "null" },
+                hourOptionId = line.optInt("hourOptionId", 0).takeIf { it > 0 },
+                hourBlockHours = line.optInt("hourBlockHours", 0).takeIf { it > 0 },
             )
         }
         // A draft saved before #388 has no flag: keep its deposit when it differs from the items' sum

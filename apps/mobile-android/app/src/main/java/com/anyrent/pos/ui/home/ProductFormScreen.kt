@@ -166,6 +166,7 @@ fun ProductFormScreen(
                     ApiParity.updateProductFull(
                         initial.id, name, price, salePrice.toDoubleOrNull(), qty,
                         barcode, deposit.toDoubleOrNull() ?: 0.0, categoryId, file,
+                        hourBlocks = com.anyrent.pos.domain.products.ProductPricing.hourBlocks(initial),
                     )
                 }
             }

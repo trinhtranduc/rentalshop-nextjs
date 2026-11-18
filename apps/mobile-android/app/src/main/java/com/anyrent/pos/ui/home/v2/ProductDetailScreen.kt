@@ -265,6 +265,16 @@ fun ProductDetailScreen(
                         tiles.forEach { (title, value) -> PriceTile(title, value, Modifier.weight(1f)) }
                     }
                 }
+                // #1621: "Theo khối giờ: 2 giờ 150.000đ · 4 giờ 250.000đ" under the price tiles (read only)
+                val hourBlocks = ProductPricing.hourBlocks(current)
+                if (hourBlocks.isNotEmpty()) {
+                    Text(
+                        stringResource(R.string.v2_form_per_hour_block) + ": " +
+                            com.anyrent.pos.domain.products.HourBlockText.detailSummary(LocalContext.current.resources, hourBlocks),
+                        fontSize = DS.TextSize.Secondary, color = DS.Colors.Text,
+                        modifier = Modifier.padding(top = 4.dp),
+                    )
+                }
                 if (strip.isEmpty()) {
                     val counts = ProductStock.counts(current, CurrentOutlet.id)
                     Text(

@@ -2536,4 +2536,25 @@
     <plurals name="weekly_summary_times">
         <item quantity="other">%1$d ครั้ง</item>
     </plurals>
+    <!-- #1621 Theo khối giờ (hour blocks) -->
+    <string name="v2_form_per_hour_block">แบบเป็นช่วงชั่วโมง</string>
+    <string name="v2_form_error_hour_blocks_need_price">ช่วงชั่วโมงต้องมีราคาต่อครั้งหรือต่อวันด้วย</string>
+    <string name="hour_block_title">ราคาตามช่วงชั่วโมง</string>
+    <string name="hour_block_intro">แต่ละช่วงชั่วโมงมีราคาเดียว ในตะกร้า เลือกช่วงไหนก็คิดราคาช่วงนั้น</string>
+    <string name="hour_block_section">ช่วงชั่วโมง</string>
+    <string name="hour_block_unit">ชั่วโมง</string>
+    <string name="hour_block_add">+ เพิ่มช่วง</string>
+    <string name="hour_block_remove">ลบช่วงที่ %1$d</string>
+    <string name="hour_block_max">ได้สูงสุด %1$d ช่วง</string>
+    <string name="hour_block_save">บันทึกตารางราคา</string>
+    <string name="hour_block_turn_off">ปิดการคิดราคาตามช่วงชั่วโมง</string>
+    <string name="hour_block_error_hours">จำนวนชั่วโมงต้องเป็นจำนวนเต็ม 1 ถึง 24</string>
+    <string name="hour_block_error_repeated">จำนวนชั่วโมงแต่ละค่าใช้ได้กับช่วงเดียว</string>
+    <string name="hour_block_error_price">กรอกราคาให้ทุกช่วง (0 ได้)</string>
+    <string name="hour_block_label">ช่วง %1$d ชั่วโมง</string>
+    <string name="hour_block_detail">%1$d ชั่วโมง %2$s</string>
+    <string name="api_error_hour_blocks_invalid">ราคาตามช่วงชั่วโมงไม่ถูกต้อง ใช้จำนวนชั่วโมงเต็ม 1 ถึง 24 แต่ละค่าเพียงครั้งเดียว ราคาตั้งแต่ 0 ขึ้นไป ไม่เกิน 10 ช่วง และต้องมีราคาต่อครั้งหรือต่อวันด้วย</string>
+    <plurals name="hour_block_summary">
+        <item quantity="other">%1$d ช่วง: %2$s ชั่วโมง</item>
+    </plurals>
 </resources>

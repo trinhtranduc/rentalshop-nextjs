@@ -2539,4 +2539,28 @@
         <item quantity="many">%1$d раз</item>
         <item quantity="other">%1$d раза</item>
     </plurals>
+    <!-- #1621 Theo khối giờ (hour blocks) -->
+    <string name="v2_form_per_hour_block">Блок часов</string>
+    <string name="v2_form_error_hour_blocks_need_price">Для блоков часов нужна ещё цена за аренду или за день.</string>
+    <string name="hour_block_title">Цены по блокам часов</string>
+    <string name="hour_block_intro">У каждого блока часов своя цена. В корзине берётся цена выбранного блока.</string>
+    <string name="hour_block_section">Блоки часов</string>
+    <string name="hour_block_unit">ч</string>
+    <string name="hour_block_add">+ Добавить блок</string>
+    <string name="hour_block_remove">Удалить блок %1$d</string>
+    <string name="hour_block_max">Не более %1$d блоков.</string>
+    <string name="hour_block_save">Сохранить цены</string>
+    <string name="hour_block_turn_off">Выключить цены по блокам часов</string>
+    <string name="hour_block_error_hours">Часы — целое число от 1 до 24.</string>
+    <string name="hour_block_error_repeated">Каждое количество часов можно указать только в одном блоке.</string>
+    <string name="hour_block_error_price">Укажите цену для каждого блока (0 допускается).</string>
+    <string name="hour_block_label">Блок %1$d ч</string>
+    <string name="hour_block_detail">%1$d ч %2$s</string>
+    <string name="api_error_hour_blocks_invalid">Цены по блокам часов некорректны. Используйте целые часы от 1 до 24, каждое значение один раз, цены от 0, не более 10 блоков, и оставьте цену за аренду или за день.</string>
+    <plurals name="hour_block_summary">
+        <item quantity="one">%1$d блок: %2$s ч</item>
+        <item quantity="few">%1$d блока: %2$s ч</item>
+        <item quantity="many">%1$d блоков: %2$s ч</item>
+        <item quantity="other">%1$d блока: %2$s ч</item>
+    </plurals>
 </resources>

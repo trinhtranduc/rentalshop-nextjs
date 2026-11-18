@@ -1,6 +1,6 @@
 package com.anyrent.pos.print
 
-import com.anyrent.pos.domain.products.blockLines
+import com.anyrent.pos.domain.products.pricingLines
 import com.anyrent.pos.domain.deposit.DepositReceipt
 import com.anyrent.pos.domain.orders.ShareText
 import com.anyrent.pos.domain.ShopTime
@@ -260,7 +260,7 @@ object ThermalPrinter {
                 text("${index + 1}. $withNote")
                 // #1189: a day-block line shows how its price was reached (iOS prints summary + ": " + formula)
                 if (summary.orderType.equals("RENT", ignoreCase = true)) {
-                    com.anyrent.pos.AnyRentApp.instance?.resources?.let { res -> item.blockLines(res) }?.let { (head, formula) ->
+                    com.anyrent.pos.AnyRentApp.instance?.resources?.let { res -> item.pricingLines(res) }?.let { (head, formula) ->
                         text("   " + (formula?.let { "$head: $it" } ?: head))
                     }
                 }

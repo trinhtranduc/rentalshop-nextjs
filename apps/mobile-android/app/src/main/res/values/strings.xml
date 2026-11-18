@@ -2641,4 +2641,26 @@
         <item quantity="one">%1$d time</item>
         <item quantity="other">%1$d times</item>
     </plurals>
+    <!-- #1621 Theo khối giờ (hour blocks) -->
+    <string name="v2_form_per_hour_block">Per hour-block</string>
+    <string name="v2_form_error_hour_blocks_need_price">Hour blocks also need a per-rental or per-day price.</string>
+    <string name="hour_block_title">Hour-block pricing</string>
+    <string name="hour_block_intro">One price for each block of hours. In the cart, the block you pick sets the price.</string>
+    <string name="hour_block_section">Hour blocks</string>
+    <string name="hour_block_unit">h</string>
+    <string name="hour_block_add">+ Add block</string>
+    <string name="hour_block_remove">Remove block %1$d</string>
+    <string name="hour_block_max">At most %1$d blocks.</string>
+    <string name="hour_block_save">Save price list</string>
+    <string name="hour_block_turn_off">Turn off hour-block pricing</string>
+    <string name="hour_block_error_hours">Hours must be a whole number from 1 to 24.</string>
+    <string name="hour_block_error_repeated">Each number of hours can be used for one block only.</string>
+    <string name="hour_block_error_price">Enter a price for every block (0 is allowed).</string>
+    <string name="hour_block_label">%1$d-hour block</string>
+    <string name="hour_block_detail">%1$d h %2$s</string>
+    <string name="api_error_hour_blocks_invalid">The hour-block prices are not valid. Use whole hours from 1 to 24, each number of hours once, prices of 0 or more, at most 10 blocks, and keep a per-rental or per-day price.</string>
+    <plurals name="hour_block_summary">
+        <item quantity="one">%1$d block: %2$s h</item>
+        <item quantity="other">%1$d blocks: %2$s h</item>
+    </plurals>
 </resources>
