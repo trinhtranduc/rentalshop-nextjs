@@ -198,21 +198,29 @@ fun OverviewV2Screen(
         ) {
             Column(
                 Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(
-                    start = 16.dp, end = 16.dp, top = 16.dp,
-                    // #1612: the floating button never covers the last card
-                    bottom = 24.dp + if (showsSummaryButton) WeeklySummaryButtonClearance else 0.dp,
+                    start = 16.dp, end = 16.dp, top = 16.dp, bottom = 24.dp,
                 ),
                 verticalArrangement = Arrangement.spacedBy(14.dp),
             ) {
-                Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(
-                        stringResource(R.string.overview_v2_title), fontSize = DS.TextSize.Title, fontWeight = FontWeight.Bold, color = OV.Ink,
-                        modifier = Modifier.semantics { heading() },
-                    )
-                    Text(
-                        longRange(range), fontSize = DS.TextSize.Secondary, color = OV.Muted, textAlign = TextAlign.End, maxLines = 1,
-                        overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f).padding(bottom = 3.dp),
-                    )
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    // #1618: the date sits under the title, so a range ("11/11/26 – 17/11/26") and the weekly button both fit
+                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                        Text(
+                            stringResource(R.string.overview_v2_title), fontSize = DS.TextSize.Title, fontWeight = FontWeight.Bold, color = OV.Ink,
+                            maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.semantics { heading() },
+                        )
+                        Text(
+                            longRange(range), fontSize = DS.TextSize.Secondary, color = OV.Muted, maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
+                    // #1612 "✦ Tóm tắt tuần"; #1618 (owner): top right, end of the title row
+                    if (showsSummaryButton) {
+                        WeeklySummaryButton(
+                            showsDot = WeeklySummaryLogic.showsDot(summaryState.summary),
+                            onClick = summaryViewModel::open,
+                        )
+                    }
                 }
                 if (state.showsRevenue) {
                     Row(
@@ -275,13 +283,6 @@ fun OverviewV2Screen(
                     )
                 }
             }
-        }
-        if (showsSummaryButton) {
-            WeeklySummaryButton(
-                showsDot = WeeklySummaryLogic.showsDot(summaryState.summary),
-                onClick = summaryViewModel::open,
-                modifier = Modifier.align(Alignment.BottomEnd).padding(end = 16.dp, bottom = 16.dp),
-            )
         }
     }
     if (summaryState.sheetOpen) {

@@ -42,7 +42,7 @@ final class OverviewV2ViewController: BaseViewControler {
     private var requests: [DataRequest] = []
     /// #674: dirty on the orders-changed signal; reloaded on appear when dirty or 10 minutes old
     private var freshness = RefreshTracker()
-    /// #1612 GET weekly-summary (owner, branch manager): the floating button shows when `available`
+    /// #1612 GET weekly-summary (owner, branch manager): the button (title row, #1618) shows when `available`
     private var weekly: WeeklySummaryData?
     private var weeklyGeneration = 0
     private let weeklyButton = WeeklySummaryButton()
@@ -108,14 +108,14 @@ final class OverviewV2ViewController: BaseViewControler {
         view.backgroundColor = OVColor.page
         let title = OVFont.label("overview.v2.title".localized(), DS.TextSize.title, .bold)
         title.accessibilityTraits = UIAccessibilityTraitHeader
-        dateLabel.textAlignment = .right
+        // #1618: the date sits under the title, so a range ("11/11/26 – 17/11/26") and the weekly button both fit
+        dateLabel.textAlignment = .natural
         dateLabel.adjustsFontSizeToFitWidth = true
         dateLabel.minimumScaleFactor = 0.8
         let header = UIStackView(arrangedSubviews: [title, dateLabel])
-        header.alignment = .firstBaseline
-        header.spacing = DS.Spacing.sm
-        title.setContentHuggingPriority(.required, for: .horizontal)
-        title.setContentCompressionResistancePriority(.required, for: .horizontal)
+        header.axis = .vertical
+        header.alignment = .leading
+        header.spacing = 2
 
         chipsRow.spacing = 6
         chipsRow.alignment = .center
@@ -153,18 +153,17 @@ final class OverviewV2ViewController: BaseViewControler {
             make.bottom.equalTo(scrollView.contentLayoutGuide).offset(-DS.Spacing.xl)
             make.leading.trailing.equalTo(scrollView.frameLayoutGuide).inset(DS.Spacing.lg)
         }
-        contentStack.addArrangedSubview(header)
-        contentStack.addArrangedSubview(chipsScroll)
-        contentStack.setCustomSpacing(10, after: chipsScroll)
-
-        // #1612 floating "✦ Tóm tắt tuần", bottom right above the tab bar; hidden until GET says the AI is on
+        // #1612 "✦ Tóm tắt tuần", hidden until GET says the AI is on; #1618 (owner): top right, end of the title row
         weeklyButton.isHidden = true
         weeklyButton.addTarget(self, action: #selector(weeklyTapped), for: .touchUpInside)
-        view.addSubview(weeklyButton)
-        weeklyButton.snp.makeConstraints { make in
-            make.trailing.equalTo(view.safeAreaLayoutGuide).offset(-DS.Spacing.lg)
-            make.bottom.equalTo(view.safeAreaLayoutGuide).offset(-14)
-        }
+        weeklyButton.setContentHuggingPriority(.required, for: .horizontal)
+        weeklyButton.setContentCompressionResistancePriority(.required, for: .horizontal)
+        let titleRow = UIStackView(arrangedSubviews: [header, weeklyButton])
+        titleRow.alignment = .center
+        titleRow.spacing = DS.Spacing.sm
+        contentStack.addArrangedSubview(titleRow)
+        contentStack.addArrangedSubview(chipsScroll)
+        contentStack.setCustomSpacing(10, after: chipsScroll)
         render()
     }
 
@@ -195,8 +194,6 @@ final class OverviewV2ViewController: BaseViewControler {
         let shows = WeeklySummaryLogic.showsButton(weekly)
         weeklyButton.isHidden = !shows
         weeklyButton.showsDot = WeeklySummaryLogic.showsDot(weekly)
-        // Room under the last card so the button never covers it
-        scrollView.contentInset.bottom = shows ? 56 : 0
     }
 
     @objc private func weeklyTapped() {

@@ -44,6 +44,19 @@ class OrderDetailHeaderTest {
         assertEquals(null, OrderDetailHeader.creatorName(order("RESERVED").copy(createdByName = null)))
     }
 
+    /** #1618: the branch line shows the order's branch to an owner with 2+ active branches only (iOS branchName) */
+    @Test
+    fun branchNameShowsForAnOwnerWithTwoBranches() {
+        assertEquals("Chi nhánh Quận 1", OrderDetailHeader.branchName(" Chi nhánh Quận 1 ", com.anyrent.pos.data.UserRole.MERCHANT, 2))
+        assertEquals(null, OrderDetailHeader.branchName("Quận 1", com.anyrent.pos.data.UserRole.MERCHANT, 1))
+        assertEquals(null, OrderDetailHeader.branchName("Quận 1", com.anyrent.pos.data.UserRole.MERCHANT, 0))
+        listOf(com.anyrent.pos.data.UserRole.OUTLET_ADMIN, com.anyrent.pos.data.UserRole.OUTLET_STAFF).forEach { role ->
+            assertEquals(null, OrderDetailHeader.branchName("Quận 1", role, 2))
+        }
+        assertEquals(null, OrderDetailHeader.branchName(null, com.anyrent.pos.data.UserRole.MERCHANT, 2))
+        assertEquals(null, OrderDetailHeader.branchName("  ", com.anyrent.pos.data.UserRole.MERCHANT, 2))
+    }
+
     /** #891 (owner): the detail header hides the "lấy sau N ngày" countdown; other notes stay (iOS headerSummary) */
     @Test
     fun handOverCountdownIsHidden() {

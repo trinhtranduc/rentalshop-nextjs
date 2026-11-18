@@ -198,4 +198,19 @@ final class WeeklySummaryTests: XCTestCase {
         XCTAssertEqual(TabsV2APIService.weeklySummaryPath(timeZone: "Etc/GMT+7"),
                        "/api/analytics/weekly-summary?timeZone=Etc/GMT%2B7")
     }
+
+    /// #1618 (owner): the ✦ pops with a quarter turn and rests; the loop ends where a 4-point star looks like the start
+    func testSparkleTwinkleLoopsWithoutAJump() {
+        let t = WeeklySummaryTwinkle.self
+        XCTAssertEqual(t.keyTimes.count, t.scales.count)
+        XCTAssertEqual(t.keyTimes.count, t.turns.count)
+        XCTAssertEqual(t.keyTimes.first, 0)
+        XCTAssertEqual(t.keyTimes.last, 1)
+        XCTAssertEqual(t.scales.first, 1)
+        XCTAssertEqual(t.scales.last, 1)
+        XCTAssertEqual(t.turns.last ?? 0, Double.pi / 2, accuracy: 0.0001, "a quarter turn: ✦ looks the same")
+        XCTAssertGreaterThan(t.scales.max() ?? 0, 1)
+        XCTAssertTrue(t.runs(reduceMotion: false))
+        XCTAssertFalse(t.runs(reduceMotion: true))
+    }
 }

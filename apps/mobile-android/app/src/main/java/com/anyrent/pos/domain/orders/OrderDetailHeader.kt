@@ -1,5 +1,6 @@
 package com.anyrent.pos.domain.orders
 
+import com.anyrent.pos.data.UserRole
 import com.anyrent.pos.data.model.OrderSummary
 import java.time.Instant
 import java.time.LocalDate
@@ -79,6 +80,13 @@ object OrderDetailHeader {
 
     /** #891 (owner): "Người tạo" of the detail; null (no line) when the name is empty */
     fun creatorName(summary: OrderSummary): String? = summary.createdByName?.trim()?.takeIf { it.isNotEmpty() }
+
+    /**
+     * #1618: the order's branch on the detail, for an owner with 2+ active branches (a one-branch shop and the branch
+     * roles only ever see one branch); null when the name is blank (iOS branchName)
+     */
+    fun branchName(name: String?, role: UserRole?, activeOutletCount: Int): String? =
+        if (role != UserRole.MERCHANT || activeOutletCount < 2) null else name?.trim()?.takeIf { it.isNotEmpty() }
 
     /** #891 (owner): the header hides the "lấy sau N ngày" / "trả sau N ngày" countdowns; late and today notes stay */
     fun shownDue(due: Due?): Due? = due.takeUnless { it is Due.HandOverIn || it is Due.ReturnIn || it is Due.PastPickup }
