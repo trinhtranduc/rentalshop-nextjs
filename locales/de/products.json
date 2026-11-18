@@ -633,7 +633,8 @@
         "depositNegative": "Die Anzahlung darf nicht negativ sein",
         "stockRequired": "Die Menge muss größer als 0 sein",
         "outletStockNegative": "Die Menge darf nicht negativ sein",
-        "branchRequired": "Mindestens eine Filiale ankreuzen, in der der Artikel angezeigt wird"
+        "branchRequired": "Mindestens eine Filiale ankreuzen, in der der Artikel angezeigt wird",
+        "hourBlocksNeedPrice": "Stundenblöcke brauchen zusätzlich einen Preis pro Vermietung oder pro Tag."
       },
       "noCreate": "Sie haben keine Berechtigung, Artikel hinzuzufügen.",
       "noEdit": "Sie haben keine Berechtigung, Artikel zu bearbeiten.",
@@ -645,6 +646,7 @@
       "needOutlet": "Vor dem Hinzufügen von Artikeln ist mindestens eine Filiale nötig.",
       "goOutlets": "Filialen öffnen",
       "blockRow": "Nach Tagesblock",
+      "hourRow": "Nach Stundenblock",
       "blockNotSet": "Nicht eingerichtet",
       "unitOnce": "₫ / Vermietung",
       "unitDay": "₫ / Tag",
@@ -662,6 +664,26 @@
         "copyLoading": "Wird geladen…",
         "close": "Schließen",
         "incomplete": "Geben Sie für jeden Tag und den Zuschlag pro Zusatztag einen Betrag ein oder behalten Sie den Preis des letzten Blocks."
+      },
+      "hour": {
+        "summary": "{count, plural, one {# Block} other {# Blöcke}}: {hours} Std.",
+        "edit": "Stundenblockpreise bearbeiten",
+        "title": "Stundenblockpreise",
+        "hint": "Jeder Stundenblock hat einen Preis. Im Warenkorb gilt der Preis des gewählten Blocks.",
+        "listTitle": "Stundenblöcke",
+        "unit": "Std.",
+        "hoursOf": "Stunden von Block {n}",
+        "priceOf": "Preis von Block {n}",
+        "remove": "Block {n} entfernen",
+        "add": "+ Block hinzufügen",
+        "max": "Höchstens {n} Blöcke.",
+        "save": "Preisliste speichern",
+        "turnOff": "Stundenblockpreise deaktivieren",
+        "errors": {
+          "hours": "Die Stunden müssen eine ganze Zahl von 1 bis 24 sein.",
+          "repeated": "Jede Stundenzahl darf nur für einen Block verwendet werden.",
+          "price": "Geben Sie für jeden Block einen Preis ein (0 ist erlaubt)."
+        }
       },
       "listing": {
         "branch": "Filiale",
@@ -691,6 +713,7 @@
       "hour": "Miete pro Stunde",
       "perDay": "{price}/Tag",
       "perHour": "{price}/Stunde",
+      "hourBlock": "{n} Std. {price}",
       "default": "Standard",
       "deposit": "Anzahlung",
       "sale": "Verkaufspreis",

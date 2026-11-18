@@ -659,7 +659,8 @@
         "HOURLY": "1시간당 · {price}/시간",
         "FIXED": "1회당 · {price}/회",
         "SALE": "판매가 · {price}",
-        "BLOCK": "일수 블록 · {price}"
+        "BLOCK": "일수 블록 · {price}",
+        "HOUR_BLOCK": "{n}시간 블록 · {price}"
       },
       "cart": {
         "label": "주문 작성 중",
@@ -753,7 +754,8 @@
           "DAILY": "/일",
           "HOURLY": "/시간",
           "OTHER": "",
-          "BLOCK": "대여 전체"
+          "BLOCK": "대여 전체",
+          "HOUR_BLOCK": "/블록"
         },
         "note": "이 주문에만 적용되며 상품 가격은 변경되지 않습니다.",
         "done": "완료",
@@ -937,7 +939,8 @@
         "image": "{name} 사진",
         "block": "{n}일 블록",
         "blockExtra": "{n}일 블록 + 추가 {m}일",
-        "blockDays": "{n}일"
+        "blockDays": "{n}일",
+        "hourBlock": "{n}시간 블록"
       },
       "notes": {
         "title": "메모",
@@ -1115,7 +1118,8 @@
         "perHour": "/시간",
         "hours": "{n}시간",
         "block": "{n}일 블록",
-        "blockExtra": "{n}일 블록 + 추가 {m}일"
+        "blockExtra": "{n}일 블록 + 추가 {m}일",
+        "hourBlock": "{n}시간 블록"
       },
       "bankTitle": "계좌이체",
       "bankName": "은행",

@@ -557,6 +557,7 @@
   "BLOCK_PRICE_MISMATCH": "Harga produk dengan tarif per blok hari tidak sesuai dengan tabel harga. Muat ulang produk lalu coba lagi.",
   "PRICING_TYPE_REQUIRES_UPDATE": "Produk ini menggunakan harga per blok hari. Silakan perbarui aplikasi untuk memesan sewa.",
   "BLOCK_TABLE_INVALID": "Tabel harga per blok hari tidak valid. Gunakan 1 sampai 31 hari, harga 0 atau lebih, dan hanya satu tabel harga per produk.",
+  "HOUR_BLOCKS_INVALID": "Harga per blok jam tidak valid. Gunakan jam bulat 1 sampai 24, setiap jumlah jam sekali saja, harga 0 atau lebih, paling banyak 10 blok, dan tetap sertakan harga per sewa atau per hari.",
   "INSTALLMENT_EXCEEDS_TOTAL": "Total tahap uang muka lebih besar dari total pesanan.",
   "INSTALLMENT_OVERPAID": "Jumlah lebih besar dari yang diizinkan untuk tahap ini, atau total baru lebih kecil dari yang sudah dibayar.",
   "INSTALLMENT_ALREADY_PAID": "Tahap uang muka ini sudah dibayar.",

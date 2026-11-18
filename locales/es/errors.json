@@ -557,6 +557,7 @@
   "BLOCK_PRICE_MISMATCH": "El precio del artículo por bloques de días no coincide con la tabla de precios. Recargue el producto e inténtelo de nuevo.",
   "PRICING_TYPE_REQUIRES_UPDATE": "Este producto usa precio por bloques de días. Por favor, actualice la app para reservar.",
   "BLOCK_TABLE_INVALID": "La tabla de precios por bloques de días no es válida. Use de 1 a 31 días, precios de 0 o más y solo una tabla por producto.",
+  "HOUR_BLOCKS_INVALID": "Los precios por bloque de horas no son válidos. Use horas enteras de 1 a 24, cada cantidad de horas una sola vez, precios de 0 o más, como máximo 10 bloques, y mantenga un precio por alquiler o por día.",
   "INSTALLMENT_EXCEEDS_TOTAL": "La suma de las etapas de anticipo es mayor que el total del pedido.",
   "INSTALLMENT_OVERPAID": "El monto supera el permitido para esta etapa, o el nuevo total es menor que lo ya cobrado.",
   "INSTALLMENT_ALREADY_PAID": "Esta etapa de anticipo ya fue cobrada.",

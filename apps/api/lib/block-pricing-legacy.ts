@@ -17,7 +17,10 @@ type OptionLike = { type?: string | null; [key: string]: unknown };
 const BLOCK_KEYS = ['blockTiers', 'blockStartDay', 'blockExtraMode', 'blockExtraPrice'];
 
 export function pricingOptionsForClient<T extends OptionLike>(options: T[] | null | undefined, request: HeaderRequest): T[] {
-  const list = options ?? [];
+  // #1621: hour blocks only for a client with `hour-blocks`; an installed app would fold them into one "Theo giờ" row
+  // (iOS ProductsV2.swift pricingChoices, Android ProductRules.kt). A product always keeps a FIXED / DAILY option next to them.
+  const raw = options ?? [];
+  const list = raw.some((o) => o?.type === 'HOURLY') && !hasCapability(request, 'hour-blocks') ? raw.filter((o) => o?.type !== 'HOURLY') : raw;
   if (!list.some((o) => o?.type === 'BLOCK')) return list;
   if (hasCapability(request, 'block-pricing')) return list;
   const hasFixed = list.some((o) => o?.type === 'FIXED');

@@ -1,4 +1,6 @@
 import { blockOptionsIssue } from '../../../lib/block-options-issue';
+import { hourBlocksIssue } from '../../../lib/hour-blocks-issue';
+import { hasCapability } from '../../../lib/client-capabilities';
 import { NextRequest, NextResponse } from 'next/server';
 import { withPermissions, hasPermission } from '@rentalshop/auth/server';
 import { db, prisma } from '@rentalshop/database';
@@ -614,6 +616,12 @@ export const POST = withPermissions(['products.manage', 'products.create'])(asyn
     if (blockIssue) {
       return NextResponse.json(ResponseBuilder.error(blockIssue), { status: 400 });
     }
+    // #1621: hour blocks only from a client with `hour-blocks`, and then a valid set
+    const allowHourly = hasCapability(request, 'hour-blocks');
+    const hourIssue = allowHourly ? hourBlocksIssue(parsed.data.pricingOptions) : null;
+    if (hourIssue) {
+      return NextResponse.json(ResponseBuilder.error(hourIssue), { status: 400 });
+    }
 
     // Determine merchantId
     let merchantId = userScope.merchantId;
@@ -741,7 +749,7 @@ export const POST = withPermissions(['products.manage', 'products.create'])(asyn
           isListed: os.isListed
         }))
       }
-    });
+    }, { allowHourly });
 
     await safeAudit('create', () => createAuditHelper(prisma).logCreate({
       entityType: 'Product',

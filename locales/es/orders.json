@@ -659,7 +659,8 @@
         "HOURLY": "Por hora · {price}/hora",
         "FIXED": "Por alquiler · {price}",
         "SALE": "Precio de venta · {price}",
-        "BLOCK": "Por bloque de días · {price}"
+        "BLOCK": "Por bloque de días · {price}",
+        "HOUR_BLOCK": "Bloque de {n} horas · {price}"
       },
       "cart": {
         "label": "Pedido en curso",
@@ -753,7 +754,8 @@
           "DAILY": "/día",
           "HOURLY": "/hora",
           "OTHER": "",
-          "BLOCK": "por todo el alquiler"
+          "BLOCK": "por todo el alquiler",
+          "HOUR_BLOCK": "/bloque"
         },
         "note": "Solo se aplica a este pedido; el precio del producto no cambia.",
         "done": "Listo",
@@ -937,7 +939,8 @@
         "image": "Foto de {name}",
         "block": "Bloque de {n} días",
         "blockExtra": "Bloque de {n} días + {m} días adicionales",
-        "blockDays": "{n} días"
+        "blockDays": "{n} días",
+        "hourBlock": "Bloque de {n} horas"
       },
       "notes": {
         "title": "Notas",
@@ -1115,7 +1118,8 @@
         "perHour": "/hora",
         "hours": "{n} horas",
         "block": "Bloque de {n} días",
-        "blockExtra": "Bloque de {n} días + {m} días adicionales"
+        "blockExtra": "Bloque de {n} días + {m} días adicionales",
+        "hourBlock": "Bloque de {n} horas"
       },
       "bankTitle": "Transferencia bancaria",
       "bankName": "Banco",

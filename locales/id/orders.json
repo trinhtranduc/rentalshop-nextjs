@@ -659,7 +659,8 @@
         "HOURLY": "Per jam · {price}/jam",
         "FIXED": "Per sewa · {price}/sewa",
         "SALE": "Harga jual · {price}",
-        "BLOCK": "Per blok hari · {price}"
+        "BLOCK": "Per blok hari · {price}",
+        "HOUR_BLOCK": "Blok {n} jam · {price}"
       },
       "cart": {
         "label": "Pesanan yang sedang dibuat",
@@ -753,6 +754,7 @@
           "DAILY": "/hari",
           "HOURLY": "/jam",
           "BLOCK": "untuk seluruh masa sewa",
+          "HOUR_BLOCK": "/blok",
           "OTHER": ""
         },
         "note": "Hanya berlaku untuk pesanan ini, tidak mengubah harga produk.",
@@ -937,7 +939,8 @@
         "image": "Foto {name}",
         "block": "Blok {n} hari",
         "blockExtra": "Blok {n} hari + {m} hari tambahan",
-        "blockDays": "{n} hari"
+        "blockDays": "{n} hari",
+        "hourBlock": "Blok {n} jam"
       },
       "notes": {
         "title": "Catatan",
@@ -1115,7 +1118,8 @@
         "perHour": "/jam",
         "hours": "{n} jam",
         "block": "Blok {n} hari",
-        "blockExtra": "Blok {n} hari + {m} hari tambahan"
+        "blockExtra": "Blok {n} hari + {m} hari tambahan",
+        "hourBlock": "Blok {n} jam"
       },
       "bankTitle": "Transfer bank",
       "bankName": "Bank",

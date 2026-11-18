@@ -557,6 +557,7 @@
   "BLOCK_PRICE_MISMATCH": "Le prix de l'article en tranche de jours ne correspond pas à la grille tarifaire. Rechargez le produit puis réessayez.",
   "PRICING_TYPE_REQUIRES_UPDATE": "Ce produit utilise un tarif par tranche de jours. Veuillez mettre à jour l'application pour réserver.",
   "BLOCK_TABLE_INVALID": "La grille de tarifs par tranche de jours n'est pas valide. Utilisez de 1 à 31 jours, des prix égaux ou supérieurs à 0 et une seule grille par produit.",
+  "HOUR_BLOCKS_INVALID": "Les tarifs par tranche d'heures ne sont pas valides. Utilisez des heures entières de 1 à 24, chaque durée une seule fois, des prix à partir de 0, au plus 10 tranches, et gardez un prix par location ou par jour.",
   "INSTALLMENT_EXCEEDS_TOTAL": "Les échéances d'acompte dépassent au total le montant de la commande.",
   "INSTALLMENT_OVERPAID": "Le montant dépasse ce qui est autorisé pour cette échéance, ou le nouveau total est inférieur au montant déjà encaissé.",
   "INSTALLMENT_ALREADY_PAID": "Cette échéance d'acompte a déjà été encaissée.",

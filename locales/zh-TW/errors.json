@@ -557,6 +557,7 @@
   "BLOCK_PRICE_MISMATCH": "依整段天數計價的商品價格與價目表不符。請重新載入商品後再試一次。",
   "PRICING_TYPE_REQUIRES_UPDATE": "此商品使用整段天數計價。請更新應用程式後再預約租借。",
   "BLOCK_TABLE_INVALID": "整段天數價目表無效。天數須為 1 至 31 天，價格須為 0 或以上，且每件商品只能有一張價目表。",
+  "HOUR_BLOCKS_INVALID": "依小時區間價格無效。小時數需為 1 至 24 的整數且不可重複，價格需為 0 以上，最多 10 個區間，並保留按次或按日價格。",
   "INSTALLMENT_EXCEEDS_TOTAL": "各期訂金加總超過訂單總額。",
   "INSTALLMENT_OVERPAID": "金額超過此期允許的上限，或新的總額低於已收金額。",
   "INSTALLMENT_ALREADY_PAID": "此期訂金已收取。",

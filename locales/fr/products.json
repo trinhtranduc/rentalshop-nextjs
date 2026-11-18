@@ -633,7 +633,8 @@
         "depositNegative": "L'acompte ne peut pas être négatif",
         "stockRequired": "La quantité doit être supérieure à 0",
         "outletStockNegative": "La quantité ne peut pas être négative",
-        "branchRequired": "Cochez au moins un point de location où afficher le produit"
+        "branchRequired": "Cochez au moins un point de location où afficher le produit",
+        "hourBlocksNeedPrice": "Les tranches d'heures demandent aussi un prix par location ou par jour."
       },
       "noCreate": "Vous n'êtes pas autorisé à ajouter des produits.",
       "noEdit": "Vous n'êtes pas autorisé à modifier les produits.",
@@ -645,6 +646,7 @@
       "needOutlet": "Créez au moins un point de location avant d'ajouter un produit.",
       "goOutlets": "Ouvrir Points de location",
       "blockRow": "Par tranche de jours",
+      "hourRow": "Par tranche d'heures",
       "blockNotSet": "Non configuré",
       "unitOnce": "VND / fois",
       "unitDay": "VND / jour",
@@ -662,6 +664,26 @@
         "copyLoading": "Chargement…",
         "close": "Fermer",
         "incomplete": "Saisissez le prix de chaque jour et le montant ajouté par jour, ou choisissez de maintenir le prix du dernier palier."
+      },
+      "hour": {
+        "summary": "{count, plural, one {# tranche} other {# tranches}} : {hours} h",
+        "edit": "Modifier les prix par tranche d'heures",
+        "title": "Prix par tranche d'heures",
+        "hint": "Un prix par tranche d'heures. Dans le panier, la tranche choisie donne le prix.",
+        "listTitle": "Tranches d'heures",
+        "unit": "h",
+        "hoursOf": "Heures de la tranche {n}",
+        "priceOf": "Prix de la tranche {n}",
+        "remove": "Supprimer la tranche {n}",
+        "add": "+ Ajouter une tranche",
+        "max": "{n} tranches au maximum.",
+        "save": "Enregistrer la grille tarifaire",
+        "turnOff": "Désactiver le prix par tranche d'heures",
+        "errors": {
+          "hours": "Les heures doivent être un nombre entier de 1 à 24.",
+          "repeated": "Chaque durée ne peut servir qu'à une seule tranche.",
+          "price": "Saisissez un prix pour chaque tranche (0 est accepté)."
+        }
       },
       "listing": {
         "branch": "Point de location",
@@ -691,6 +713,7 @@
       "hour": "À l'heure",
       "perDay": "{price}/jour",
       "perHour": "{price}/heure",
+      "hourBlock": "{n} h {price}",
       "default": "Par défaut",
       "deposit": "Acompte",
       "sale": "Prix de vente",

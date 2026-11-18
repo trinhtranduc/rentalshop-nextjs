@@ -1,4 +1,6 @@
 import { blockOptionsIssue } from '../../../../lib/block-options-issue';
+import { hourBlocksIssue } from '../../../../lib/hour-blocks-issue';
+import { hasCapability } from '../../../../lib/client-capabilities';
 import { pricingOptionsForClient } from '../../../../lib/block-pricing-legacy';
 import { salePriceForClient } from '../../../../lib/legacy-sale-price';
 import { NextRequest, NextResponse } from 'next/server';
@@ -623,6 +625,11 @@ export async function PUT(
       if (blockIssue) {
         return NextResponse.json(ResponseBuilder.error(blockIssue), { status: 400 });
       }
+      // #1621: a client that knows hour blocks must send a valid set (hours 1–24 once each, price >= 0, another price next to them)
+      const hourIssue = hasCapability(request, 'hour-blocks') ? hourBlocksIssue(productUpdateData.pricingOptions) : null;
+      if (hourIssue) {
+        return NextResponse.json(ResponseBuilder.error(hourIssue), { status: 400 });
+      }
 
       // Prepare outletStock nested write if provided.
       // #825: OUTLET_STAFF passed the shared-field check above, so its write is the stock only
@@ -687,7 +694,11 @@ export async function PUT(
       // #1200: a client that sends no `pricingSchemaVersion` (installed apps) cannot see BLOCK options;
       // saving its option list must not delete them.
       const keepBlockOptions = (productDataFromRequest as any)?.pricingSchemaVersion == null;
-      const updatedProduct = await db.products.update(productId, finalUpdateData, { keepBlockOptions });
+      // #1621: only a client with `hour-blocks` saves hour blocks; any other keeps the stored ones it cannot see
+      const updatedProduct = await db.products.update(productId, finalUpdateData, {
+        keepBlockOptions,
+        allowHourly: hasCapability(request, 'hour-blocks'),
+      });
       // #519: snapshots with prices, pricing options, per-outlet stock and images (never costPrice)
       await safeAudit('update', () => createAuditHelper(prisma).logUpdate({
         entityType: 'Product',

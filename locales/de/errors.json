@@ -557,6 +557,7 @@
   "BLOCK_PRICE_MISMATCH": "Der Preis des nach Tagesblöcken berechneten Artikels stimmt nicht mit der Preisliste überein. Laden Sie den Artikel neu und versuchen Sie es erneut.",
   "PRICING_TYPE_REQUIRES_UPDATE": "Dieser Artikel verwendet Blockpreise pro Tag. Bitte aktualisieren Sie die App, um diese Vermietung zu buchen.",
   "BLOCK_TABLE_INVALID": "Die Blockpreistabelle ist ungültig. Verwenden Sie 1 bis 31 Tage, Preise ab 0 und nur eine Blockpreistabelle pro Artikel.",
+  "HOUR_BLOCKS_INVALID": "Die Preise nach Stundenblock sind ungültig. Verwenden Sie ganze Stunden von 1 bis 24, jede Stundenzahl nur einmal, Preise ab 0, höchstens 10 Blöcke, und behalten Sie einen Preis pro Vermietung oder pro Tag.",
   "INSTALLMENT_EXCEEDS_TOTAL": "Die Anzahlungsetappen ergeben zusammen mehr als die Auftragssumme.",
   "INSTALLMENT_OVERPAID": "Der Betrag ist höher als diese Etappe zulässt, oder die neue Summe liegt unter dem bereits eingezogenen Betrag.",
   "INSTALLMENT_ALREADY_PAID": "Diese Anzahlungsetappe wurde bereits eingezogen.",
