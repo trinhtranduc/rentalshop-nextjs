@@ -1,6 +1,6 @@
 # Web: back to the product list keeps its filters; a new tab keeps the language
 
-Issue: #1627 · Author: Claude (for the owner) · Status: in-progress · Created: 2026-11-18
+Issue: #1627 · Author: Claude (for the owner) · Status: done · Created: 2026-11-18
 
 ## Problem
 

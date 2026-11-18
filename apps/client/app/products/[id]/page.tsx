@@ -17,6 +17,7 @@ import { Modal } from '../../orders/create/parts';
 import { PRODUCT_ICON } from '../list/parts';
 import { BARCODE_ICON } from '../labels/LabelSheet';
 import { ownStockRows, productPrices, type ProductLike } from '../list/list-model';
+import { useProductsListHref } from '../list/useProductsListHref';
 import { BlockPricingCard } from './BlockPricingCard';
 import { draftFromProduct } from '../block-model';
 import { defaultModeOf, imagesOf, sharedFieldsLockedFor, type ProductSource } from '../form/form-model';
@@ -120,10 +121,12 @@ export default function ProductDetailPage() {
 
   const [confirm, setConfirm] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  // #1627 back to the list with the filters and page it had
+  const listHref = useProductsListHref();
 
   const container = 'mx-auto box-border flex w-full max-w-[1280px] flex-col gap-4 px-4 pb-12 pt-6 text-ar-ink sm:px-8';
   const backLink = (
-    <Link href="/products" className="inline-flex w-fit items-center gap-1 text-sm font-semibold text-ar-muted no-underline hover:text-ar-ink">
+    <Link href={listHref} className="inline-flex w-fit items-center gap-1 text-sm font-semibold text-ar-muted no-underline hover:text-ar-ink">
       <ShellIcon d={ICONS.chevronLeft} size={16} />
       {t('detail.back')}
     </Link>
@@ -188,7 +191,7 @@ export default function ProductDetailPage() {
         return;
       }
       toastSuccess(t('delete.done', { count: 1 }));
-      router.push('/products');
+      router.push(listHref);
     } catch {
       setConfirm(false);
     } finally {

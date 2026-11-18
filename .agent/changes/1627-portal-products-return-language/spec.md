@@ -1,6 +1,6 @@
 # Spec — back to the product list keeps its filters; a new tab keeps the language
 
-Issue: #1627 · Status: in-progress · Intent: ./intent.md
+Issue: #1627 · Status: done · Intent: ./intent.md
 
 ## Behavior
 
