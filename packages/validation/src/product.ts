@@ -3,8 +3,10 @@ import { z } from 'zod';
 /** #1189 pricing options of a product save; `pricingSchemaVersion: 2` marks a client that knows BLOCK options */
 export const ProductPricingOptionSchema = z.object({
   id: z.number().int().positive().optional(),
-  type: z.enum(['FIXED', 'DAILY', 'BLOCK']),
-  price: z.number().min(0), // BLOCK: day-1 price (the server sets it to blockTiers[0])
+  type: z.enum(['FIXED', 'DAILY', 'BLOCK', 'HOURLY']),
+  price: z.number().min(0), // BLOCK: day-1 price (the server sets it to blockTiers[0]); HOURLY: price of the block
+  unit: z.enum(['DAY', 'HOUR']).nullable().optional(),
+  blockSize: z.number().int().min(1).max(24).nullable().optional(), // #1621 HOURLY: hours of the block
   isDefault: z.boolean().optional(),
   isActive: z.boolean().optional(),
   sortOrder: z.number().int().optional(),
