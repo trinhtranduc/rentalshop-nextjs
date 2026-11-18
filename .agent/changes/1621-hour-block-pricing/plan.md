@@ -1,6 +1,6 @@
 # Plan — Giá theo khối giờ, PR 1 (API + web)
 
-Issue: #1621 · Status: accepted · Spec: ./spec.md · Branch: `feat/1621-hour-block-pricing` (từ `origin/dev`, worktree riêng)
+Issue: #1621 · Status: in-progress (PR 1 API + web xong; iOS, Android sau) · Spec: ./spec.md · Branch: `feat/1621-hour-block-pricing` (từ `origin/dev`, worktree riêng)
 
 Skills: `api-route-standard`, `api-compat-review`, `i18n-keys`, `timezone-dates` (chỉ để chắc không đổi ngày), `mobile-parity` (ghi PR 2/3), `verify-change`.
 
