@@ -2536,4 +2536,25 @@
     <plurals name="weekly_summary_times">
         <item quantity="other">%1$d 次</item>
     </plurals>
+    <!-- #1621 Theo khối giờ (hour blocks) -->
+    <string name="v2_form_per_hour_block">依小時區間計價</string>
+    <string name="v2_form_error_hour_blocks_need_price">使用小時區間時，還需要按次或按日價格。</string>
+    <string name="hour_block_title">依小時區間計價</string>
+    <string name="hour_block_intro">每個小時區間一個價格。在購物車選擇哪個區間，就套用該區間的價格。</string>
+    <string name="hour_block_section">小時區間</string>
+    <string name="hour_block_unit">小時</string>
+    <string name="hour_block_add">+ 新增區間</string>
+    <string name="hour_block_remove">刪除第 %1$d 個區間</string>
+    <string name="hour_block_max">最多 %1$d 個區間。</string>
+    <string name="hour_block_save">儲存價目表</string>
+    <string name="hour_block_turn_off">關閉依小時區間計價</string>
+    <string name="hour_block_error_hours">小時數須為 1 至 24 的整數。</string>
+    <string name="hour_block_error_repeated">每個小時數只能用於一個區間。</string>
+    <string name="hour_block_error_price">請為每個區間輸入價格（可為 0）。</string>
+    <string name="hour_block_label">%1$d 小時區間</string>
+    <string name="hour_block_detail">%1$d 小時 %2$s</string>
+    <string name="api_error_hour_blocks_invalid">依小時區間價格無效。小時數需為 1 至 24 的整數且不可重複，價格需為 0 以上，最多 10 個區間，並保留按次或按日價格。</string>
+    <plurals name="hour_block_summary">
+        <item quantity="other">%1$d 個區間：%2$s 小時</item>
+    </plurals>
 </resources>

@@ -141,7 +141,10 @@ object ProductsV2Api {
             prices.costPrice?.let { data.put("costPrice", it) }
             data.put("pricingOptions", JSONArray(prices.options.map { option ->
                 option.blockTable?.let { BlockPricing.optionJson(it, option.isDefault) }
-                    ?: JSONObject().put("type", option.type).put("price", option.price).put("isDefault", option.isDefault)
+                    ?: JSONObject().put("type", option.type).put("price", option.price).put("isDefault", option.isDefault).apply {
+                        // #1621: an hour block
+                        option.blockSize?.let { put("unit", com.anyrent.pos.domain.products.HourBlocks.UNIT); put("blockSize", it) }
+                    }
             }))
             prices.pricingSchemaVersion?.let { data.put("pricingSchemaVersion", it) }
         }

@@ -95,6 +95,7 @@ import com.anyrent.pos.domain.orders.EditOrderSheet
 import com.anyrent.pos.domain.customers.CustomerPickerEdit
 import com.anyrent.pos.domain.products.BlockPricing
 import com.anyrent.pos.domain.products.BlockText
+import com.anyrent.pos.domain.products.HourBlockText
 import com.anyrent.pos.domain.products.CartDateRow
 import com.anyrent.pos.domain.products.ProductPricing
 import com.anyrent.pos.domain.products.CartLineCalc
@@ -492,7 +493,11 @@ fun CartV2Screen(
                                 shop = com.anyrent.pos.ui.orders.shareShop(),
                                 vi = shareContext.shareIsVietnamese(),
                                 blockFormula = { line -> line.blockDetail?.let { BlockText.formulaOrNull(shareContext.resources, it) } },
-                                blockSummary = { line -> line.blockDetail?.let { BlockText.summary(shareContext.resources, it) } },
+                                blockSummary = { line ->
+                                    line.blockDetail?.let { BlockText.summary(shareContext.resources, it) }
+                                        // #1621: "Khối 4 giờ" of an hour-block line
+                                        ?: line.hourBlockHours?.takeIf { line.isHourBlock }?.let { HourBlockText.label(shareContext.resources, it) }
+                                },
                             ),
                         )
                     }.onFailure { error = it.message }
@@ -1180,9 +1185,12 @@ private fun PricingChip(line: CartLine, isSale: Boolean, onClick: () -> Unit, mo
     val days = (CartV2Logic.calc(line, isSale).kind as? CartLineCalc.Kind.PerDay)?.days?.takeIf { it > 1 }
     val daysText = days?.let { pluralStringResource(R.plurals.v2_cart_days, it, it) }
     val changeLabel = stringResource(R.string.v2_pricing_change, line.product.name)
-    // #1189: a block line reads "Khối 3 ngày + 2 ngày thêm · 160.000đ ⌄"
+    // #1189: a block line reads "Khối 3 ngày + 2 ngày thêm · 160.000đ ⌄"; #1621: an hour-block line "Khối 4 giờ · 250.000đ ⌄"
     val blockDetail = if (isSale) null else line.blockDetail
-    if (blockDetail != null) {
+    val res = LocalContext.current.resources
+    val blockText = blockDetail?.let { BlockText.summary(res, it) }
+        ?: line.hourBlockHours?.takeIf { line.isHourBlock }?.let { HourBlockText.label(res, it) }
+    if (blockText != null) {
         Row(
             modifier.clip(RoundedCornerShape(8.dp)).clickable(onClickLabel = changeLabel, onClick = onClick)
                 .heightIn(min = 32.dp).padding(end = 6.dp),
@@ -1191,7 +1199,7 @@ private fun PricingChip(line: CartLine, isSale: Boolean, onClick: () -> Unit, mo
             // One text, so a long summary wraps with its price instead of splitting into two columns
             Text(
                 buildAnnotatedString {
-                    withStyle(SpanStyle(fontWeight = FontWeight.Medium)) { append(BlockText.summary(LocalContext.current.resources, blockDetail)) }
+                    withStyle(SpanStyle(fontWeight = FontWeight.Medium)) { append(blockText) }
                     append(" · " + com.anyrent.pos.domain.money.ShopMoney.withUnit(line.unitPrice))
                 },
                 fontSize = DS.TextSize.Body, color = DS.Colors.Primary,
@@ -1283,11 +1291,13 @@ private fun CartPricingSheet(
     onApply: (String?, Double?) -> Unit,
 ) {
     val choices = remember(line.lineId) { if (isSale) emptyList() else CartV2Logic.pricingChoices(line) }
-    var type by remember(line.lineId) { mutableStateOf(line.pricingType.uppercase()) }
+    // The chosen row's key: a type, or "HOURLY:<option id>" for an hour block (#1621)
+    var type by remember(line.lineId) { mutableStateOf(CartV2Logic.currentKey(line)) }
     // #951: "0" is a price (a free line) and shows as 0; an empty box is no typed price
     var digits by remember(line.lineId) {
-        mutableStateOf(CartV2Logic.sheetStartPrice(line, line.pricingType)?.toLong()?.toString().orEmpty())
+        mutableStateOf(CartV2Logic.sheetStartPrice(line, CartV2Logic.currentKey(line))?.toLong()?.toString().orEmpty())
     }
+    val hours = choices.firstOrNull { it.key == type }?.hours
     val typed = digits.toDoubleOrNull()
     val price = typed ?: 0.0
     val daily = !isSale && type == "DAILY"
@@ -1316,15 +1326,15 @@ private fun CartPricingSheet(
             if (choices.isNotEmpty()) {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     choices.forEach { choice ->
-                        val selected = choice.type == type
+                        val selected = choice.key == type
                         val shape = RoundedCornerShape(12.dp)
                         Row(
                             Modifier.fillMaxWidth().heightIn(min = 56.dp).clip(shape)
                                 .border(if (selected) 1.5.dp else 1.dp, if (selected) DS.Colors.Primary else Color(0xFFE2E8F0), shape)
                                 .background(if (selected) Color(0xFFEFF6FF) else DS.Colors.Surface)
                                 .clickable(role = Role.RadioButton) {
-                                    type = choice.type
-                                    digits = CartV2Logic.sheetStartPrice(line, choice.type)?.toLong()?.toString().orEmpty()
+                                    type = choice.key
+                                    digits = CartV2Logic.sheetStartPrice(line, choice.key)?.toLong()?.toString().orEmpty()
                                 }
                                 .padding(horizontal = 14.dp),
                             verticalAlignment = Alignment.CenterVertically,
@@ -1334,8 +1344,8 @@ private fun CartPricingSheet(
                                 Modifier.size(20.dp).clip(CircleShape).background(Color.White)
                                     .border(if (selected) 6.dp else 1.5.dp, if (selected) DS.Colors.Primary else Color(0xFF94A3B8), CircleShape),
                             )
-                            Text(pricingLabel(choice.type), fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = DS.Colors.Text,
-                                modifier = Modifier.weight(1f))
+                            Text(choice.hours?.let { HourBlockText.label(sheetRes, it) } ?: pricingLabel(choice.type),
+                                fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = DS.Colors.Text, modifier = Modifier.weight(1f))
                             val catalog = choice.catalogPrice
                             if (choice.type == "BLOCK" && blockTable != null) {
                                 Text(BlockText.rowSummary(sheetRes, blockTable), fontSize = DS.TextSize.Body, color = DS.Colors.TextMuted)
@@ -1374,6 +1384,9 @@ private fun CartPricingSheet(
                 val money = com.anyrent.pos.domain.money.ShopMoney.withUnit(preview.unitPrice)
                 val text = if (blockDetail != null) {
                     BlockText.summary(sheetRes, blockDetail) + (BlockText.formulaOrNull(sheetRes, blockDetail)?.let { "\n$it" } ?: "")
+                } else if (hours != null) {
+                    // #1621: "Khối 4 giờ × 1" (never × days)
+                    HourBlockText.label(sheetRes, hours) + " × ${preview.quantity}"
                 } else preview.days?.let { "$money × ${pluralStringResource(R.plurals.v2_cart_days, it, it)} × ${preview.quantity}" }
                     ?: "$money × ${preview.quantity}"
                 Text(text, fontSize = DS.TextSize.Body, color = DS.Colors.TextMuted, modifier = Modifier.weight(1f))

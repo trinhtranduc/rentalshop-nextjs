@@ -42,3 +42,6 @@ Kiểm được: các ca tiền ở `spec.md` (Váy 2/4/8 giờ, Vest 2 giờ ×
 - 2026-11-18 — Trùng lịch vẫn theo ngày; hai khách cùng ngày bị báo trùng, shop bấm "Vẫn tạo đơn" (chủ shop chốt theo mockup).
 - 2026-11-18 — Thứ tự: web → iOS → Android (chủ shop).
 - 2026-11-18 — Bắt đầu làm (chủ shop: "làm luôn").
+- 2026-11-18 — PR 1 (API + web) #1622 đã merge vào dev; làm tiếp iOS (chủ shop: "có").
+- 2026-11-18 — iOS: form cũ `NewProductViewController` (cờ `newProducts` tắt) không có dòng khối giờ nhưng app đã gửi `hour-blocks`, nên form này gửi lại nguyên các khối đã lưu để không mất (Android làm giống ở PR 3).
+- 2026-11-18 — PR 2 iOS là #1624 (issue #1623). Làm tiếp Android (chủ shop: "có"); form cũ Android (`ProductFormScreen` → `ApiParity.updateProductFull`) cũng gửi lại các khối đã lưu.

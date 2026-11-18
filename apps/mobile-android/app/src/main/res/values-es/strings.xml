@@ -2537,4 +2537,26 @@
         <item quantity="one">%1$d vez</item>
         <item quantity="other">%1$d veces</item>
     </plurals>
+    <!-- #1621 Theo khối giờ (hour blocks) -->
+    <string name="v2_form_per_hour_block">Por bloque de horas</string>
+    <string name="v2_form_error_hour_blocks_need_price">Los bloques de horas también necesitan un precio por alquiler o por día.</string>
+    <string name="hour_block_title">Precio por bloque de horas</string>
+    <string name="hour_block_intro">Cada bloque de horas tiene un precio. En el carrito se cobra el precio del bloque elegido.</string>
+    <string name="hour_block_section">Bloques de horas</string>
+    <string name="hour_block_unit">h</string>
+    <string name="hour_block_add">+ Agregar bloque</string>
+    <string name="hour_block_remove">Eliminar bloque %1$d</string>
+    <string name="hour_block_max">Como máximo %1$d bloques.</string>
+    <string name="hour_block_save">Guardar tabla de precios</string>
+    <string name="hour_block_turn_off">Desactivar precios por bloque de horas</string>
+    <string name="hour_block_error_hours">Las horas deben ser un número entero de 1 a 24.</string>
+    <string name="hour_block_error_repeated">Cada cantidad de horas solo puede usarse en un bloque.</string>
+    <string name="hour_block_error_price">Ingrese un precio para cada bloque (se permite 0).</string>
+    <string name="hour_block_label">Bloque de %1$d horas</string>
+    <string name="hour_block_detail">%1$d h %2$s</string>
+    <string name="api_error_hour_blocks_invalid">Los precios por bloque de horas no son válidos. Use horas enteras de 1 a 24, cada cantidad de horas una sola vez, precios de 0 o más, como máximo 10 bloques, y mantenga un precio por alquiler o por día.</string>
+    <plurals name="hour_block_summary">
+        <item quantity="one">%1$d bloque: %2$s h</item>
+        <item quantity="other">%1$d bloques: %2$s h</item>
+    </plurals>
 </resources>

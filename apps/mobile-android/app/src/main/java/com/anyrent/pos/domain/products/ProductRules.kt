@@ -97,9 +97,19 @@ object PricingTypes {
     fun normalizeOption(raw: String?): String = raw?.trim()?.uppercase()?.takeIf { it in known || it == "BLOCK" } ?: "FIXED"
 }
 
-data class PricingOptionInput(val type: String, val price: Double, val isDefault: Boolean, val blockTable: BlockTable? = null)
+data class PricingOptionInput(
+    val type: String,
+    val price: Double,
+    val isDefault: Boolean,
+    val blockTable: BlockTable? = null,
+    /** #1621: the hours of an hour block (sent with `unit` HOUR); null on every other option */
+    val blockSize: Int? = null,
+)
 
 object ProductPricing {
+    /** #1621: the hour blocks of the product ("Theo khối giờ"), shortest first; empty when it has none */
+    fun hourBlocks(product: Product): List<HourBlock> = HourBlocks.of(product.pricingOptions)
+
     fun perRental(product: Product): Double? {
         if (product.pricingOptions.isEmpty()) {
             if (product.pricingType.equals("DAILY", ignoreCase = true)) return null
@@ -135,7 +145,14 @@ object ProductPricing {
      * Options sent on save (#951: 0 is a 0đ price, empty = none); a default without a price falls back to the mode
      * that has one. #1189: the BLOCK option carries the table, its `price` is the day-1 price.
      */
-    fun options(perRental: Double?, perDay: Double?, defaultMode: PricingMode, block: BlockTable? = null): List<PricingOptionInput> {
+    fun options(
+        perRental: Double?,
+        perDay: Double?,
+        defaultMode: PricingMode,
+        block: BlockTable? = null,
+        /** #1621: always every block (this build sends `hour-blocks`, so the API replaces the stored ones); never the default */
+        hourBlocks: List<HourBlock> = emptyList(),
+    ): List<PricingOptionInput> {
         val fixed = perRental?.takeIf { it >= 0 }
         val daily = perDay?.takeIf { it >= 0 }
         val has = { m: PricingMode ->
@@ -152,7 +169,7 @@ object ProductPricing {
             fixed?.let { PricingOptionInput("FIXED", it, mode == PricingMode.PER_RENTAL) },
             daily?.let { PricingOptionInput("DAILY", it, mode == PricingMode.PER_DAY) },
             block?.let { PricingOptionInput("BLOCK", it.tiers.first(), mode == PricingMode.BLOCK, it) },
-        )
+        ) + hourBlocks.sortedBy { it.hours }.map { PricingOptionInput(HourBlocks.TYPE, it.price, false, blockSize = it.hours) }
     }
 }
 
@@ -321,12 +338,16 @@ data class ProductFormInput(
     val showsPrices: Boolean,
     /** #1249: the day table "Theo ngày" sends; null = none */
     val block: BlockTable? = null,
+    /** #1621: the hour blocks; empty = none */
+    val hourBlocks: List<HourBlock> = emptyList(),
 )
 
 sealed class ProductFormIssue {
     object NameRequired : ProductFormIssue()
     object NegativeAmount : ProductFormIssue()
     object PerDayDefaultNeedsPrice : ProductFormIssue()
+    /** #1621: a block is never the default, so the product keeps a per-rental, per-day or day-block price next to it */
+    object HourBlocksNeedPrice : ProductFormIssue()
     object NegativeQuantity : ProductFormIssue()
     data class QuantityBelowRented(val rented: Int) : ProductFormIssue()
     data class TooManyPhotos(val max: Int) : ProductFormIssue()
@@ -347,6 +368,9 @@ object ProductFormValidator {
         // #951: a per-day default needs a per-day price; 0đ is one
         if (input.showsPrices && input.defaultMode == PricingMode.PER_DAY && (input.perDay == null || input.perDay < 0)) {
             issues += ProductFormIssue.PerDayDefaultNeedsPrice
+        }
+        if (input.showsPrices && input.hourBlocks.isNotEmpty() && input.perRental == null && input.perDay == null && input.block == null) {
+            issues += ProductFormIssue.HourBlocksNeedPrice
         }
         when {
             input.quantity < 0 -> issues += ProductFormIssue.NegativeQuantity
@@ -387,8 +411,13 @@ object MoneyInput {
 // Cart
 // ---------------------------------------------------------------------------------------------
 
-/** One row of the "Cách tính giá" sheet (#482): a pricing type and its catalog price (null = "Nhập giá") */
-data class CartPricingChoice(val type: String, val catalogPrice: Double?)
+/**
+ * One row of the "Cách tính giá" sheet (#482): a pricing type and its catalog price (null = "Nhập giá"). #1621: an hour
+ * block row also has its option id and hours; [key] is what the sheet selects ("HOURLY:<option id>" for a block).
+ */
+data class CartPricingChoice(val type: String, val catalogPrice: Double?, val optionId: Int? = null, val hours: Int? = null) {
+    val key: String get() = hours?.let { HourBlocks.key(optionId, it) } ?: type
+}
 
 /** Live preview of the sheet: "130.000đ × 3 ngày × 1" ([days] only for a daily rent price) and its total */
 data class CartPricePreview(val unitPrice: Double, val days: Int?, val quantity: Int, val total: Double)
@@ -550,7 +579,7 @@ object CartV2Logic {
      * the product's option of that mode (0đ included), else the legacy rent price of its own type, 0 included (#996).
      */
     fun hasPrice(line: CartLine): Boolean =
-        line.isSale || line.unitPriceOverride != null || catalogPrice(line.product, line.pricingType) != null
+        line.isSale || line.unitPriceOverride != null || line.isHourBlock || catalogPrice(line.product, line.pricingType) != null
 
     /** A rent line with no price yet (a mode the product has no price for): the cart asks for one. 0đ is a price (#951) */
     fun needsPrice(line: CartLine, isSale: Boolean): Boolean = !isSale && !hasPrice(line)
@@ -573,7 +602,9 @@ object CartV2Logic {
      * `CartItem.adoptPricingOptions`).
      */
     fun withFreshPricing(line: CartLine, product: Product): CartLine {
-        if (!offersBothModes(product) || offersBothModes(line.product)) return line
+        // #1621: also when the product has hour blocks the line does not offer yet
+        val newBlocks = HourBlocks.of(product.pricingOptions).isNotEmpty() && HourBlocks.of(line.product.pricingOptions).isEmpty()
+        if ((!offersBothModes(product) || offersBothModes(line.product)) && !newBlocks) return line
         return line.copy(product = line.product.copy(pricingOptions = product.pricingOptions))
     }
 
@@ -594,20 +625,36 @@ object CartV2Logic {
      * type, 0 included (#996). A mode the product does not price is null ("Nhập giá").
      */
     fun catalogPrice(product: Product, type: String): Double? =
-        product.pricingOptions.firstOrNull { it.type.equals(type, ignoreCase = true) && it.price >= 0 }?.price
+        product.pricingOptions.firstOrNull { it.type.equals(type, ignoreCase = true) && it.blockSize == null && it.price >= 0 }?.price
             ?: product.rentPrice.takeIf { product.pricingType.equals(type, ignoreCase = true) && it >= 0 }
 
-    /** Theo lần and Theo ngày always, then every other option type of the product, each with its catalog price */
+    /**
+     * Theo lần and Theo ngày always, then every other option type of the product, each with its catalog price. #1621:
+     * then one row per hour block, shortest first ("Khối 2 giờ"), and the line's own block when the product does not
+     * have it (an order being edited)
+     */
     fun pricingChoices(line: CartLine): List<CartPricingChoice> {
         val types = mutableListOf("FIXED", "DAILY")
         line.product.pricingOptions.forEach { option ->
             val type = option.type.uppercase()
-            if (type !in types) types += type
+            if (HourBlocks.block(option) == null && type !in types) types += type
         }
         // #1189: a line loaded from a saved order offers the table it was priced with
         if (line.blockTable != null && "BLOCK" !in types) types += "BLOCK"
-        return types.map { CartPricingChoice(it, catalogPrice(line.product, it)) }
+        val choices = types.map { CartPricingChoice(it, catalogPrice(line.product, it)) }.toMutableList()
+        HourBlocks.options(line.product.pricingOptions).forEach { option ->
+            choices += CartPricingChoice(HourBlocks.TYPE, option.price, option.id, option.blockSize)
+        }
+        val own = currentKey(line)
+        if (line.isHourBlock && choices.none { it.key == own }) {
+            choices += CartPricingChoice(HourBlocks.TYPE, line.unitPrice, line.hourOptionId, line.hourBlockHours)
+        }
+        return choices
     }
+
+    /** The sheet row of the line: its type, or "HOURLY:<option id>" on an hour-block line (#1621) */
+    fun currentKey(line: CartLine): String =
+        if (line.isHourBlock) HourBlocks.key(line.hourOptionId, line.hourBlockHours!!) else line.pricingType.uppercase()
 
     /** Price the field shows for a row: the line's price for its own mode, else the catalog price, else 0 */
     fun startPrice(line: CartLine, type: String): Double = sheetStartPrice(line, type) ?: 0.0
@@ -617,7 +664,8 @@ object CartV2Logic {
      * (0 shows "0"); another mode its catalog price.
      */
     fun sheetStartPrice(line: CartLine, type: String): Double? =
-        if (type.equals(line.pricingType, ignoreCase = true) || line.isSale) line.unitPrice.takeIf { hasPrice(line) }
+        if (type.equals(currentKey(line), ignoreCase = true) || line.isSale) line.unitPrice.takeIf { hasPrice(line) }
+        else if (HourBlocks.isKey(type)) pricingChoices(line).firstOrNull { it.key.equals(type, ignoreCase = true) }?.catalogPrice
         else catalogPrice(line.product, type)
 
     /** #951: digits typed in the price box; a lone 0 stays (a free line), leading zeros go */
@@ -643,11 +691,37 @@ object CartV2Logic {
         val safe = price?.coerceAtLeast(0.0)
         if (line.isSale || type == null) return line.copy(unitPriceOverride = safe)
         val normalized = type.uppercase()
+        // #1621: an hour-block row ("HOURLY:<option id>"): the line takes that block; its price is the block's unless typed
+        if (HourBlocks.isKey(normalized)) {
+            val choice = pricingChoices(line).firstOrNull { it.key.equals(normalized, ignoreCase = true) } ?: return line
+            val ownGone = choice.optionId == null || line.product.pricingOptions.none { it.id == choice.optionId && it.blockSize != null }
+            val blockPrice = if (ownGone) null else choice.catalogPrice
+            return line.copy(
+                pricingType = HourBlocks.TYPE,
+                hourOptionId = choice.optionId,
+                hourBlockHours = choice.hours,
+                rentalDays = rentalDays,
+                // A block gone from the product (or not loaded yet) keeps its own price (an empty box too)
+                unitPriceOverride = when {
+                    ownGone -> safe ?: choice.catalogPrice ?: line.unitPrice
+                    blockPrice != null && blockPrice == safe -> null
+                    else -> safe
+                },
+            )
+        }
         val catalog = catalogPrice(line.product, normalized)
+        // #1621: leaving a block the product no longer has (an order being edited): it stays a row for the way back
+        val product = if (line.isHourBlock && line.product.pricingOptions.none { it.id == line.hourOptionId && it.blockSize != null }) {
+            line.product.copy(pricingOptions = line.product.pricingOptions +
+                com.anyrent.pos.data.model.PricingOption(line.hourOptionId, HourBlocks.TYPE, line.unitPrice, blockSize = line.hourBlockHours))
+        } else line.product
         return line.copy(
+            product = product,
             pricingType = normalized,
             rentalDays = rentalDays,
             unitPriceOverride = if (catalog != null && catalog == safe) null else safe,
+            hourOptionId = null,
+            hourBlockHours = null,
         )
     }
 

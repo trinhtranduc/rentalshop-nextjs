@@ -12,6 +12,8 @@ data class PriceFormState(
     val perRental: Double?,
     val perDay: Double?,
     val block: BlockTable?,
+    /** #1621 "Theo khối giờ", shortest first; empty = "Chưa cài" */
+    val hourBlocks: List<HourBlock> = emptyList(),
 )
 
 object PriceForm {
@@ -22,6 +24,7 @@ object PriceForm {
             perRental = ProductPricing.perRental(product),
             perDay = ProductPricing.perDay(product),
             block = ProductPricing.block(product),
+            hourBlocks = ProductPricing.hourBlocks(product),
         )
     }
 
@@ -31,9 +34,18 @@ object PriceForm {
     /** "Tắt giá theo khối ngày": the table goes ("Chưa cài"); the other two prices stay */
     fun turnOffBlock(s: PriceFormState): PriceFormState = s.copy(block = null)
 
-    /** What is sent: FIXED + DAILY (when its box has a price) + BLOCK (when a table is set). FIXED is the default; without it the next one is. */
+    /** #1621 "Lưu bảng giá" of the hour-block screen */
+    fun saveHourBlocks(s: PriceFormState, blocks: List<HourBlock>): PriceFormState = s.copy(hourBlocks = blocks.sortedBy { it.hours })
+
+    /** #1621 "Tắt giá theo khối giờ": every block goes ("Chưa cài") */
+    fun turnOffHourBlocks(s: PriceFormState): PriceFormState = s.copy(hourBlocks = emptyList())
+
+    /**
+     * What is sent: FIXED + DAILY (when its box has a price) + BLOCK (when a table is set) + one HOURLY per hour block.
+     * FIXED is the default; without it the next one is; a block never is.
+     */
     fun options(s: PriceFormState): List<PricingOptionInput> =
-        ProductPricing.options(s.perRental, s.perDay, PricingMode.PER_RENTAL, s.block)
+        ProductPricing.options(s.perRental, s.perDay, PricingMode.PER_RENTAL, s.block, s.hourBlocks)
 
     /** "Sao chép từ sản phẩm khác": its table and its rule past the last day (never its sale price or deposit) */
     fun copyTable(other: Product): BlockTable? = ProductPricing.block(other)

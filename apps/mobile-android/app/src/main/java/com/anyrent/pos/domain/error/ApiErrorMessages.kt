@@ -272,6 +272,7 @@ object ApiErrorMessages {
         "BLOCK_PRICE_MISMATCH" -> R.string.api_error_block_price_mismatch
         "PRICING_TYPE_REQUIRES_UPDATE" -> R.string.api_error_pricing_type_requires_update
         "BLOCK_TABLE_INVALID" -> R.string.api_error_block_table_invalid
+        "HOUR_BLOCKS_INVALID" -> R.string.api_error_hour_blocks_invalid
         "OUTLET_ID_REQUIRED" -> R.string.api_error_outlet_id_required
         "OUTLET_INFO_UPDATED_SUCCESS" -> R.string.api_error_outlet_info_updated_success
         "OUTLET_NAME_ADDRESS_REQUIRED" -> R.string.api_error_outlet_name_address_required

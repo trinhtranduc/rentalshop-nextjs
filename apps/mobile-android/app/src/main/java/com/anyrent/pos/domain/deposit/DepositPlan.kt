@@ -24,7 +24,9 @@ import kotlin.math.pow
  */
 object ClientCapabilities {
     const val HEADER_NAME = "X-Client-Capabilities"
-    val TOKENS: List<String> = listOf("installments", "block-pricing", "branch-listing")
+    // #1621 `hour-blocks`: this build shows and saves hour blocks, so the API sends HOURLY options and replaces them with
+    // what the product forms send; every product save must therefore send all of them (the old form too)
+    val TOKENS: List<String> = listOf("installments", "block-pricing", "branch-listing", "hour-blocks")
     val headerValue: String get() = TOKENS.joinToString(",")
 }
 

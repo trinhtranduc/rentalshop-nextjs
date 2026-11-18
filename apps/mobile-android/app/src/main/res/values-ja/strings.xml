@@ -2536,4 +2536,25 @@
     <plurals name="weekly_summary_times">
         <item quantity="other">%1$d回</item>
     </plurals>
+    <!-- #1621 Theo khối giờ (hour blocks) -->
+    <string name="v2_form_per_hour_block">時間ブロック</string>
+    <string name="v2_form_error_hour_blocks_need_price">時間ブロックのほかに、1回ごとまたは1日ごとの料金も必要です。</string>
+    <string name="hour_block_title">時間ブロック料金</string>
+    <string name="hour_block_intro">時間ブロックごとに1つの料金です。カートで選んだブロックの料金になります。</string>
+    <string name="hour_block_section">時間ブロック</string>
+    <string name="hour_block_unit">時間</string>
+    <string name="hour_block_add">+ ブロックを追加</string>
+    <string name="hour_block_remove">ブロック%1$dを削除</string>
+    <string name="hour_block_max">最大%1$dブロックです。</string>
+    <string name="hour_block_save">料金表を保存</string>
+    <string name="hour_block_turn_off">時間ブロック料金をオフにする</string>
+    <string name="hour_block_error_hours">時間は1〜24の整数で入力してください。</string>
+    <string name="hour_block_error_repeated">同じ時間数は1つのブロックにだけ使えます。</string>
+    <string name="hour_block_error_price">すべてのブロックに料金を入力してください（0も可）。</string>
+    <string name="hour_block_label">%1$d時間ブロック</string>
+    <string name="hour_block_detail">%1$d時間 %2$s</string>
+    <string name="api_error_hour_blocks_invalid">時間ブロックの料金が正しくありません。1〜24の整数時間を各1回、0以上の金額、最大10ブロックで設定し、1回ごとまたは1日ごとの料金も残してください。</string>
+    <plurals name="hour_block_summary">
+        <item quantity="other">%1$dブロック：%2$s時間</item>
+    </plurals>
 </resources>

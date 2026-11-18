@@ -640,7 +640,8 @@ class ApiClient(
                         if (orderType == "RENT") {
                             put("rentDays", if (pricingType == "DAILY" || pricingType == "BLOCK") itemRentalDays else 1)
                             put("pricingType", pricingType)
-                            if (pricingType == "BLOCK") extra?.pricingOptionId?.let { put("pricingOptionId", it) }
+                            // #1621: an hour-block line sends its block's option id too
+                            if (pricingType == "BLOCK" || pricingType == "HOURLY") extra?.pricingOptionId?.let { put("pricingOptionId", it) }
                         }
                     }
             )
@@ -737,7 +738,8 @@ class ApiClient(
                         if (orderType == "RENT") {
                             put("rentDays", if (pricingType == "DAILY" || pricingType == "BLOCK") itemRentalDays else 1)
                             put("pricingType", pricingType)
-                            if (pricingType == "BLOCK") extra?.pricingOptionId?.let { put("pricingOptionId", it) }
+                            // #1621: an hour-block line sends its block's option id too
+                            if (pricingType == "BLOCK" || pricingType == "HOURLY") extra?.pricingOptionId?.let { put("pricingOptionId", it) }
                         }
                     },
             )
@@ -1540,6 +1542,8 @@ class ApiClient(
                         price = option.optDouble("price"),
                         isDefault = option.optBoolean("isDefault"),
                         blockTable = com.anyrent.pos.domain.products.BlockPricing.tableFrom(option),
+                        // #1621: the hours of an hour block (only HOURLY options with `hour-blocks`)
+                        blockSize = option.optInt("blockSize", 0).takeIf { it > 0 && option.optString("type").equals("HOURLY", true) },
                     )
                 }
             }
@@ -1771,6 +1775,8 @@ class ApiClient(
             rentalDays = rentalDays,
             pricingType = pricingType,
             pricingSnapshot = com.anyrent.pos.domain.products.BlockSnapshot.from(item.optJSONObject("pricingSnapshot")),
+            pricingOptionId = item.positiveInt("pricingOptionId"),
+            hourBlock = com.anyrent.pos.domain.products.HourBlocks.snapshotFrom(item.optJSONObject("pricingSnapshot")),
         )
     }
 

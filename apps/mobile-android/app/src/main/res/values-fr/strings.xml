@@ -2537,4 +2537,26 @@
         <item quantity="one">%1$d fois</item>
         <item quantity="other">%1$d fois</item>
     </plurals>
+    <!-- #1621 Theo khối giờ (hour blocks) -->
+    <string name="v2_form_per_hour_block">Par tranche d\'heures</string>
+    <string name="v2_form_error_hour_blocks_need_price">Les tranches d\'heures demandent aussi un prix par location ou par jour.</string>
+    <string name="hour_block_title">Prix par tranche d\'heures</string>
+    <string name="hour_block_intro">Un prix par tranche d\'heures. Dans le panier, la tranche choisie donne le prix.</string>
+    <string name="hour_block_section">Tranches d\'heures</string>
+    <string name="hour_block_unit">h</string>
+    <string name="hour_block_add">+ Ajouter une tranche</string>
+    <string name="hour_block_remove">Supprimer la tranche %1$d</string>
+    <string name="hour_block_max">%1$d tranches au maximum.</string>
+    <string name="hour_block_save">Enregistrer la grille tarifaire</string>
+    <string name="hour_block_turn_off">Désactiver le prix par tranche d\'heures</string>
+    <string name="hour_block_error_hours">Les heures doivent être un nombre entier de 1 à 24.</string>
+    <string name="hour_block_error_repeated">Chaque durée ne peut servir qu\'à une seule tranche.</string>
+    <string name="hour_block_error_price">Saisissez un prix pour chaque tranche (0 est accepté).</string>
+    <string name="hour_block_label">Tranche de %1$d heures</string>
+    <string name="hour_block_detail">%1$d h %2$s</string>
+    <string name="api_error_hour_blocks_invalid">Les tarifs par tranche d\'heures ne sont pas valides. Utilisez des heures entières de 1 à 24, chaque durée une seule fois, des prix à partir de 0, au plus 10 tranches, et gardez un prix par location ou par jour.</string>
+    <plurals name="hour_block_summary">
+        <item quantity="one">%1$d tranche : %2$s h</item>
+        <item quantity="other">%1$d tranches : %2$s h</item>
+    </plurals>
 </resources>
