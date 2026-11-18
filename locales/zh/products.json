@@ -633,7 +633,8 @@
         "depositNegative": "订金不能为负数",
         "stockRequired": "数量必须大于 0",
         "outletStockNegative": "数量不能为负数",
-        "branchRequired": "请至少勾选一个显示商品的门店"
+        "branchRequired": "请至少勾选一个显示商品的门店",
+        "hourBlocksNeedPrice": "使用小时档位时，还需要按次或按天价格。"
       },
       "noCreate": "您没有添加商品的权限。",
       "noEdit": "您没有编辑商品的权限。",
@@ -645,6 +646,7 @@
       "needOutlet": "添加商品前，请先至少添加一个分店。",
       "goOutlets": "打开分店",
       "blockRow": "按天数档位",
+      "hourRow": "按小时档位",
       "blockNotSet": "未设置",
       "unitOnce": "đ / 次",
       "unitDay": "đ / 天",
@@ -662,6 +664,26 @@
         "copyLoading": "加载中…",
         "close": "关闭",
         "incomplete": "请填写每一天的价格和每多一天加收的金额，或选择保持最后一档价格。"
+      },
+      "hour": {
+        "summary": "{count} 个档位：{hours} 小时",
+        "edit": "编辑按小时档位价格",
+        "title": "按小时档位计价",
+        "hint": "每个小时档位一个价格。在购物车中选择哪个档位，就按该档位计价。",
+        "listTitle": "小时档位",
+        "unit": "小时",
+        "hoursOf": "第 {n} 档的小时数",
+        "priceOf": "第 {n} 档的价格",
+        "remove": "删除第 {n} 档",
+        "add": "+ 添加档位",
+        "max": "最多 {n} 个档位。",
+        "save": "保存价格表",
+        "turnOff": "关闭按小时档位计价",
+        "errors": {
+          "hours": "小时数须为 1 到 24 的整数。",
+          "repeated": "每个小时数只能用于一个档位。",
+          "price": "请为每个档位填写价格（可为 0）。"
+        }
       },
       "listing": {
         "branch": "门店",
@@ -691,6 +713,7 @@
       "hour": "每小时租金",
       "perDay": "{price}/天",
       "perHour": "{price}/小时",
+      "hourBlock": "{n} 小时 {price}",
       "default": "默认",
       "deposit": "订金",
       "sale": "售价",

@@ -659,7 +659,8 @@
         "HOURLY": "Theo giờ · {price}/giờ",
         "FIXED": "Theo lần · {price}/lần",
         "SALE": "Giá bán · {price}",
-        "BLOCK": "Theo khối ngày · {price}"
+        "BLOCK": "Theo khối ngày · {price}",
+        "HOUR_BLOCK": "Khối {n} giờ · {price}"
       },
       "cart": {
         "label": "Đơn đang tạo",
@@ -753,7 +754,8 @@
           "DAILY": "/ngày",
           "HOURLY": "/giờ",
           "OTHER": "",
-          "BLOCK": "cả đợt thuê"
+          "BLOCK": "cả đợt thuê",
+          "HOUR_BLOCK": "/khối"
         },
         "note": "Chỉ áp dụng cho đơn này, không đổi giá sản phẩm.",
         "done": "Xong",
@@ -937,7 +939,8 @@
         "image": "Ảnh {name}",
         "block": "Khối {n} ngày",
         "blockExtra": "Khối {n} ngày + {m} ngày thêm",
-        "blockDays": "{n} ngày"
+        "blockDays": "{n} ngày",
+        "hourBlock": "Khối {n} giờ"
       },
       "notes": {
         "title": "Ghi chú",
@@ -1115,7 +1118,8 @@
         "perHour": "/giờ",
         "hours": "{n} giờ",
         "block": "Khối {n} ngày",
-        "blockExtra": "Khối {n} ngày + {m} ngày thêm"
+        "blockExtra": "Khối {n} ngày + {m} ngày thêm",
+        "hourBlock": "Khối {n} giờ"
       },
       "bankTitle": "Chuyển khoản",
       "bankName": "Ngân hàng",

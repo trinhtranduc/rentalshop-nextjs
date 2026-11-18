@@ -10,7 +10,21 @@ import { ICONS, ShellIcon } from '../../components/shell/Icon';
 import { formatDayLabel } from '../orders-model';
 import { outlineBtn, primaryBtn, type Money, type T } from '../list/parts';
 import { RangeCalendar } from '../../components/date-range/RangeCalendar';
-import { blockLineSnapshot, checkDays, lineModes, needsPrice, quickDays, rentalDays, type CartLine, type CustomerPick, type OrderType, type Stock } from './create-model';
+import {
+  blockLineSnapshot,
+  checkDays,
+  lineChoiceKey,
+  lineHourBlock,
+  lineHourChoices,
+  lineModes,
+  needsPrice,
+  quickDays,
+  rentalDays,
+  type CartLine,
+  type CustomerPick,
+  type OrderType,
+  type Stock,
+} from './create-model';
 
 export const fieldClass =
   'h-11 w-full rounded-xl border border-ar-line-strong bg-ar-surface px-3 text-base text-ar-ink placeholder:text-ar-faint focus:border-ar-primary focus:outline-none';
@@ -458,6 +472,7 @@ export function CartLineRow({
   /** #1347 "Quận 7 (3), Thủ Đức (1)": other branches that still have the product on these days (empty: none / not asked) */
   others?: string;
   onQuantity: (q: number) => void;
+  /** A mode (FIXED, DAILY, BLOCK…) or #1621 an hour block's key (`HOURLY:<option id>`) */
   onMode: (mode: string) => void;
   /** #951: 0 = a free line; null = the box was emptied (back to the product's price). */
   onPrice: (price: number | null) => void;
@@ -469,6 +484,10 @@ export function CartLineRow({
 }) {
   const rent = orderType === 'RENT';
   const type = rent ? line.pricingType : 'SALE';
+  // #1621: the choice the line is on ("HOURLY:<id>" for an hour block) and that block ("Khối 4 giờ")
+  const choice = rent ? lineChoiceKey(line) : 'SALE';
+  const hourBlock = rent ? lineHourBlock(line) : null;
+  const hourChoices = rent ? lineHourChoices(line) : [];
   const [editing, setEditing] = useState(false);
   const [noting, setNoting] = useState(false);
   const panelId = useId();
@@ -481,7 +500,9 @@ export function CartLineRow({
     : null;
   const chip = missingPrice
     ? t('editor.pricing.chipEmpty', { mode: t(`editor.pricing.mode.${modeKey(type)}`, { type }) })
-    : t(`editor.option.${['DAILY', 'HOURLY', 'FIXED', 'SALE', 'BLOCK'].includes(type) ? type : 'FIXED'}`, { price: money(line.unitPrice) });
+    : hourBlock
+      ? t('editor.option.HOUR_BLOCK', { n: hourBlock.blockSize, price: money(line.unitPrice) })
+      : t(`editor.option.${['DAILY', 'HOURLY', 'FIXED', 'SALE', 'BLOCK'].includes(type) ? type : 'FIXED'}`, { price: money(line.unitPrice) });
   return (
     <div className="flex flex-col gap-2 border-t border-ar-line-soft py-3">
       <div className="flex items-start gap-2">
@@ -582,31 +603,54 @@ export function CartLineRow({
         <div id={panelId} className="flex flex-col gap-2.5 rounded-xl bg-ar-subtle p-3">
           <span className="text-sm font-semibold text-ar-ink">{t('editor.pricing.title')}</span>
           {rent && (
-          <div role="radiogroup" aria-label={t('editor.pricing.title')} className="flex rounded-[10px] bg-ar-surface p-0.5">
-            {lineModes(line).map((m) => (
-              <button
-                key={m}
-                type="button"
-                role="radio"
-                aria-checked={type === m}
-                onClick={() => onMode(m)}
-                className={`h-9 min-w-0 flex-1 truncate rounded-[8px] px-2 text-sm ${
-                  type === m ? 'bg-ar-primary-soft font-bold text-ar-primary-ink' : 'font-medium text-ar-muted hover:text-ar-ink'
-                }`}
-              >
-                {t(`editor.pricing.mode.${modeKey(m)}`, { type: m })}
-              </button>
-            ))}
+          <div role="radiogroup" aria-label={t('editor.pricing.title')} className="flex flex-col gap-1.5">
+            <div className="flex rounded-[10px] bg-ar-surface p-0.5">
+              {lineModes(line).map((m) => (
+                <button
+                  key={m}
+                  type="button"
+                  role="radio"
+                  aria-checked={choice === m}
+                  onClick={() => onMode(m)}
+                  className={`h-9 min-w-0 flex-1 truncate rounded-[8px] px-2 text-sm ${
+                    choice === m ? 'bg-ar-primary-soft font-bold text-ar-primary-ink' : 'font-medium text-ar-muted hover:text-ar-ink'
+                  }`}
+                >
+                  {t(`editor.pricing.mode.${modeKey(m)}`, { type: m })}
+                </button>
+              ))}
+            </div>
+            {/* #1621: each hour block is its own choice ("Khối 2 giờ · 150.000đ"), keyed by its option id */}
+            {hourChoices.length > 0 && (
+              <div className="flex flex-wrap gap-1.5" data-hour-choices>
+                {hourChoices.map((c) => (
+                  <button
+                    key={c.key}
+                    type="button"
+                    role="radio"
+                    aria-checked={choice === c.key}
+                    onClick={() => onMode(c.key)}
+                    className={`h-9 rounded-[8px] border px-2.5 text-sm tabular-nums ${
+                      choice === c.key
+                        ? 'border-ar-primary bg-ar-primary-soft font-bold text-ar-primary-ink'
+                        : 'border-ar-line-strong bg-ar-surface font-medium text-ar-ink-2 hover:text-ar-ink'
+                    }`}
+                  >
+                    {t('editor.option.HOUR_BLOCK', { n: c.hours, price: money(c.price) })}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
           )}
           <label className="flex flex-col gap-1.5 text-sm text-ar-muted">
             {t('editor.pricing.price')}
             <LinePriceInput
-              key={`${line.key}-${type}`}
+              key={`${line.key}-${choice}`}
               value={missingPrice ? null : line.unitPrice}
               onChange={onPrice}
               label={t('editor.pricing.priceFor', { name: line.name })}
-              suffix={rent ? t(`editor.pricing.unit.${modeKey(type)}`) : undefined}
+              suffix={rent ? (hourBlock ? t('editor.pricing.unit.HOUR_BLOCK') : t(`editor.pricing.unit.${modeKey(type)}`)) : undefined}
               invalid={missingPrice}
             />
           </label>

@@ -17,7 +17,7 @@ import {
   useToast,
 } from '@rentalshop/ui';
 import { useAuth, useCommonTranslations, useDedupedApi, useOrderTranslations, usePermissions } from '@rentalshop/hooks';
-import { apiUrls, authenticatedFetch, blockLineText, blockSnapshotOf, getLocalDateKey, installmentsApi, ordersApi, type BlockSnapshotLike } from '@rentalshop/utils';
+import { apiUrls, authenticatedFetch, blockLineText, blockSnapshotOf, getLocalDateKey, hourBlockSnapshotOf, installmentsApi, ordersApi, type BlockSnapshotLike, type HourBlockSnapshot } from '@rentalshop/utils';
 import { useShopToday } from '../../hooks/useShopToday';
 import type { OrderWithDetails } from '@rentalshop/types';
 import { ICONS, ShellIcon } from '../../components/shell/Icon';
@@ -77,7 +77,7 @@ interface ItemLike {
   totalPrice?: number;
   rentalDays?: number;
   pricingType?: string;
-  pricingSnapshot?: BlockSnapshotLike | null;
+  pricingSnapshot?: BlockSnapshotLike | HourBlockSnapshot | null;
   productName?: string;
   barcode?: string;
   productImages?: unknown;
@@ -243,6 +243,10 @@ export default function OrderDetailPage() {
         const text = blockLineText(snap, { block: t('detail.items.block', { n: '{n}' }), blockExtra: t('detail.items.blockExtra', { n: '{n}', m: '{m}' }), days: t('detail.items.blockDays', { n: '{n}' }) }, money);
         parts.push(text.label, text.formula);
       } else parts.push(t('detail.items.fixed'), money(unit));
+    } else if (isRent && pricing === 'HOURLY' && hourBlockSnapshotOf(item.pricingSnapshot)) {
+      // #1621: "Khối 4 giờ · 1 × 250.000đ = 250.000đ" (a block is one price, never "/giờ")
+      const block = hourBlockSnapshotOf(item.pricingSnapshot)!;
+      parts.push(t('detail.items.hourBlock', { n: block.hours }), `${qty} × ${money(unit)} = ${money(item.totalPrice ?? qty * unit)}`);
     } else if (isRent) parts.push(t('detail.items.fixed'), money(unit));
     else if (qty > 1) parts.push(money(unit));
     const image = images(item.productImages)[0] || images(item.product?.images)[0] || null;

@@ -6,12 +6,15 @@
  * `@rentalshop/utils` product-pricing-options (#460, same as iOS):
  * - #1249 (mockup the owner fixed last): "Theo lần" (the default for new orders), "Theo mỗi ngày" and "Theo block ngày"
  *   (the table, set up on its own screen) all exist together and are all sent: FIXED + DAILY + BLOCK; no default switch;
+ * - #1621 "Theo khối giờ": one HOURLY option per hour block (never the default), always sent with the others (the web
+ *   declares `hour-blocks`, so a save replaces the whole option set; sending none turns them off);
  * - prices are shown and sent only to users with products.manage who are not OUTLET_STAFF;
  * - #951: an empty price box is no price, 0 is a 0đ price; prices, deposit and outlet stock not negative; quantity > 0;
  * - photos: at most 3, jpg / png / webp, 5 MB each.
  */
 
 import { blockComplete, type BlockDraft } from '../block-draft';
+import { savedHourBlocksOf, type HourBlock } from '../hour-block-draft';
 
 type Num = number | string | null | undefined;
 
@@ -47,6 +50,9 @@ export interface PricingOptionSource {
   blockStartDay?: number | null;
   blockExtraMode?: string | null;
   blockExtraPrice?: number | null;
+  /** #1621 an hour block: the hours (HOURLY option, unit HOUR) */
+  blockSize?: number | null;
+  unit?: string | null;
   price?: Num;
   isDefault?: boolean | null;
   isActive?: boolean | null;
@@ -131,21 +137,30 @@ export function savedBlockOf(p: Pick<ProductSource, 'pricingOptions'>): BlockDra
 }
 
 export interface PricingOptionPayload {
-  type: PricingMode | 'BLOCK';
+  type: PricingMode | 'BLOCK' | 'HOURLY';
   price: number;
   isDefault: boolean;
   blockTiers?: number[];
   blockStartDay?: number | null;
   blockExtraMode?: string;
   blockExtraPrice?: number | null;
+  /** #1621 hour block: `unit: 'HOUR'`, `blockSize` = hours */
+  unit?: 'HOUR';
+  blockSize?: number;
+}
+
+/** #1621: the saved hour blocks of a product (active HOURLY options with whole hours 1–24), shortest first */
+export function savedHourBlocksOfProduct(p: Pick<ProductSource, 'pricingOptions'>): HourBlock[] {
+  return savedHourBlocksOf(p.pricingOptions);
 }
 
 /**
  * #1249 the rent options the form sends: "Theo lần" (FIXED, the default for new orders), "Theo mỗi ngày" (DAILY, only
  * when its box has a price) and "Theo block ngày" (BLOCK, only when a complete table was saved), all together.
  * Without a "Theo lần" price the first of the others is the default.
+ * #1621: then one HOURLY row per hour block, shortest first, never the default.
  */
-export function buildPricingOptions(p: { perRental: Num; perDay: Num; block: BlockDraft | null }): PricingOptionPayload[] {
+export function buildPricingOptions(p: { perRental: Num; perDay: Num; block: BlockDraft | null; hourBlocks?: HourBlock[] | null }): PricingOptionPayload[] {
   const out: PricingOptionPayload[] = [];
   const fixed = priced(p.perRental);
   if (fixed != null) out.push({ type: 'FIXED', price: fixed, isDefault: true });
@@ -162,7 +177,15 @@ export function buildPricingOptions(p: { perRental: Num; perDay: Num; block: Blo
       blockExtraPrice: p.block.extraMode === 'EXTRA_PER_DAY' ? p.block.extraPrice ?? 0 : null,
     });
   }
+  for (const b of [...(p.hourBlocks ?? [])].sort((a, c) => a.hours - c.hours)) {
+    out.push({ type: 'HOURLY', price: b.price, isDefault: false, unit: 'HOUR', blockSize: b.hours });
+  }
   return out;
+}
+
+/** #1621: hour blocks are never the default price, so a product with blocks needs one other price next to them */
+export function hourBlocksNeedOtherPrice(p: { perRental: Num; perDay: Num; block: BlockDraft | null; hourBlocks?: HourBlock[] | null }): boolean {
+  return (p.hourBlocks?.length ?? 0) > 0 && buildPricingOptions({ ...p, hourBlocks: [] }).length === 0;
 }
 
 // ----------------------------------------------------------------------------
@@ -179,6 +202,8 @@ export interface FormState {
   perDay: number | null;
   /** The saved table (complete), or null when none was set up ("Chưa cài") */
   block: BlockDraft | null;
+  /** #1621 "Theo khối giờ": the saved blocks, shortest first; [] = "Chưa cài" */
+  hourBlocks: HourBlock[];
   deposit: number;
   /** null = empty box (nothing sent), 0 = 0đ. */
   salePrice: number | null;
@@ -253,6 +278,7 @@ export function emptyForm(outlets: OutletLite[], categories: Array<{ id: number 
     perRental: null,
     perDay: null,
     block: null,
+    hourBlocks: [],
     deposit: 0,
     salePrice: null,
     costPrice: 0,
@@ -289,6 +315,7 @@ export function formFromProduct(p: ProductSource, outlets: OutletLite[], categor
     perRental,
     perDay,
     block: table,
+    hourBlocks: savedHourBlocksOfProduct(p),
     deposit: Math.max(0, num(p.deposit)),
     // a stored 0 sale price is "not for sale" (the apps save 0 for an empty box): shown empty
     salePrice: positive(p.salePrice),
@@ -360,7 +387,8 @@ export type ErrorCode =
   | 'depositNegative'
   | 'stockRequired'
   | 'outletStockNegative'
-  | 'branchRequired';
+  | 'branchRequired'
+  | 'hourBlocksNeedPrice';
 
 /** Field order on the page (first error gets focus). */
 export const FIELD_ORDER: FieldKey[] = ['name', 'perRental', 'salePrice', 'deposit', 'totalStock', 'outletStock', 'listed', 'categoryId'];
@@ -378,6 +406,8 @@ export function validateForm(
   if (!form.categoryId) errors.categoryId = 'categoryRequired';
   if (opts.canEditPricing) {
     if ((form.perRental ?? 0) < 0 || (form.perDay ?? 0) < 0) errors.perRental = 'priceNegative';
+    // #1621: the API refuses a product priced by hour blocks only (HOUR_BLOCKS_INVALID)
+    else if (hourBlocksNeedOtherPrice(form)) errors.perRental = 'hourBlocksNeedPrice';
     if ((form.salePrice ?? 0) < 0) errors.salePrice = 'priceNegative';
     // #741: the sale price is optional (a rent-only product has 0, as the apps and the API create it)
   }
@@ -446,6 +476,16 @@ export function saveBlockTable(form: FormState, block: BlockDraft): FormState {
 /** "Tắt giá theo khối ngày": the table is dropped (back to "Chưa cài"); the other two prices stay */
 export function turnOffBlock(form: FormState): FormState {
   return { ...form, block: null };
+}
+
+/** #1621 "Lưu bảng giá" of "Giá theo khối giờ": the blocks go into the form, shortest first ([] = turned off) */
+export function saveHourBlocks(form: FormState, blocks: HourBlock[]): FormState {
+  return { ...form, hourBlocks: [...blocks].sort((a, b) => a.hours - b.hours) };
+}
+
+/** #1621 "Tắt giá theo khối giờ": no hour block is sent on save (the API drops the stored ones) */
+export function turnOffHourBlocks(form: FormState): FormState {
+  return { ...form, hourBlocks: [] };
 }
 
 /**

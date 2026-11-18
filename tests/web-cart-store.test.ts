@@ -10,6 +10,7 @@ jest.mock('@rentalshop/utils', () => ({
   ...(jest.requireActual('../packages/utils/src/core/rental-days') as object),
   ...(jest.requireActual('../packages/utils/src/core/block-pricing') as object),
   ...(jest.requireActual('../packages/utils/src/core/block-line-text') as object),
+  ...(jest.requireActual('../packages/utils/src/core/hour-blocks') as object),
 }));
 import {
   MAX_CARTS,

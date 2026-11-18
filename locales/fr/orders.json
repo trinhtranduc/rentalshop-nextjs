@@ -659,7 +659,8 @@
         "HOURLY": "Par heure · {price}/heure",
         "FIXED": "Par location · {price}/fois",
         "SALE": "Prix de vente · {price}",
-        "BLOCK": "Par tranche de jours · {price}"
+        "BLOCK": "Par tranche de jours · {price}",
+        "HOUR_BLOCK": "Tranche de {n} heures · {price}"
       },
       "cart": {
         "label": "Commande en cours",
@@ -753,7 +754,8 @@
           "DAILY": "/jour",
           "HOURLY": "/heure",
           "OTHER": "",
-          "BLOCK": "pour toute la période"
+          "BLOCK": "pour toute la période",
+          "HOUR_BLOCK": "/tranche"
         },
         "note": "Valable uniquement pour cette commande, ne modifie pas le prix du produit.",
         "done": "Terminé",
@@ -937,7 +939,8 @@
         "image": "Photo {name}",
         "block": "Tranche de {n} jours",
         "blockExtra": "Tranche de {n} jours + {m} jours en plus",
-        "blockDays": "{n} jours"
+        "blockDays": "{n} jours",
+        "hourBlock": "Tranche de {n} heures"
       },
       "notes": {
         "title": "Notes",
@@ -1115,7 +1118,8 @@
         "perHour": "/heure",
         "hours": "{n} heures",
         "block": "Tranche de {n} jours",
-        "blockExtra": "Tranche de {n} jours + {m} jours en plus"
+        "blockExtra": "Tranche de {n} jours + {m} jours en plus",
+        "hourBlock": "Tranche de {n} heures"
       },
       "bankTitle": "Virement bancaire",
       "bankName": "Banque",

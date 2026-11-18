@@ -12,6 +12,8 @@ import {
   isValidBlockTable,
   roundToMinorUnit,
   getPreferredPricingOption,
+  hourBlockSnapshotOf,
+  isHourBlockOption,
   repriceOrderLineForOrderType,
   resolveOrderLinePricingType,
 } from '@rentalshop/utils';
@@ -31,6 +33,9 @@ export interface PricingOptionLike {
   blockStartDay?: number | null;
   blockExtraMode?: string | null;
   blockExtraPrice?: number | null;
+  /** #1621 an hour block: the hours (HOURLY option, unit HOUR) */
+  blockSize?: number | null;
+  unit?: string | null;
 }
 
 export interface ProductLike {
@@ -103,6 +108,10 @@ export interface LineOption {
   blockStartDay?: number | null;
   blockExtraMode?: string | null;
   blockExtraPrice?: number | null;
+  /** #1621 hours of an hour block ("Khối 4 giờ"); absent on any other option, an old per-hour one included */
+  blockSize?: number | null;
+  /** #1621 an hour block rebuilt from the order line's snapshot (the product no longer has that option) */
+  fromOrder?: boolean;
 }
 
 export const activeOptions = (options?: PricingOptionLike[] | null): LineOption[] =>
@@ -116,7 +125,56 @@ export const activeOptions = (options?: PricingOptionLike[] | null): LineOption[
       ...(String(o.type).toUpperCase() === 'BLOCK' && Array.isArray(o.blockTiers)
         ? { blockTiers: o.blockTiers, blockStartDay: o.blockStartDay ?? null, blockExtraMode: o.blockExtraMode ?? null, blockExtraPrice: o.blockExtraPrice ?? null }
         : {}),
+      ...(isHourBlockOption(o) ? { blockSize: Number(o.blockSize) } : {}),
     }));
+
+// ----------------------------------------------------------------------------
+// #1621 hour blocks ("Theo khối giờ"): each block is its own pricing choice, keyed by its option id
+// ----------------------------------------------------------------------------
+
+/** Prefix of an hour-block choice key: `HOURLY:31` is the block with option id 31 */
+export const HOUR_CHOICE = 'HOURLY:';
+/** Key of a block kept from the order whose option row is gone (no id) */
+const HOUR_CHOICE_FROM_ORDER = `${HOUR_CHOICE}ORDER`;
+
+export const isHourBlock = (o: LineOption | null | undefined): o is LineOption & { blockSize: number } =>
+  !!o && o.type.toUpperCase() === 'HOURLY' && typeof o.blockSize === 'number';
+
+export const isHourChoice = (key: string): boolean => key.startsWith(HOUR_CHOICE);
+
+export const hourChoiceKey = (o: LineOption): string => (o.id != null ? `${HOUR_CHOICE}${o.id}` : HOUR_CHOICE_FROM_ORDER);
+
+/** The parts of a cart line the hour-block helpers read */
+type HourLineLike = { product: { pricingOptions: LineOption[] }; pricingType: string; selectedPricingOptionId: number | null };
+
+/** The hour blocks a line can be put on, shortest first */
+export function lineHourBlocks(line: Pick<HourLineLike, 'product'>): Array<LineOption & { blockSize: number }> {
+  return line.product.pricingOptions.filter(isHourBlock).sort((a, b) => a.blockSize - b.blockSize);
+}
+
+/** The hour block a rent line is on ("Khối 4 giờ"), or null (any other line, an old per-hour line included) */
+export function lineHourBlock(line: HourLineLike): (LineOption & { blockSize: number }) | null {
+  if (line.pricingType.toUpperCase() !== 'HOURLY') return null;
+  const blocks = lineHourBlocks(line);
+  if (line.selectedPricingOptionId != null) return blocks.find((o) => o.id === line.selectedPricingOptionId) ?? null;
+  return blocks.find((o) => o.fromOrder) ?? null;
+}
+
+/** The pricing choice a rent line is on: `HOURLY:<id>` for an hour block, else its pricing type */
+export function lineChoiceKey(line: HourLineLike): string {
+  const block = lineHourBlock(line);
+  return block ? hourChoiceKey(block) : line.pricingType;
+}
+
+/**
+ * The line's own block next to the product's current options: the product's option of that id when it still has it,
+ * else the kept one (in place of a block of the same hours, so "Khối 4 giờ" is listed once).
+ */
+function withLineHourBlock(options: LineOption[], keep: LineOption | null): LineOption[] {
+  if (!keep || !isHourBlock(keep)) return options;
+  if (keep.id != null && options.some((o) => o.id === keep.id)) return options;
+  return [...options.filter((o) => !(isHourBlock(o) && o.blockSize === keep.blockSize)), { ...keep, fromOrder: true }];
+}
 
 // ----------------------------------------------------------------------------
 // Lines
@@ -171,13 +229,16 @@ export interface OrderItemLike {
   notes?: string | null;
   pricingType?: string | null;
   pricingOptionId?: number | null;
-  /** #1189 what a BLOCK line was priced with (table, days, formula) */
+  /** #1189 what a BLOCK line was priced with (table, days, formula); #1621 `{ type: 'HOURLY', hours, price }` for an hour block */
   pricingSnapshot?: BlockSnapshotInput | null;
 }
 
 /** The part of `OrderItem.pricingSnapshot` the cart reads back */
 export interface BlockSnapshotInput {
   type?: string | null;
+  /** #1621 hour block */
+  hours?: number | null;
+  price?: number | null;
   tiers?: number[] | null;
   startDay?: number | null;
   extraMode?: string | null;
@@ -210,6 +271,15 @@ export function lineFromOrderItem(item: OrderItemLike): CartLine {
     };
     options = [...options.filter((o) => o.type.toUpperCase() !== 'BLOCK'), saved];
   }
+  // #1621: an hour-block line keeps the block it was priced on ("Khối 4 giờ"), even when the product's option is gone
+  const hourSnap = pricingType === 'HOURLY' ? hourBlockSnapshotOf(snap) : null;
+  if (hourSnap) {
+    options = withLineHourBlock(options, { id: item.pricingOptionId ?? null, type: 'HOURLY', price: hourSnap.price, isDefault: false, blockSize: hourSnap.hours });
+  }
+  const shell = { product: { pricingOptions: options }, pricingType, selectedPricingOptionId: item.pricingOptionId ?? null };
+  const hourBlock = hourSnap ? lineHourBlock(shell) : null;
+  // the key of this order's price: the block's own key for an hour-block line, else the pricing type
+  const priceKey = hourBlock ? hourChoiceKey(hourBlock) : pricingType;
   return {
     key: nextLineKey(),
     productId: num(p.id ?? item.productId),
@@ -219,11 +289,11 @@ export function lineFromOrderItem(item: OrderItemLike): CartLine {
     unitPrice: num(item.unitPrice),
     deposit: num(item.deposit),
     pricingType,
-    selectedPricingOptionId: item.pricingOptionId ?? options.find((o) => o.type.toUpperCase() === pricingType)?.id ?? null,
+    selectedPricingOptionId: item.pricingOptionId ?? (hourBlock ? null : plainOption(options, pricingType)?.id ?? null),
     notes: item.notes || '',
     // The saved price is this order's price for its mode: switching mode and back keeps it (#556)
     // (a BLOCK line was priced by its table; only a hand-typed price is kept as typed)
-    customPrices: pricingType === 'BLOCK' ? (snapTable?.overridden ? { BLOCK: num(item.unitPrice) } : {}) : { [pricingType]: num(item.unitPrice) },
+    customPrices: pricingType === 'BLOCK' ? (snapTable?.overridden ? { BLOCK: num(item.unitPrice) } : {}) : { [priceKey]: num(item.unitPrice) },
     product: {
       rentPrice,
       salePrice: p.salePrice == null ? rentPrice : num(p.salePrice),
@@ -237,15 +307,17 @@ export function lineFromOrderItem(item: OrderItemLike): CartLine {
 export function hydrateLines(lines: CartLine[], products: ProductLike[]): CartLine[] {
   let changed = false;
   const next = lines.map((line) => {
-    if (line.product.pricingOptions.length > 0) return line;
+    // #1621: a line holding only the hour block rebuilt from its order still takes the product's other choices
+    if (line.product.pricingOptions.some((o) => !o.fromOrder)) return line;
     const p = products.find((x) => x.id === line.productId);
-    const options = activeOptions(p?.pricingOptions);
+    const hourBlock = lineHourBlock(line);
+    const options = withLineHourBlock(activeOptions(p?.pricingOptions), hourBlock);
     if (!p || options.length === 0) return line;
     changed = true;
     return {
       ...line,
       image: line.image || imagesOf(p.images)[0] || null,
-      selectedPricingOptionId: line.selectedPricingOptionId ?? options.find((o) => o.type.toUpperCase() === line.pricingType)?.id ?? null,
+      selectedPricingOptionId: line.selectedPricingOptionId ?? (hourBlock ? null : plainOption(options, line.pricingType)?.id ?? null),
       product: {
         rentPrice: p.rentPrice == null ? line.product.rentPrice : num(p.rentPrice),
         salePrice: p.salePrice == null ? line.product.salePrice : num(p.salePrice),
@@ -264,9 +336,12 @@ export function hydrateLines(lines: CartLine[], products: ProductLike[]): CartLi
 export function refreshBlockOptions(lines: CartLine[], products: ProductLike[]): CartLine[] {
   return lines.map((line) => {
     const p = products.find((x) => x.id === line.productId);
-    const options = activeOptions(p?.pricingOptions);
+    const hourBlock = lineHourBlock(line);
+    const options = withLineHourBlock(activeOptions(p?.pricingOptions), hourBlock);
     if (!p || options.length === 0) return line;
-    const chosen = options.find((o) => o.type.toUpperCase() === line.pricingType.toUpperCase());
+    // #1621: an hour-block line stays on its block (by id)
+    if (hourBlock) return { ...line, product: { ...line.product, pricingOptions: options } };
+    const chosen = plainOption(options, line.pricingType.toUpperCase());
     return { ...line, selectedPricingOptionId: chosen?.id ?? line.selectedPricingOptionId, product: { ...line.product, pricingOptions: options } };
   });
 }
@@ -304,7 +379,7 @@ export function repriceLines(lines: CartLine[], orderType: OrderType): CartLine[
   return lines.map((l) => {
     const { unitPrice } = repriceOrderLineForOrderType(l, orderType, 1);
     if (orderType === 'SALE') return { ...l, unitPrice: l.customPrices?.SALE ?? unitPrice };
-    const custom = l.customPrices?.[l.pricingType];
+    const custom = l.customPrices?.[lineChoiceKey(l)];
     if (custom != null) return { ...l, unitPrice: custom };
     const preferred = l.selectedPricingOptionId == null ? getPreferredPricingOption(l.product.pricingOptions) : null;
     return preferred
@@ -322,17 +397,32 @@ export function repriceLines(lines: CartLine[], orderType: OrderType): CartLine[
 // Pricing mode and price for this order (#556, iOS CartItem.selectPricingType / setCustomRentalPrice)
 // ----------------------------------------------------------------------------
 
-/** Modes a rent line offers: Theo lần and Theo ngày always, then any other active option type. */
+/**
+ * Modes a rent line offers: Theo lần and Theo ngày always, then any other active option type. #1621: hour blocks are
+ * not a mode here; each one is its own choice (`lineHourChoices`).
+ */
 export function lineModes(line: CartLine): string[] {
   const modes = ['FIXED', 'DAILY'];
   line.product.pricingOptions.forEach((o) => {
+    if (isHourBlock(o)) return;
     const type = o.type.toUpperCase();
     if (!modes.includes(type)) modes.push(type);
   });
   return modes;
 }
 
-const optionOf = (line: CartLine, type: string): LineOption | null => line.product.pricingOptions.find((o) => o.type.toUpperCase() === type) || null;
+/** #1621 the hour blocks of a rent line as choices ("Khối 2 giờ · 150.000đ"), keyed by option id, shortest first */
+export function lineHourChoices(line: CartLine): Array<{ key: string; id: number | null; hours: number; price: number }> {
+  return lineHourBlocks(line).map((o) => ({ key: hourChoiceKey(o), id: o.id, hours: o.blockSize, price: o.price }));
+}
+
+/** The option of a plain type (never an hour block) */
+const plainOption = (options: LineOption[], type: string): LineOption | null =>
+  options.find((o) => o.type.toUpperCase() === type && !isHourBlock(o)) || null;
+
+/** The option of a choice: an hour block by its key (`HOURLY:<id>`), else the option of that type */
+const optionOf = (line: CartLine, key: string): LineOption | null =>
+  isHourChoice(key) ? lineHourBlocks(line).find((o) => hourChoiceKey(o) === key) ?? null : plainOption(line.product.pricingOptions, key);
 
 /** The usable day table of a BLOCK option, else null */
 export function blockTableOf(option: LineOption | null | undefined) {
@@ -392,14 +482,18 @@ export function syncBlockPrices(lines: CartLine[], orderType: OrderType, days: n
 export function selectMode(lines: CartLine[], ref: LineRef, mode: string): CartLine[] {
   const next = mode.toUpperCase();
   return lines.map((l) => {
-    if (!isLine(l, ref) || l.pricingType === next) return l;
-    const custom = { ...(l.customPrices || {}) };
-    if (!optionOf(l, l.pricingType) && custom[l.pricingType] == null) custom[l.pricingType] = l.unitPrice;
+    const current = lineChoiceKey(l);
+    if (!isLine(l, ref) || current === next) return l;
+    // #1621 an hour block is chosen by its key (`HOURLY:<id>`); it is an HOURLY line on that option
+    const hour = isHourChoice(next);
     const option = optionOf(l, next);
+    if (hour && !option) return l;
+    const custom = { ...(l.customPrices || {}) };
+    if (!optionOf(l, current) && custom[current] == null) custom[current] = l.unitPrice;
     const typed = custom[next];
     return {
       ...l,
-      pricingType: next,
+      pricingType: hour ? 'HOURLY' : next,
       selectedPricingOptionId: option?.id ?? null,
       unitPrice: typed ?? (option ? num(option.price) : 0),
       customPrices: custom,
@@ -424,7 +518,7 @@ function catalogRentPrice(line: CartLine, mode: string): number | null {
 export function setLinePrice(lines: CartLine[], ref: LineRef, price: number | null, orderType: OrderType = 'RENT'): CartLine[] {
   return lines.map((l) => {
     if (!isLine(l, ref)) return l;
-    const mode = orderType === 'SALE' ? 'SALE' : l.pricingType;
+    const mode = orderType === 'SALE' ? 'SALE' : lineChoiceKey(l);
     const custom = { ...(l.customPrices || {}) };
     if (price == null) {
       delete custom[mode];
@@ -447,7 +541,7 @@ export function setLineNote(lines: CartLine[], ref: LineRef, note: string): Cart
  * that mode (a 0đ option included). A saved order line always has one. Sale lines always do (0 sells at 0đ).
  */
 export const hasLinePrice = (line: CartLine, orderType: OrderType): boolean =>
-  orderType === 'SALE' || line.customPrices?.[line.pricingType] != null || catalogRentPrice(line, line.pricingType) != null;
+  orderType === 'SALE' || line.customPrices?.[lineChoiceKey(line)] != null || catalogRentPrice(line, lineChoiceKey(line)) != null;
 
 /** A rent line without a price yet ("Nhập giá"): a mode the product has no price for and nothing typed. */
 export const needsPrice = (line: CartLine, orderType: OrderType): boolean => !hasLinePrice(line, orderType);
@@ -465,7 +559,8 @@ export function cardPrices(p: ProductLike, orderType: OrderType): Array<{ type: 
         price: p.salePrice == null ? num(p.rentPrice) : num(p.salePrice),
       },
     ];
-  const options = activeOptions(p.pricingOptions);
+  // #1621: an hour block is never shown as "x/giờ" (its price is the whole block)
+  const options = activeOptions(p.pricingOptions).filter((o) => !isHourBlock(o));
   if (options.length === 0)
     return [
       {
@@ -719,6 +814,7 @@ export function buildPayload(input: PayloadInput) {
     notes: input.notes,
     orderItems: input.lines.map((l) => {
       // The API takes FIXED, HOURLY, DAILY; another option type goes as FIXED without its id (iOS requestPricingType)
+      // #1621 an hour block goes as HOURLY with its option id, priced flat (unit × qty, rentDays 1); the server stamps the block
       const lineType = rent ? resolveOrderLinePricingType(l) : 'FIXED';
       // BLOCK goes as BLOCK only with a usable day table (an option of that type without one is "another type")
       const block = rent && lineType === 'BLOCK' && isBlockLine(l, input.orderType);

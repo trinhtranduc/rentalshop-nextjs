@@ -19,6 +19,8 @@ import { ICONS, ShellIcon } from '../../components/shell/Icon';
 import { cardClass, outlineBtn, primaryBtn, Skeleton, type T } from '../../orders/list/parts';
 import { fieldClass } from '../../orders/create/parts';
 import { BlockSetupDialog } from '../BlockSetupDialog';
+import { HourBlocksDialog } from '../HourBlocksDialog';
+import { hourBlockPriceRange } from '../hour-block-draft';
 import {
   MAX_PHOTOS,
   PHOTO_ACCEPT,
@@ -41,7 +43,9 @@ import {
   parseCount,
   removedAllSavedPhotos,
   saveBlockTable,
+  saveHourBlocks,
   turnOffBlock,
+  turnOffHourBlocks,
   setOutletListed,
   setOutletStock,
   setTotalStock,
@@ -426,6 +430,7 @@ export function ProductFormPage({ productId }: { productId: number | null }) {
   const [saving, setSaving] = useState(false);
   const [failed, setFailed] = useState(false);
   const [setupOpen, setSetupOpen] = useState(false);
+  const [hourOpen, setHourOpen] = useState(false);
   const money = useFormatCurrency();
 
   useEffect(() => {
@@ -566,6 +571,12 @@ export function ProductFormPage({ productId }: { productId: number | null }) {
         .map((i) => `${t('detail.block.dayRow', { n: form.block!.startDay + i })} ${money(form.block!.tiers[i] ?? 0)}`)
         .join(' · ')
     : '';
+  // #1621 "3 khối: 2 · 4 · 8 giờ" and "150.000 – 400.000"
+  const hourRange = hourBlockPriceRange(form.hourBlocks);
+  const hourSummary = form.hourBlocks.length
+    ? t('form.hour.summary', { count: form.hourBlocks.length, hours: form.hourBlocks.map((b) => b.hours).join(' · ') })
+    : '';
+  const hourPrices = hourRange ? (hourRange.min === hourRange.max ? money(hourRange.min) : `${money(hourRange.min)} – ${money(hourRange.max)}`) : '';
 
   return wrap(
     <form onSubmit={submit} noValidate className="flex flex-col gap-4">
@@ -626,6 +637,20 @@ export function ProductFormPage({ productId }: { productId: number | null }) {
                       <span className="flex min-w-0 flex-col">
                         <span className="text-[15px] font-semibold text-ar-ink">{blockSummary}</span>
                         <span className="text-xs text-ar-muted">{blockPrices}</span>
+                      </span>
+                    ) : (
+                      <span className="text-[15px] text-ar-muted">{t('form.blockNotSet')}</span>
+                    )}
+                    <span aria-hidden className="text-xl text-ar-muted">›</span>
+                  </button>
+                </div>
+                <div className="flex flex-col gap-1.5" data-hour-blocks-row>
+                  <span className={labelText}>{t('form.hourRow')}</span>
+                  <button type="button" onClick={() => setHourOpen(true)} aria-label={t('form.hour.edit')} data-hour-summary className="flex min-h-[52px] w-full items-center justify-between gap-3 rounded-xl border border-ar-line-strong px-4 py-2 text-left hover:bg-ar-subtle">
+                    {form.hourBlocks.length ? (
+                      <span className="flex min-w-0 flex-col">
+                        <span className="text-[15px] font-semibold text-ar-ink">{hourSummary}</span>
+                        <span className="text-xs tabular-nums text-ar-muted">{hourPrices}</span>
                       </span>
                     ) : (
                       <span className="text-[15px] text-ar-muted">{t('form.blockNotSet')}</span>
@@ -818,6 +843,21 @@ export function ProductFormPage({ productId }: { productId: number | null }) {
           onTurnOff={() => {
             patch((f) => turnOffBlock(f));
             setSetupOpen(false);
+          }}
+        />
+      )}
+      {hourOpen && (
+        <HourBlocksDialog
+          initial={form.hourBlocks}
+          canTurnOff={form.hourBlocks.length > 0}
+          onClose={() => setHourOpen(false)}
+          onSave={(blocks) => {
+            patch((f) => saveHourBlocks(f, blocks), ['perRental']);
+            setHourOpen(false);
+          }}
+          onTurnOff={() => {
+            patch((f) => turnOffHourBlocks(f), ['perRental']);
+            setHourOpen(false);
           }}
         />
       )}

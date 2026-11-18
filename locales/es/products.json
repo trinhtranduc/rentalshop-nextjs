@@ -633,7 +633,8 @@
         "depositNegative": "El anticipo no puede ser negativo",
         "stockRequired": "La cantidad debe ser mayor que 0",
         "outletStockNegative": "La cantidad no puede ser negativa",
-        "branchRequired": "Marque al menos una sucursal donde mostrar el producto"
+        "branchRequired": "Marque al menos una sucursal donde mostrar el producto",
+        "hourBlocksNeedPrice": "Los bloques de horas también necesitan un precio por alquiler o por día."
       },
       "noCreate": "No tiene permiso para agregar productos.",
       "noEdit": "No tiene permiso para editar productos.",
@@ -645,6 +646,7 @@
       "needOutlet": "Agregue al menos una sucursal antes de agregar productos.",
       "goOutlets": "Abrir Sucursales",
       "blockRow": "Por bloque de días",
+      "hourRow": "Por bloque de horas",
       "blockNotSet": "Sin configurar",
       "unitOnce": "₫ / alquiler",
       "unitDay": "₫ / día",
@@ -662,6 +664,26 @@
         "copyLoading": "Cargando…",
         "close": "Cerrar",
         "incomplete": "Ingrese el precio de todos los días y el monto adicional por cada día extra, o elija mantener el precio del último bloque."
+      },
+      "hour": {
+        "summary": "{count, plural, one {# bloque} other {# bloques}}: {hours} h",
+        "edit": "Editar precios por bloque de horas",
+        "title": "Precio por bloque de horas",
+        "hint": "Cada bloque de horas tiene un precio. En el carrito se cobra el precio del bloque elegido.",
+        "listTitle": "Bloques de horas",
+        "unit": "h",
+        "hoursOf": "Horas del bloque {n}",
+        "priceOf": "Precio del bloque {n}",
+        "remove": "Eliminar bloque {n}",
+        "add": "+ Agregar bloque",
+        "max": "Como máximo {n} bloques.",
+        "save": "Guardar tabla de precios",
+        "turnOff": "Desactivar precios por bloque de horas",
+        "errors": {
+          "hours": "Las horas deben ser un número entero de 1 a 24.",
+          "repeated": "Cada cantidad de horas solo puede usarse en un bloque.",
+          "price": "Ingrese un precio para cada bloque (se permite 0)."
+        }
       },
       "listing": {
         "branch": "Sucursal",
@@ -691,6 +713,7 @@
       "hour": "Alquiler por hora",
       "perDay": "{price}/día",
       "perHour": "{price}/hora",
+      "hourBlock": "{n} h {price}",
       "default": "Predeterminado",
       "deposit": "Anticipo",
       "sale": "Precio de venta",
