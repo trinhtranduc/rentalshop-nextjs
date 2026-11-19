@@ -1,12 +1,14 @@
 /**
  * #1459: the renewal rule lives in one place on the server (apps/api/lib/plan-renewal.ts).
- * Same plan: ≤ 7 Vietnam days left, trial, or expired. Upgrade: any time. Auto-renewing: nothing to buy.
+ * #1629: the same plan and higher ones any time unless the plan auto-renews (was: same plan only with ≤ 7 Vietnam days
+ * left). `renewWindowDays` stays 7: the apps' Home reminder. Auto-renewing: only the upgrade on its own store (A5).
  * Must hold under TZ=UTC and TZ=Asia/Ho_Chi_Minh.
  */
 import { describe, expect, it } from '@jest/globals';
 import {
   RENEW_WINDOW_DAYS,
   channelFromStore,
+  storeCreditForPurchase,
   deviceStoreFromHeaders,
   inAppPlans,
   parseSandboxMerchantIds,
@@ -69,14 +71,33 @@ describe('store products and plan tiers', () => {
 });
 
 describe('renewalOffer (#1459)', () => {
-  it('Basic with 20 days left: only the upgrade', () => {
+  it('#1629 Basic with 20 days left: renew and upgrade', () => {
     const offer = basic();
-    expect(offer).toMatchObject({ expired: false, daysRemaining: 20, canRenew: false, canUpgrade: true, purchasablePlanIds: [3] });
+    expect(offer).toMatchObject({ expired: false, daysRemaining: 20, canRenew: true, canUpgrade: true, purchasablePlanIds: [2, 3] });
   });
 
-  it(`Basic with ${RENEW_WINDOW_DAYS} days left: renew and upgrade; 8 days: upgrade only`, () => {
-    expect(basic({ currentPeriodEnd: endIn(7) })).toMatchObject({ daysRemaining: 7, canRenew: true, canUpgrade: true, purchasablePlanIds: [2, 3] });
-    expect(basic({ currentPeriodEnd: endIn(8) })).toMatchObject({ daysRemaining: 8, canRenew: false, purchasablePlanIds: [3] });
+  it(`#1629 no renew window: 7, 8 and 200 days left all renew; renewWindowDays stays ${RENEW_WINDOW_DAYS} (Home reminder)`, () => {
+    expect(RENEW_WINDOW_DAYS).toBe(7);
+    for (const days of [7, 8, 200]) {
+      expect(basic({ currentPeriodEnd: endIn(days) })).toMatchObject({
+        daysRemaining: days, canRenew: true, canUpgrade: true, purchasablePlanIds: [2, 3], renewWindowDays: 7,
+      });
+    }
+  });
+
+  it('#1629 issue example: Basic paid by transfer to 31/01/2027, 19/11/2026 → renew now; the 73 days carry (A13)', () => {
+    const now = new Date('2026-11-19T03:00:00.000Z'); // 10:00 VN
+    const end = new Date('2027-01-31T16:59:59.000Z'); // 31/01/2027 23:59:59 VN
+    const offer = renewalOffer(
+      { dbStatus: 'ACTIVE', currentPeriodEnd: end, planId: 2, planName: 'Basic', autoRenew: false, billingChannel: 'MANUAL', deviceStore: 'APP_STORE', now },
+      PLANS,
+    );
+    expect(offer).toMatchObject({ daysRemaining: 73, canRenew: true, canUpgrade: true, purchasablePlanIds: [2, 3], reenableAutoRenew: false });
+    // Bought on the App Store now: a new store subscription keeps the days left as credit, the store expiry is 19/11/2027
+    const credit = storeCreditForPurchase({ status: 'ACTIVE', currentPeriodEnd: end, billingChannel: 'MANUAL' }, 'APP_STORE', now);
+    const storeExpiry = new Date('2027-11-19T03:00:00.000Z');
+    const newEnd = new Date(storeExpiry.getTime() + credit);
+    expect(newEnd.toISOString()).toBe('2028-01-31T16:59:59.000Z'); // 31/01/2028 23:59:59 VN
   });
 
   it('the window counts Vietnam days, not hours: 7 days at 23:59 VN, 8 at 00:00 VN the day after', () => {
@@ -116,10 +137,10 @@ describe('renewalOffer (#1459)', () => {
     });
   });
 
-  it('Professional with 30 days left: nothing (no higher plan); with 5 days: renew only', () => {
+  it('#1629 Professional (no higher plan) with 30 or 5 days left: renew only', () => {
     const pro = (end: Date) =>
       renewalOffer({ dbStatus: 'ACTIVE', currentPeriodEnd: end, planId: 3, planName: 'Professional', autoRenew: false, now: NOW }, PLANS);
-    expect(pro(endIn(30))).toMatchObject({ canRenew: false, canUpgrade: false, purchasablePlanIds: [] });
+    expect(pro(endIn(30))).toMatchObject({ canRenew: true, canUpgrade: false, purchasablePlanIds: [3] });
     expect(pro(endIn(5))).toMatchObject({ canRenew: true, canUpgrade: false, purchasablePlanIds: [3] });
   });
 
