@@ -63,8 +63,8 @@ describe('status answers keep every old key and value, and only add the renewal 
 describe('the new fields answer the renewal rule', () => {
   const data = (name: string) => now[`status_${name}`].body.data;
 
-  it('Basic, 20 days: upgrade only; 5 days and the last day: renew too', () => {
-    expect(data('activeBasic20Days')).toMatchObject({ canRenew: false, canUpgrade: true, purchasablePlanIds: [3], billingChannel: 'MANUAL', autoRenew: false, billingIssue: false, planTier: 'basic', renewWindowDays: 7 });
+  it('#1629 Basic, 20 days, 5 days and the last day: renew and upgrade (no 7-day window; renewWindowDays = Home reminder)', () => {
+    expect(data('activeBasic20Days')).toMatchObject({ canRenew: true, canUpgrade: true, purchasablePlanIds: [2, 3], billingChannel: 'MANUAL', autoRenew: false, billingIssue: false, planTier: 'basic', renewWindowDays: 7 });
     expect(data('activeBasic5Days')).toMatchObject({ canRenew: true, canUpgrade: true, purchasablePlanIds: [2, 3] });
     expect(data('lastDayBasic')).toMatchObject({ daysRemaining: 0, canRenew: true });
   });
@@ -88,8 +88,8 @@ describe('the new fields answer the renewal rule', () => {
     expect(data('expiredBasic').storeRenewsAt).toBeNull();
   });
 
-  it('Professional with 40 days and cancelled auto-renew: nothing to buy yet', () => {
-    expect(data('cancelledProfessional')).toMatchObject({ planTier: 'professional', canRenew: false, canUpgrade: false, purchasablePlanIds: [] });
+  it('#1629 Professional with 40 days, cancelled, not billed by this store: renew it now', () => {
+    expect(data('cancelledProfessional')).toMatchObject({ planTier: 'professional', canRenew: true, canUpgrade: false, purchasablePlanIds: [3] });
   });
 
   it('staff of an expired shop read the status (open to expired shops)', () => {
