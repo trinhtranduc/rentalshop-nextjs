@@ -12,11 +12,15 @@ Usage: scripts/mobile-e2e/plan-renewal-e2e.sh ios [step…] | state <active5|exp
 ios       runs the iOS steps in order (default all): owner-renew (hosted: 5 days left, renew 12 months from Home; the
           days continue after the new period, A13), owner-buy-restore (expired → gate after login → buy Professional,
           then refund of that purchase → 403 gate → restore, one StoreKit session), owner-gate (real login),
-          staff-retry. owner-purchases = owner-renew owner-buy-restore
+          staff-retry. owner-purchases = owner-renew owner-buy-restore.
+          owner-anytime (#1629, hosted, not in the default list): Basic paid by transfer with 73 days left → no Home line,
+          renew Basic 12 months from the plan screen (keeps the 73 days) → upgrade to Professional → cancel (keeps the
+          end day, the shop still works)
 android   boots $E2E_AVD with a window, builds debug against the local API, then: owner Home line → plan screen (no
           store key) → webhook → Thử lại; Settings row; 403 → expired screen → Thử lại; expired at launch; staff
           (NO_BUILD=1 skips the gradle build)
-state     only sets merchant1's subscription: active5 = Basic, 5 days left; expired = Basic, ended 2 days ago
+state     only sets merchant1's subscription: active5 = Basic, 5 days left; manual73 = Basic, 73 days left; expired =
+          Basic, ended 2 days ago
 Needs: E2E_DATABASE_URL on 127.0.0.1/localhost, the local API up (api-local.sh start) with REVENUECAT_WEBHOOK_SECRET,
 psql. Screenshots: $E2E_OUT/ios/plan-*/.
 EOF
@@ -38,8 +42,9 @@ set_state() {
   id="$(merchant_id)"
   case "$1" in
     active5) end="now() + interval '5 days'" ;;
+    manual73) end="now() + interval '73 days'" ;;
     expired) end="now() - interval '2 days'" ;;
-    *) echo "state active5|expired" >&2; exit 64 ;;
+    *) echo "state active5|manual73|expired" >&2; exit 64 ;;
   esac
   psql "$E2E_DATABASE_URL" -qc "UPDATE \"Subscription\" SET \"planId\" = (SELECT id FROM \"Plan\" WHERE name = 'Basic'),
     status = 'ACTIVE', \"currentPeriodStart\" = now() - interval '360 days', \"currentPeriodEnd\" = $end,
@@ -58,6 +63,8 @@ run_ios() {
     owner-renew) bundle="POS ADBDTests"; cls=PlanRenewalHostedE2ETests; method=test1OwnerRenews12MonthsFromHome; account=merchant; fresh=1; set_state active5 ;;
     # test 3 restores test 2's StoreKit purchase: both in one run (one StoreKit test session)
     owner-buy-restore) bundle="POS ADBDTests"; cls=PlanRenewalHostedE2ETests; method=""; skip=test1OwnerRenews12MonthsFromHome; account=merchant; fresh=1; set_state expired ;;
+    # #1629 tests 4-6 in one run (one StoreKit test session: the upgrade follows the renewal)
+    owner-anytime) bundle="POS ADBDTests"; cls=PlanRenewalHostedE2ETests; method=""; skip="test1OwnerRenews12MonthsFromHome test2ExpiredOwnerBuysProfessionalAfterLogin test3ExpiredOwnerRestores"; account=merchant; fresh=1; set_state manual73 ;;
     owner-gate) bundle="POS ADBDUITests"; cls=PlanRenewalE2ETests; method=testOwnerGateAfterLogin; account=merchant; fresh=1; set_state expired ;;
     staff-retry) bundle="POS ADBDUITests"; cls=PlanRenewalE2ETests; method=testStaffExpiredRetries; account=staff; fresh=1; set_state expired ;;
     *) echo "unknown step $step" >&2; exit 64 ;;
@@ -68,7 +75,8 @@ run_ios() {
   export TEST_RUNNER_E2E_STOREKIT_PATH="$E2E_ROOT/apps/mobile/POS ADBD/Configuration/AnyRentSubscriptions.storekit"
   local args=(--account "$account" --label "plan-$step" --lang vi --no-stage)
   [ -n "$method" ] && args+=(--only "$method")
-  [ -n "$skip" ] && args+=(--skip "$skip")
+  local s
+  for s in $skip; do args+=(--skip "$s"); done
   [ "$fresh" = 1 ] && args+=(--fresh)
   "$(dirname "${BASH_SOURCE[0]}")/ios-e2e.sh" "${args[@]}"
 }
@@ -221,7 +229,7 @@ run_android() {
 
 case "${1:-}" in
   -h|--help|"") usage ;;
-  state) set_state "${2:?state active5|expired}" ;;
+  state) set_state "${2:?state active5|manual73|expired}" ;;
   ios)
     shift
     steps=()
