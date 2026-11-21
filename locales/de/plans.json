@@ -194,6 +194,25 @@
       "products": "Artikel",
       "customers": "Kunden",
       "orders": "Aufträge"
+    },
+    "polar": {
+      "perMonths": "/ {months} Monate",
+      "perMonthEach": "≈ {price}/Monat",
+      "saving": "{percent} % sparen",
+      "inApp": "In der AnyRent-App kaufen",
+      "unavailable": "Derzeit nicht verfügbar",
+      "contact": "AnyRent kontaktieren",
+      "renewsInStore": "Verlängert sich über App Store / Google Play",
+      "manage": "Tarif verwalten / kündigen",
+      "manageHint": "Ihr Tarif verlängert sich per Karte über Polar. Kündigen, Karte, Tarif oder Zeitraum ändern Sie auf der Verwaltungsseite.",
+      "renew": "Verlängern",
+      "method": "Karte (Polar)",
+      "confirmHint": "Sie werden zur Zahlungsseite von Polar weitergeleitet. Der Tarif verlängert sich jeden Zeitraum und ist jederzeit kündbar. Die Resttage Ihres aktuellen Tarifs werden übernommen.",
+      "success": "Zahlung erhalten. Ihr Tarif wird in wenigen Sekunden aktualisiert.",
+      "cycle": {
+        "semi_annual": "6 Monate",
+        "annual": "12 Monate"
+      }
     }
   },
   "pricingPage": {

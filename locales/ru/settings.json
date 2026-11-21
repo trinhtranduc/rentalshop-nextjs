@@ -679,7 +679,8 @@
         "CHECK": "Чек",
         "PAYPAL": "PayPal",
         "IAP_APPLE": "App Store",
-        "IAP_GOOGLE": "Google Play"
+        "IAP_GOOGLE": "Google Play",
+        "POLAR": "Карта (Polar)"
       },
       "history": {
         "title": "История подписки",
@@ -716,7 +717,8 @@
           "REFUNDED": "Возвращено",
           "CANCELLED": "Отменено"
         }
-      }
+      },
+      "manage": "Управление / отмена тарифа"
     },
     "bank": {
       "title": "Банковские счета"

@@ -679,7 +679,8 @@
         "CHECK": "Cheque",
         "PAYPAL": "PayPal",
         "IAP_APPLE": "App Store",
-        "IAP_GOOGLE": "Google Play"
+        "IAP_GOOGLE": "Google Play",
+        "POLAR": "Tarjeta (Polar)"
       },
       "history": {
         "title": "Historial del plan",
@@ -716,7 +717,8 @@
           "REFUNDED": "Reembolsado",
           "CANCELLED": "Cancelado"
         }
-      }
+      },
+      "manage": "Gestionar / cancelar plan"
     },
     "bank": {
       "title": "Cuentas bancarias"

@@ -28,6 +28,7 @@ export * from './installments';
 export * from './subscriptions';
 export * from './stripe';
 export * from './lemonsqueezy';
+export * from './polar';
 export * from './sepay';
 export * from './plan-stripe-prices';
 export * from './plan-lemon-squeezy-variants';

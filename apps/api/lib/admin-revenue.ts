@@ -36,6 +36,7 @@ export function channelOfMethod(method: string): RevenueChannel {
       return 'TRANSFER';
     case 'LEMON_SQUEEZY':
     case 'STRIPE':
+    case 'POLAR':
       return 'CARD';
     default:
       return 'OTHER';

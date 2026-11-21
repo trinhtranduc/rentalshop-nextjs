@@ -59,9 +59,11 @@ interface SubscriptionTabProps {
   /** Shown only when upgrade / extend are switched on. */
   onUpgrade?: () => void;
   onExtend?: () => void;
+  /** #1631 the shop pays through Polar: opens Polar's portal (cancel, card, plan) */
+  onManage?: () => void;
 }
 
-export function SubscriptionTab({ status, load, onRetry, onUpgrade, onExtend }: SubscriptionTabProps) {
+export function SubscriptionTab({ status, load, onRetry, onUpgrade, onExtend, onManage }: SubscriptionTabProps) {
   const t = useTranslations('settings.web') as unknown as T;
   const locale = useLocale();
   const weekdays = useMemo(() => t('subscription.weekdays').split(','), [t]);
@@ -98,8 +100,13 @@ export function SubscriptionTab({ status, load, onRetry, onUpgrade, onExtend }: 
   const expiryTone = tag === 'expired' ? 'text-ar-danger' : tag === 'expiring' ? 'text-ar-unprepared' : 'text-ar-ink-2';
   const note = tag === 'expired' ? t('subscription.expiredNote') : status.cancelAtPeriodEnd || tag === 'cancelled' ? t('subscription.cancelNote') : '';
   const actions =
-    onUpgrade || onExtend ? (
+    onUpgrade || onExtend || onManage ? (
       <>
+        {onManage && (
+          <button type="button" onClick={onManage} className={outlineBtn}>
+            {t('subscription.manage')}
+          </button>
+        )}
         {onExtend && (
           <button type="button" onClick={onExtend} className={outlineBtn}>
             {t('subscription.extend')}

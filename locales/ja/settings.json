@@ -679,7 +679,8 @@
         "CHECK": "小切手",
         "PAYPAL": "PayPal",
         "IAP_APPLE": "App Store",
-        "IAP_GOOGLE": "Google Play"
+        "IAP_GOOGLE": "Google Play",
+        "POLAR": "カード（Polar）"
       },
       "history": {
         "title": "プランの履歴",
@@ -716,7 +717,8 @@
           "REFUNDED": "返金済み",
           "CANCELLED": "キャンセル済み"
         }
-      }
+      },
+      "manage": "プランの管理 / 解約"
     },
     "bank": {
       "title": "銀行口座"

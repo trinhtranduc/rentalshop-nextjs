@@ -25,7 +25,7 @@ import {
   SelectValue,
   Textarea,
 } from '@rentalshop/ui';
-import { subscriptionsApi } from '@rentalshop/utils';
+import { polarApi, subscriptionsApi, type PolarOffersResponse } from '@rentalshop/utils';
 import { USER_ROLE } from '@rentalshop/constants';
 import { ChoosePlanDialog } from './ChoosePlanDialog';
 import { settingsHref } from '../settings/settings-model';
@@ -113,14 +113,49 @@ export function SettingsSubscriptionMerchantActions({
 
   const showUpgradeExtendUi = SUBSCRIPTION_UPGRADE_EXTEND_ENABLED && isMerchant;
 
+  // #1631 Polar on: "Chọn gói" opens /plans (Polar checkout); a shop paying through Polar gets "Quản lý / huỷ gói"
+  const [polar, setPolar] = useState<PolarOffersResponse | null>(null);
+  const [openingPortal, setOpeningPortal] = useState(false);
+  const billingChannel = (status as { billingChannel?: string | null } | null)?.billingChannel ?? null;
+  useEffect(() => {
+    if (!isMerchant) return;
+    let alive = true;
+    polarApi
+      .getOffers()
+      .then((r) => {
+        if (alive && r.success && r.data) setPolar(r.data);
+      })
+      .catch(() => undefined);
+    return () => {
+      alive = false;
+    };
+  }, [isMerchant, billingChannel]);
+  const openPolarPortal = async () => {
+    if (openingPortal) return;
+    setOpeningPortal(true);
+    try {
+      const result = await polarApi.createPortal({ returnUrl: window.location.href });
+      if (result.success && result.data?.url) {
+        window.location.href = result.data.url;
+        return;
+      }
+    } catch (err) {
+      console.error('Error opening the Polar portal:', err);
+    }
+    setOpeningPortal(false);
+  };
+  const polarUpgrade = !showUpgradeExtendUi && isMerchant && !!polar?.enabled ? () => router.push('/plans') : undefined;
+  const polarManage = isMerchant && !!polar?.manage ? () => void openPolarPortal() : undefined;
+
   return (
     <>
       <SubscriptionTab
         status={status}
         load={load}
         onRetry={() => void onSubscriptionRefresh()}
-        onUpgrade={showUpgradeExtendUi ? () => setShowChoosePlanDialog(true) : undefined}
+        onUpgrade={showUpgradeExtendUi ? () => setShowChoosePlanDialog(true) : polarUpgrade}
         onExtend={showUpgradeExtendUi && hasSub ? () => setShowRenewModal(true) : undefined}
+        onManage={polarManage}
       />
 
       {SUBSCRIPTION_UPGRADE_EXTEND_ENABLED ? (
