@@ -22,8 +22,11 @@ describe('#1631 plan page with Polar', () => {
     expect(planAction([{ ...PRO6, decision: 'PLAN_NOT_PURCHASABLE' }], false)).toBe('unavailable');
     expect(planAction([{ ...PRO6, decision: 'PLAN_NOT_PURCHASABLE' }], true)).toBe('current');
     // Basic has no Polar product (paid in the app): "Mua trong app AnyRent"
-    expect(planAction([], false)).toBe('app');
-    expect(planAction([], true)).toBe('current');
+    expect(planAction([], false, { name: 'Basic', basePrice: 99000 })).toBe('app');
+    expect(planAction([], true, { name: 'Basic', basePrice: 99000 })).toBe('current');
+    // Enterprise is not sold in the apps: "Liên hệ AnyRent"; the free trial has no button
+    expect(planAction([], false, { name: 'Enterprise', basePrice: 399000 })).toBe('contact');
+    expect(planAction([], false, { name: 'Trial', basePrice: 0 })).toBe('none');
   });
 
   it('Pro: 1.799.000 ₫ a year saves 31% against 2 × 1.299.000 ₫', () => {

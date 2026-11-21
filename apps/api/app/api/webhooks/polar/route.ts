@@ -216,6 +216,8 @@ async function handleSubscription(merchantId: number, type: string, sub: PolarSu
   const text = texts[patch.kind];
   if (text) {
     await logActivity(saved.id, `POLAR_${patch.kind.toUpperCase()}`, text(), {
+      planName,
+      expiresAt: end.toISOString(),
       eventType: type,
       eventAt: at.toISOString(),
       subscriptionId: sub.id,
@@ -286,6 +288,6 @@ async function handleOrderRefunded(merchantId: number, order: PolarOrderLike, at
   await db.prisma.subscription.update({ where: { merchantId }, data: { ...patch.data, updatedAt: new Date() } });
   const end = patch.data.currentPeriodEnd as Date;
   const text = patch.kind === 'refund_kept_days' ? planHistory.refundKeepsDays('POLAR', end) : planHistory.refund('POLAR', end);
-  await logActivity(sub!.id, 'POLAR_REFUND', text, { orderId: order.id, refundedAt: refundedAt.toISOString() });
+  await logActivity(sub!.id, 'POLAR_REFUND', text, { orderId: order.id, refundedAt: refundedAt.toISOString(), expiresAt: end.toISOString() });
   return `ok_${patch.kind}`;
 }

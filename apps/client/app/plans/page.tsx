@@ -253,7 +253,7 @@ export default function PlansPage() {
             const price = planPriceText(plan, t);
             const free = !(plan.basePrice > 0);
             const offers = usePolar ? planOffers(polar?.offers, plan.id) : [];
-            const action = usePolar ? planAction(offers, isCurrent) : null;
+            const action = usePolar ? planAction(offers, isCurrent, plan) : null;
             const saving = yearSaving(offers);
             return (
               <li
@@ -316,7 +316,7 @@ export default function PlansPage() {
                     </div>
                   )}
                 </div>
-                <div className="border-t border-ar-subtle bg-ar-surface-muted px-5 py-3.5">
+                <div className={`border-t border-ar-subtle bg-ar-surface-muted px-5 py-3.5 ${action === 'none' ? 'hidden' : ''}`}>
                   {action === 'buy' || action === 'renew' ? (
                     <button
                       type="button"
@@ -330,16 +330,20 @@ export default function PlansPage() {
                     <button type="button" onClick={() => void openPortal()} disabled={opening} className={`${outlineBtn} w-full`}>
                       {opening ? t('redirecting') : t('polar.manage')}
                     </button>
-                  ) : action ? (
+                  ) : action === 'current' ? (
                     <button type="button" disabled className={`${outlineBtn} w-full`}>
-                      {action === 'current'
-                        ? t('currentButton')
-                        : action === 'store'
-                          ? t('polar.renewsInStore')
-                          : action === 'app'
-                            ? t('polar.inApp')
-                            : t('polar.unavailable')}
+                      {t('currentButton')}
                     </button>
+                  ) : action === 'none' ? null : action ? (
+                    <p className="m-0 py-1.5 text-center text-sm font-semibold text-ar-muted">
+                      {action === 'store'
+                        ? t('polar.renewsInStore')
+                        : action === 'app'
+                          ? t('polar.inApp')
+                          : action === 'contact'
+                            ? t('polar.contact')
+                            : t('polar.unavailable')}
+                    </p>
                   ) : isCurrent ? (
                     <button type="button" disabled className={`${outlineBtn} w-full`}>
                       {t('currentButton')}

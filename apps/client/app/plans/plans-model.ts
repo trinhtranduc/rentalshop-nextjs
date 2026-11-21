@@ -118,12 +118,27 @@ export function planOffers(offers: WebOffer[] | null | undefined, planId: number
 /**
  * What the plan card's button does with Polar on: buy / renew (open the cycle picker), manage (Polar portal: the shop
  * auto-renews there), store (renews on the App Store / Google Play: nothing to buy here), current (in use, nothing to
- * buy), app (no Polar product: bought in the app), unavailable (not purchasable now).
+ * buy), app (Basic / Professional without a Polar product: bought in the app), contact (a paid plan not sold in the
+ * apps, e.g. Enterprise), none (the free trial), unavailable (not purchasable now).
  */
-export type PlanAction = 'buy' | 'renew' | 'manage' | 'store' | 'current' | 'app' | 'unavailable';
+export type PlanAction = 'buy' | 'renew' | 'manage' | 'store' | 'current' | 'app' | 'contact' | 'none' | 'unavailable';
 
-export function planAction(offers: WebOffer[], isCurrent: boolean): PlanAction {
-  if (offers.length === 0) return isCurrent ? 'current' : 'app';
+/** Basic and Professional are sold in the apps (the API's `planTierFromName`) */
+export function isAppPlanName(name: string | null | undefined): boolean {
+  const n = String(name ?? '').trim().toLowerCase();
+  return n === 'basic' || n.startsWith('basic ') || n === 'professional' || n === 'pro' || n.startsWith('professional ') || n.startsWith('pro ');
+}
+
+export function planAction(
+  offers: WebOffer[],
+  isCurrent: boolean,
+  plan: { name?: string | null; basePrice?: number | null } = { name: 'Basic' }
+): PlanAction {
+  if (offers.length === 0) {
+    if (isCurrent) return 'current';
+    if (isAppPlanName(plan.name)) return 'app';
+    return typeof plan.basePrice === 'number' && plan.basePrice > 0 ? 'contact' : 'none';
+  }
   if (offers.some((o) => o.decision === 'POLAR_MANAGE_IN_PORTAL')) return 'manage';
   if (offers.some((o) => o.decision === 'SUBSCRIPTION_RENEWS_IN_STORE')) return 'store';
   if (offers.some((o) => o.decision === 'ok')) return isCurrent ? 'renew' : 'buy';
