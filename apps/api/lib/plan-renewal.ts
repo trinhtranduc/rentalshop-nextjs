@@ -7,7 +7,8 @@
 import { civilDaysBetween } from '../../../packages/utils/src/core/billing-dates';
 
 export type PlanTier = 'basic' | 'professional';
-export type BillingChannel = 'APP_STORE' | 'PLAY_STORE' | 'LEMON' | 'MANUAL';
+/** #1631 POLAR: the web card subscription through Polar (replaces LEMON for new purchases) */
+export type BillingChannel = 'APP_STORE' | 'PLAY_STORE' | 'LEMON' | 'POLAR' | 'MANUAL';
 
 /** Renewing the same plan opens this many Vietnam days before the period ends (0 = the last day). */
 export const RENEW_WINDOW_DAYS = 7;
@@ -91,7 +92,7 @@ export function parseSandboxMerchantIds(raw: string | null | undefined): number[
 }
 
 export function normaliseChannel(raw: string | null | undefined): BillingChannel {
-  return raw === 'APP_STORE' || raw === 'PLAY_STORE' || raw === 'LEMON' ? raw : 'MANUAL';
+  return raw === 'APP_STORE' || raw === 'PLAY_STORE' || raw === 'LEMON' || raw === 'POLAR' ? raw : 'MANUAL';
 }
 
 /**
@@ -121,6 +122,14 @@ export function isStoreChannel(channel: string | null | undefined): channel is '
   return channel === 'APP_STORE' || channel === 'PLAY_STORE';
 }
 
+/**
+ * #1631 A channel that charges on its own dates: the two stores and Polar. The A13 credit, admin extensions and the next
+ * charge date treat Polar like a store (its subscription id is kept in `storeOriginalTransactionId`).
+ */
+export function isAutoBilledChannel(channel: string | null | undefined): channel is 'APP_STORE' | 'PLAY_STORE' | 'POLAR' {
+  return isStoreChannel(channel) || channel === 'POLAR';
+}
+
 /** The stored credit in ms (null or negative = none) */
 export function creditMs(row: Pick<CreditRow, 'storeBonusMs'> | null | undefined): number {
   const value = Number(row?.storeBonusMs ?? 0);
@@ -145,15 +154,15 @@ export function storeCreditForPurchase(existing: CreditRow | null | undefined, c
   if (!existing || end === null) return 0;
   const left = Math.max(0, end - purchasedAt.getTime());
   if (left === 0) return 0;
-  const sameStore = isStoreChannel(existing.billingChannel) && existing.billingChannel === channel && !!existing.storeProductId;
+  const sameStore = isAutoBilledChannel(existing.billingChannel) && existing.billingChannel === channel && !!existing.storeProductId;
   return sameStore ? Math.min(creditMs(existing), left) : left;
 }
 
-/** A store plan (App Store / Google Play) still in its period: auto-renewing, or auto-renew off but not ended */
+/** A store or Polar plan still in its period: auto-renewing, or auto-renew off but not ended */
 export function isRunningStoreSubscription(row: CreditRow | null | undefined, now: Date = new Date()): boolean {
   const end = endMs(row);
   return (
-    !!row && isStoreChannel(row.billingChannel) && !!row.storeProductId && String(row.status ?? '').toUpperCase() !== 'EXPIRED' &&
+    !!row && isAutoBilledChannel(row.billingChannel) && !!row.storeProductId && String(row.status ?? '').toUpperCase() !== 'EXPIRED' &&
     end !== null && end > now.getTime()
   );
 }
@@ -212,8 +221,8 @@ export interface RenewalInput {
   autoRenew: boolean | null | undefined;
   /** How the plan is paid (Subscription.billingChannel) */
   billingChannel?: string | null;
-  /** The store of the device asking (`deviceStoreFromHeaders`); null for the web and old apps */
-  deviceStore?: 'APP_STORE' | 'PLAY_STORE' | null;
+  /** The store of the device asking (`deviceStoreFromHeaders`); POLAR for the web checkout (#1631); null for old apps */
+  deviceStore?: 'APP_STORE' | 'PLAY_STORE' | 'POLAR' | null;
   now?: Date;
 }
 

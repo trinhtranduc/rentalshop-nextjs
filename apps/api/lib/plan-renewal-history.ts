@@ -21,6 +21,8 @@ export function storeName(channel: BillingChannel): string {
       return 'Google Play';
     case 'LEMON':
       return 'Lemon Squeezy';
+    case 'POLAR':
+      return 'Polar';
     default:
       return 'cửa hàng ứng dụng';
   }
@@ -43,6 +45,12 @@ export const planHistory = {
   cancel: (channel: BillingChannel, end: Date) =>
     `Đã tắt tự gia hạn trên ${storeName(channel)}. Gói vẫn dùng đến ${vnDate(end)}.`,
   uncancel: (channel: BillingChannel) => `Đã bật lại tự gia hạn trên ${storeName(channel)}.`,
+  /** #1631 a plan or cycle switch in Polar's customer portal */
+  change: (planName: string, months: number, channel: BillingChannel, end: Date) =>
+    `Đổi sang ${planPeriod(planName, months)} qua ${storeName(channel)}. Dùng đến ${vnDate(end)}.`,
+  /** #1631 Polar ended the subscription (after a cancel or failed charges): the paid days stay */
+  ended: (channel: BillingChannel, end: Date) =>
+    `${storeName(channel)} đã dừng gói. Shop dùng tiếp đến ${vnDate(end)}, không tự gia hạn.`,
   refund: (channel: BillingChannel, end: Date) => `${storeName(channel)} đã hoàn tiền. Gói dừng từ ${vnDate(end)}.`,
   /** A13: the refunded purchase had added to days the shop already had; those days stay */
   refundKeepsDays: (channel: BillingChannel, end: Date) => `${storeName(channel)} đã hoàn tiền. Shop dùng tiếp các ngày còn lại đến ${vnDate(end)}.`,

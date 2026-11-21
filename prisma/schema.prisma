@@ -996,6 +996,8 @@ enum PaymentMethod {
   PAYPAL
   IAP_APPLE
   IAP_GOOGLE
+  /// #1631 web card payment through Polar
+  POLAR
 }
 
 enum PaymentType {
