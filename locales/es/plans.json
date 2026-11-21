@@ -194,6 +194,24 @@
       "products": "Productos",
       "customers": "Clientes",
       "orders": "Pedidos"
+    },
+    "polar": {
+      "perMonths": "/ {months} meses",
+      "perMonthEach": "≈ {price}/mes",
+      "saving": "Ahorra {percent} %",
+      "inApp": "Comprar en la app AnyRent",
+      "unavailable": "No disponible ahora",
+      "renewsInStore": "Se renueva por App Store / Google Play",
+      "manage": "Gestionar / cancelar plan",
+      "manageHint": "Tu plan se renueva con tarjeta a través de Polar. Cancela o cambia la tarjeta, el plan o el periodo en la página de gestión.",
+      "renew": "Renovar",
+      "method": "Tarjeta (Polar)",
+      "confirmHint": "Irás a la página de pago de Polar. El plan se renueva cada periodo y puedes cancelarlo cuando quieras. Los días que te quedan del plan actual se suman.",
+      "success": "Pago recibido. Tu plan se actualizará en unos segundos.",
+      "cycle": {
+        "semi_annual": "6 meses",
+        "annual": "12 meses"
+      }
     }
   },
   "pricingPage": {

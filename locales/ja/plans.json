@@ -194,6 +194,24 @@
       "products": "商品",
       "customers": "顧客",
       "orders": "注文"
+    },
+    "polar": {
+      "perMonths": "/ {months}か月",
+      "perMonthEach": "≈ {price}/月",
+      "saving": "{percent}%お得",
+      "inApp": "AnyRent アプリで購入",
+      "unavailable": "現在は購入できません",
+      "renewsInStore": "App Store / Google Play で自動更新中",
+      "manage": "プランの管理 / 解約",
+      "manageHint": "プランは Polar 経由でカードにより自動更新されています。解約やカード・プラン・期間の変更は管理ページで行えます。",
+      "renew": "更新する",
+      "method": "カード（Polar）",
+      "confirmHint": "Polar の支払いページに移動します。プランは期間ごとに自動更新され、いつでも解約できます。現在のプランの残り日数は引き継がれます。",
+      "success": "お支払いを受け付けました。数秒でプランが更新されます。",
+      "cycle": {
+        "semi_annual": "6か月",
+        "annual": "12か月"
+      }
     }
   },
   "pricingPage": {

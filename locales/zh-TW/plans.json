@@ -194,6 +194,24 @@
       "products": "商品",
       "customers": "客戶",
       "orders": "訂單"
+    },
+    "polar": {
+      "perMonths": "/ {months} 個月",
+      "perMonthEach": "≈ {price}/月",
+      "saving": "省 {percent}%",
+      "inApp": "在 AnyRent App 內購買",
+      "unavailable": "目前無法購買",
+      "renewsInStore": "正透過 App Store / Google Play 自動續訂",
+      "manage": "管理 / 取消方案",
+      "manageHint": "您的方案正透過 Polar 以信用卡自動續訂。可在管理頁面取消或變更信用卡、方案或週期。",
+      "renew": "續訂",
+      "method": "信用卡（Polar）",
+      "confirmHint": "您將前往 Polar 付款頁面。方案每期自動續訂，可隨時取消。目前方案的剩餘天數會延續。",
+      "success": "已收到付款。方案將在幾秒內更新。",
+      "cycle": {
+        "semi_annual": "6 個月",
+        "annual": "12 個月"
+      }
     }
   },
   "pricingPage": {

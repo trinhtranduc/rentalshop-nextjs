@@ -194,6 +194,24 @@
       "products": "Sản phẩm",
       "customers": "Khách hàng",
       "orders": "Đơn hàng"
+    },
+    "polar": {
+      "perMonths": "/ {months} tháng",
+      "perMonthEach": "≈ {price}/tháng",
+      "saving": "Tiết kiệm {percent}%",
+      "inApp": "Mua trong app AnyRent",
+      "unavailable": "Chưa mua được lúc này",
+      "renewsInStore": "Đang tự gia hạn qua App Store / Google Play",
+      "manage": "Quản lý / huỷ gói",
+      "manageHint": "Gói đang tự gia hạn bằng thẻ qua Polar. Huỷ, đổi thẻ, đổi gói hoặc kỳ hạn trong trang quản lý.",
+      "renew": "Gia hạn",
+      "method": "Thẻ (Polar)",
+      "confirmHint": "Bạn sẽ sang trang thanh toán của Polar. Gói tự gia hạn mỗi kỳ, huỷ lúc nào cũng được. Số ngày còn lại của gói hiện tại được cộng tiếp.",
+      "success": "Đã thanh toán. Gói sẽ cập nhật sau vài giây.",
+      "cycle": {
+        "semi_annual": "6 tháng",
+        "annual": "12 tháng"
+      }
     }
   },
   "pricingPage": {

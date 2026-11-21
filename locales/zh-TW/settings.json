@@ -679,7 +679,8 @@
         "CHECK": "支票",
         "PAYPAL": "PayPal",
         "IAP_APPLE": "App Store",
-        "IAP_GOOGLE": "Google Play"
+        "IAP_GOOGLE": "Google Play",
+        "POLAR": "信用卡（Polar）"
       },
       "history": {
         "title": "方案紀錄",
@@ -716,7 +717,8 @@
           "REFUNDED": "已退款",
           "CANCELLED": "已取消"
         }
-      }
+      },
+      "manage": "管理 / 取消方案"
     },
     "bank": {
       "title": "銀行帳戶"

@@ -95,3 +95,56 @@ export function cycleTotalText(plan: PlanLike, cycle: BillingCycle, t: T): strin
 export function isCurrentPlan(plan: PlanLike, currentPlanId: number | null | undefined): boolean {
   return currentPlanId != null && plan.id != null && plan.id === currentPlanId;
 }
+
+// ─── #1631 Polar offers (GET /api/polar/offers) ──────────────────────────────
+
+export type PolarIntervalKey = 'semi_annual' | 'annual';
+
+export interface WebOffer {
+  planId: number;
+  interval: PolarIntervalKey;
+  months: number;
+  amount: number;
+  currency: string;
+  /** `ok` or the error code the checkout would answer */
+  decision: string;
+}
+
+/** The plan's Polar offers, 6 months first */
+export function planOffers(offers: WebOffer[] | null | undefined, planId: number | null | undefined): WebOffer[] {
+  return (offers ?? []).filter((o) => o.planId === planId).sort((a, b) => a.months - b.months);
+}
+
+/**
+ * What the plan card's button does with Polar on: buy / renew (open the cycle picker), manage (Polar portal: the shop
+ * auto-renews there), store (renews on the App Store / Google Play: nothing to buy here), current (in use, nothing to
+ * buy), app (no Polar product: bought in the app), unavailable (not purchasable now).
+ */
+export type PlanAction = 'buy' | 'renew' | 'manage' | 'store' | 'current' | 'app' | 'unavailable';
+
+export function planAction(offers: WebOffer[], isCurrent: boolean): PlanAction {
+  if (offers.length === 0) return isCurrent ? 'current' : 'app';
+  if (offers.some((o) => o.decision === 'POLAR_MANAGE_IN_PORTAL')) return 'manage';
+  if (offers.some((o) => o.decision === 'SUBSCRIPTION_RENEWS_IN_STORE')) return 'store';
+  if (offers.some((o) => o.decision === 'ok')) return isCurrent ? 'renew' : 'buy';
+  return isCurrent ? 'current' : 'unavailable';
+}
+
+/** Percent the 12-month offer saves against two 6-month ones; null without both or without a saving */
+export function yearSaving(offers: WebOffer[]): number | null {
+  const six = offers.find((o) => o.months === 6);
+  const year = offers.find((o) => o.months === 12);
+  if (!six || !year || !(six.amount > 0) || six.currency !== year.currency) return null;
+  const percent = Math.round((1 - year.amount / (six.amount * 2)) * 100);
+  return percent > 0 ? percent : null;
+}
+
+/** "1.799.000 ₫" */
+export function offerPriceText(offer: Pick<WebOffer, 'amount' | 'currency'>): string {
+  return moneyText(offer.amount, offer.currency);
+}
+
+/** "149.917 ₫" a month */
+export function offerMonthlyText(offer: Pick<WebOffer, 'amount' | 'currency' | 'months'>): string {
+  return moneyText(offer.months > 0 ? offer.amount / offer.months : offer.amount, offer.currency);
+}

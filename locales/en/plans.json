@@ -194,6 +194,24 @@
       "products": "Products",
       "customers": "Customers",
       "orders": "Orders"
+    },
+    "polar": {
+      "perMonths": "/ {months} months",
+      "perMonthEach": "≈ {price}/month",
+      "saving": "Save {percent}%",
+      "inApp": "Buy in the AnyRent app",
+      "unavailable": "Not available right now",
+      "renewsInStore": "Renews through the App Store / Google Play",
+      "manage": "Manage / cancel plan",
+      "manageHint": "Your plan renews by card through Polar. Cancel, change the card, the plan or the period on the management page.",
+      "renew": "Renew",
+      "method": "Card (Polar)",
+      "confirmHint": "You will go to Polar's payment page. The plan renews every period and can be cancelled any time. The days left on your current plan carry over.",
+      "success": "Payment received. Your plan updates in a few seconds.",
+      "cycle": {
+        "semi_annual": "6 months",
+        "annual": "12 months"
+      }
     }
   },
   "pricingPage": {

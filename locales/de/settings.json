@@ -679,7 +679,8 @@
         "CHECK": "Scheck",
         "PAYPAL": "PayPal",
         "IAP_APPLE": "App Store",
-        "IAP_GOOGLE": "Google Play"
+        "IAP_GOOGLE": "Google Play",
+        "POLAR": "Karte (Polar)"
       },
       "history": {
         "title": "Tarifverlauf",
@@ -716,7 +717,8 @@
           "REFUNDED": "Erstattet",
           "CANCELLED": "Storniert"
         }
-      }
+      },
+      "manage": "Tarif verwalten / kündigen"
     },
     "bank": {
       "title": "Bankkonten"

@@ -679,7 +679,8 @@
         "CHECK": "Cek",
         "PAYPAL": "PayPal",
         "IAP_APPLE": "App Store",
-        "IAP_GOOGLE": "Google Play"
+        "IAP_GOOGLE": "Google Play",
+        "POLAR": "Kartu (Polar)"
       },
       "history": {
         "title": "Riwayat paket",
@@ -716,7 +717,8 @@
           "REFUNDED": "Dikembalikan",
           "CANCELLED": "Dibatalkan"
         }
-      }
+      },
+      "manage": "Kelola / batalkan paket"
     },
     "bank": {
       "title": "Rekening bank"
