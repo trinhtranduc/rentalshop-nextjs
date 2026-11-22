@@ -12,6 +12,20 @@ export function appLocaleFor(value: unknown): AppLocale {
 }
 
 /**
+ * #1627 the logged-in pages speak the language saved in Settings (`NEXT_LOCALE`). A tab that came in from the landing
+ * page (`/en`, then a client navigation to log in) still shows the landing language, and a new tab or F5 would show
+ * the saved one (Vietnamese when none is saved). Nothing valid saved → save the app language of the shown one (like
+ * sign-up, #1551); saved → keep it, and refresh when the tab shows another language.
+ */
+export function appLanguageSync(shown: string, saved: string | null | undefined): { save?: AppLocale; refresh: boolean } {
+  if (!isPublicLocale(saved)) {
+    const save = appLocaleFor(shown);
+    return { save, refresh: save !== shown };
+  }
+  return { refresh: appLocaleFor(saved) !== shown };
+}
+
+/**
  * #1551 the sign-up page language for a new visitor: the landing choice (`NEXT_PUBLIC_LOCALE`), Vietnamese → vi and any
  * other → en (the shop app speaks VI / EN; #1545 the shop language follows the sign-up page). null = leave it: an app
  * language is already picked (`NEXT_LOCALE`) or there is no landing choice (the page stays Vietnamese).

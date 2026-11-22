@@ -12,6 +12,10 @@
 //  1. the owner renews Basic 12 months from the Home line → banner → auto-renewing state;
 //  2. the store refunds it (period ends now); after a new login the gate opens; the owner buys Professional 12 months → Home;
 //  3. refunded again; the next call answers 403 SUBSCRIPTION_PERIOD_ENDED → the gate; Khôi phục giao dịch → Home.
+//  #1629 (runner step owner-anytime, Basic paid by transfer with 73 days left; tests 4-6 in one run):
+//  4. no Home line, but the plan screen sells Basic now; the purchase keeps the 73 days;
+//  5. the upgrade to Professional (store product change);
+//  6. cancel (not a refund): the shop keeps working and the plan keeps its end day.
 //  Skipped unless E2E_API_URL, E2E_EMAIL, E2E_STOREKIT_PATH are set (normal unit-test runs skip it).
 //
 
@@ -129,6 +133,118 @@ final class PlanRenewalHostedE2ETests: XCTestCase {
         shot("plan-23-home-after-restore")
     }
 
+    // MARK: - #1629 Gia hạn lúc nào cũng được
+
+    /// Basic paid by transfer, 73 days left: the Home reminder stays quiet (last 7 days only), the plan screen sells Basic
+    /// now and the end day it promises is the one the server gives (A13: the 73 days carry)
+    func test4AnytimeManualShopRenewsEarly() throws {
+        signIn()
+        spin(3)
+        let line: UIButton? = view("home.planLine")
+        XCTAssertTrue(line == nil || line?.window == nil, "No Home line with 73 days left")
+        shot("plan-51-home-no-line")
+        try openPlanScreen()
+        let status: UILabel = try waitForView("plan.status", 30)
+        XCTAssertTrue(status.text?.contains("73") == true, "73 days left: \(status.text ?? "")")
+        let basic: ChoiceRow = try waitForView("plan.row.basic", 30)
+        XCTAssertTrue(basic.isEnabled, "#1629: Basic is sold with 73 days left")
+        tap("plan.row.basic")
+        tap("plan.period.12")
+        let buy: UIButton = try waitForView("plan.buy", 10)
+        let title = buy.title(for: .normal) ?? ""
+        XCTAssertTrue(title.hasPrefix(String("plan.button.renew".localized().prefix(7))), "Gia hạn …: \(title)")
+        let disclosure = (view("plan.disclosure") as UILabel?)?.text ?? ""
+        XCTAssertTrue(disclosure.hasPrefix(String("plan.disclosureCarry".localized().prefix(12))), "Continues from the old end: \(disclosure)")
+        let promised = dates(in: disclosure)
+        XCTAssertEqual(promised.count, 3, "old end, new end, charge day: \(disclosure)")
+        shot("plan-52-renew-basic-12")
+        try buyAndConfirm(type: "INITIAL_PURCHASE", productId: "anyrent_merchant_annual", price: 1_799_000, months: 12, shot: "plan-53")
+        _ = try waitForView("plan.banner.text", 30) as UILabel
+        let validUntilPrefix = String("plan.validUntil".localized().prefix(8))
+        let after: UILabel = try waitForView("plan.status", 20) { $0.text?.hasPrefix(validUntilPrefix) == true }
+        if promised.count == 3 {
+            XCTAssertEqual(dates(in: after.text ?? "").first, promised[1], "Dùng đến = the day the screen promised: \(after.text ?? "")")
+        }
+        spin(4.5)
+        shot("plan-54-renewed-keeps-73-days")
+    }
+
+    /// The shop now auto-renews Basic on the App Store: Basic is not sold again (A5), Professional is
+    func test5AnytimeUpgradesToProfessional() throws {
+        signIn()
+        try openPlanScreen()
+        let basic: ChoiceRow = try waitForView("plan.row.basic", 30)
+        XCTAssertFalse(basic.isEnabled, "Auto-renewing: Basic is not sold again")
+        tap("plan.row.professional")
+        tap("plan.period.12")
+        let buy: UIButton = try waitForView("plan.buy", 10)
+        XCTAssertTrue((buy.title(for: .normal) ?? "").contains("Professional"), "Nâng lên Professional …")
+        shot("plan-61-upgrade-professional")
+        try buyAndConfirm(type: "PRODUCT_CHANGE", productId: "anyrent_merchant_annual", price: 2_399_000, months: 12, shot: "plan-62",
+                          extra: ["new_product_id": "anyrent_professional_annual"])
+        try waitFor(30, "Professional on the status card") { self.labelTexts().contains { $0.hasPrefix("Professional") } }
+        spin(4.5)
+        shot("plan-63-professional")
+    }
+
+    /// Cancel (not a refund): the shop keeps working to the end day; only the auto-renew stops
+    func test6AnytimeCancelKeepsUsingToTheEnd() throws {
+        signIn()
+        try openPlanScreen()
+        let before: UILabel = try waitForView("plan.status", 30)
+        let end = dates(in: before.text ?? "").first ?? "?"
+        shot("plan-71-before-cancel")
+        try postWebhook(type: "CANCELLATION", productId: "anyrent_professional_annual", price: 2_399_000, months: 12,
+                        extra: ["cancel_reason": "UNSUBSCRIBE"])
+        signIn()
+        try waitFor(30, "Home after the cancel") { self.window.rootViewController is TabbarViewController }
+        var answered = false
+        var failed: NSError?
+        TabsV2APIService.shared.request("/api/products", parameters: ["limit": 1, "page": 1]) { (_: SettingsListTotal?, error: NSError?) in
+            failed = error
+            answered = true
+        }
+        try waitFor(20, "products after the cancel") { answered }
+        XCTAssertNil(failed, "The shop still works after cancelling: \(failed?.localizedDescription ?? "")")
+        XCTAssertNil(view("plan.expired.title") as UILabel?, "No expired screen")
+        shot("plan-72-home-after-cancel")
+        try openPlanScreen()
+        let line: UILabel = try waitForView("plan.reenable", 30)
+        XCTAssertTrue(line.text?.contains(end) == true, "Same end day \(end): \(line.text ?? "")")
+        spin(1)
+        shot("plan-73-cancelled-keeps-end")
+    }
+
+    /// The plan screen from the selected tab (the Settings row and the Home line push the same screen)
+    private func openPlanScreen() throws {
+        try waitFor(30, "tabs") { self.window.rootViewController is TabbarViewController }
+        dismissPresented()
+        guard let tabs = window.rootViewController as? UITabBarController,
+              let nav = (tabs.selectedViewController as? UINavigationController) ?? tabs.selectedViewController?.navigationController else {
+            return XCTFail("no navigation controller on the selected tab")
+        }
+        nav.pushViewController(SubscriptionViewController(), animated: false)
+        spin(1.5)
+    }
+
+    /// "dd/MM/yyyy" days in a text, in order
+    private func dates(in text: String) -> [String] {
+        guard let regex = try? NSRegularExpression(pattern: "\\d{2}/\\d{2}/\\d{4}") else { return [] }
+        return regex.matches(in: text, range: NSRange(text.startIndex..., in: text)).compactMap {
+            Range($0.range, in: text).map { String(text[$0]) }
+        }
+    }
+
+    private func labelTexts() -> [String] {
+        var texts: [String] = []
+        func walk(_ root: UIView) {
+            if let label = root as? UILabel, !label.isHidden, let text = label.text { texts.append(text) }
+            root.subviews.forEach(walk)
+        }
+        walk(window)
+        return texts
+    }
+
     // MARK: - App driving
 
     /// Same path as the login screen: AuthenticationService.login, then route(after: .loggedIn)
@@ -163,11 +279,11 @@ final class PlanRenewalHostedE2ETests: XCTestCase {
         spin(0.6)
     }
 
-    private func buyAndConfirm(type: String, productId: String, price: Int, months: Int, shot name: String) throws {
+    private func buyAndConfirm(type: String, productId: String, price: Int, months: Int, shot name: String, extra: [String: Any] = [:]) throws {
         let buy: UIButton = try waitForView("plan.buy", 10)
         buy.sendActions(for: .touchUpInside)
         try waitForConfirming(shot: "\(name)-confirming")
-        try postWebhook(type: type, productId: productId, price: price, months: months)
+        try postWebhook(type: type, productId: productId, price: price, months: months, extra: extra)
     }
 
     /// StoreKit approved (no dialog): the button says "Đang xác nhận thanh toán…" while the app polls the server
