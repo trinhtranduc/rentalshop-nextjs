@@ -46,3 +46,6 @@ change; installed apps read `billingChannel` as a free string (see the issue's c
 - 2026-11-21 — Per 2026-11-02: Basic pays in the app, Pro on the web; the web sells whatever plans have a Polar product.
 - 2026-11-21 — A shop auto-renewing on Polar changes plan or cycle in Polar's portal (no second checkout); an ended Polar
   subscription leaves the shop manual with its paid days (agent, follows case 4).
+- 2026-11-22 — Owner created all four sandbox products, Basic included ("bổ sung basic?" → "đã tạo xong"): the web sells
+  Basic and Pro on Polar, no code change. Every public Polar product must be in `POLAR_PRODUCTS`, or a portal switch to it
+  is not followed. Local headed e2e 16/16: trial buys Basic 6 months, portal Basic ↔ Pro.
