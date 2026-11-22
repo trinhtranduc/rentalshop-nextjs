@@ -574,5 +574,11 @@
   "DEPOSIT_PLAN_UPDATED": "已更新訂金計畫",
   "CANCEL_AMOUNTS_MISMATCH": "保留金額大於已收金額，或金額無效。",
   "CANCELLED_ORDER_KEEPS_AMOUNT": "已取消的訂單保留了訂金，因此會保存在歷史紀錄中，無法刪除。",
-  "ADMIN_REVENUE_SUCCESS": "營收取得成功"
+  "ADMIN_REVENUE_SUCCESS": "營收取得成功",
+  "POLAR_NOT_CONFIGURED": "尚未開通信用卡付款。請聯絡支援人員。",
+  "POLAR_MANAGE_IN_PORTAL": "您的方案正透過信用卡自動續訂。請在「管理 / 取消方案」中變更方案或週期。",
+  "SUBSCRIPTION_RENEWS_IN_STORE": "您的方案正透過 App Store 或 Google Play 自動續訂。請先在那裡關閉自動續訂，再於網頁付款。",
+  "PLAN_NOT_PURCHASABLE": "此方案目前無法購買。",
+  "POLAR_CUSTOMER_NOT_FOUND": "目前沒有可管理的信用卡訂閱。",
+  "POLAR_REQUEST_FAILED": "無法開啟付款頁面。請再試一次。"
 }

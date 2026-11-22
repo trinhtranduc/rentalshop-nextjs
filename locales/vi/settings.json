@@ -679,7 +679,8 @@
         "CHECK": "Séc",
         "PAYPAL": "PayPal",
         "IAP_APPLE": "App Store",
-        "IAP_GOOGLE": "Google Play"
+        "IAP_GOOGLE": "Google Play",
+        "POLAR": "Thẻ (Polar)"
       },
       "history": {
         "title": "Lịch sử gói",
@@ -716,7 +717,8 @@
           "REFUNDED": "Đã hoàn tiền",
           "CANCELLED": "Đã huỷ"
         }
-      }
+      },
+      "manage": "Quản lý / huỷ gói"
     },
     "bank": {
       "title": "Tài khoản ngân hàng"

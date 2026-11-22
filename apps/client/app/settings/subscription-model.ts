@@ -220,7 +220,7 @@ const PAID_ACTIVITIES = new Set([
 /** A payment this close to a paid activity is the same event. */
 const SAME_EVENT_MS = 5 * 60 * 1000;
 
-const METHODS = new Set(['STRIPE', 'LEMON_SQUEEZY', 'TRANSFER', 'MANUAL', 'CASH', 'CHECK', 'PAYPAL', 'IAP_APPLE', 'IAP_GOOGLE']);
+const METHODS = new Set(['STRIPE', 'LEMON_SQUEEZY', 'POLAR', 'TRANSFER', 'MANUAL', 'CASH', 'CHECK', 'PAYPAL', 'IAP_APPLE', 'IAP_GOOGLE']);
 
 const metaObj = (v: unknown): Record<string, unknown> => (v && typeof v === 'object' ? (v as Record<string, unknown>) : {});
 const metaStr = (m: Record<string, unknown>, k: string) => (typeof m[k] === 'string' && (m[k] as string).trim() ? (m[k] as string).trim() : '');
@@ -310,6 +310,35 @@ export function activityItem(a: ActivityLike, ctx: HistoryCtx): HistoryItem | nu
       title = t('subscription.history.checkout');
       tone = 'pay';
       break;
+    // #1631 web card payments through Polar (plain titles; the detail says until when and "Thẻ (Polar)")
+    case 'polar_purchase':
+    case 'polar_renewal':
+    case 'polar_change':
+    case 'polar_cancel':
+    case 'polar_uncancel':
+    case 'polar_ended':
+    case 'polar_billing_issue':
+    case 'polar_refund': {
+      const name = metaStr(m, 'planName');
+      const titles: Record<string, string> = {
+        polar_purchase: name ? t('subscription.history.started', { plan: plan(name) }) : t('subscription.history.startedPlain'),
+        polar_renewal: t('subscription.history.extendedPlain'),
+        polar_change: name ? t('subscription.history.planChanged', { plan: plan(name) }) : t('subscription.history.planChangedPlain'),
+        polar_cancel: t('subscription.history.cancelled'),
+        polar_uncancel: t('subscription.history.resumed'),
+        polar_ended: t('subscription.history.cancelled'),
+        polar_billing_issue: t('subscription.history.paymentStatus.FAILED'),
+        polar_refund: t('subscription.history.paymentStatus.REFUNDED'),
+      };
+      const tones: Record<string, HistoryTone> = {
+        polar_purchase: 'start', polar_renewal: 'renew', polar_change: 'up', polar_cancel: 'stop', polar_uncancel: 'renew',
+        polar_ended: 'stop', polar_billing_issue: 'other', polar_refund: 'pay',
+      };
+      title = titles[type];
+      tone = tones[type];
+      detail = joinDetail(metaStr(m, 'expiresAt') ? untilText(metaStr(m, 'expiresAt'), ctx) : '', t('subscription.method.POLAR'));
+      break;
+    }
     case 'subscription_cancelled':
       title = t('subscription.history.cancelled');
       tone = 'stop';

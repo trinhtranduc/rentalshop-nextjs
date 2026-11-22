@@ -679,7 +679,8 @@
         "CHECK": "수표",
         "PAYPAL": "PayPal",
         "IAP_APPLE": "App Store",
-        "IAP_GOOGLE": "Google Play"
+        "IAP_GOOGLE": "Google Play",
+        "POLAR": "카드 (Polar)"
       },
       "history": {
         "title": "요금제 내역",
@@ -716,7 +717,8 @@
           "REFUNDED": "환불 완료",
           "CANCELLED": "취소됨"
         }
-      }
+      },
+      "manage": "요금제 관리 / 해지"
     },
     "bank": {
       "title": "은행 계좌"

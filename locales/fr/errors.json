@@ -574,5 +574,11 @@
   "DEPOSIT_PLAN_UPDATED": "Échéancier d'acompte mis à jour",
   "CANCEL_AMOUNTS_MISMATCH": "Le montant retenu est supérieur au montant encaissé ou non valide.",
   "CANCELLED_ORDER_KEEPS_AMOUNT": "La commande annulée conserve un acompte : elle reste dans l'historique et ne peut pas être supprimée.",
-  "ADMIN_REVENUE_SUCCESS": "Revenus récupérés avec succès"
+  "ADMIN_REVENUE_SUCCESS": "Revenus récupérés avec succès",
+  "POLAR_NOT_CONFIGURED": "Le paiement par carte n'est pas encore configuré. Contactez le support.",
+  "POLAR_MANAGE_IN_PORTAL": "Votre forfait se renouvelle par carte. Changez de forfait ou de période dans Gérer / résilier le forfait.",
+  "SUBSCRIPTION_RENEWS_IN_STORE": "Votre forfait se renouvelle via l'App Store ou Google Play. Désactivez le renouvellement automatique là-bas avant de payer sur le web.",
+  "PLAN_NOT_PURCHASABLE": "Ce forfait ne peut pas être acheté pour le moment.",
+  "POLAR_CUSTOMER_NOT_FOUND": "Aucun abonnement par carte à gérer pour l'instant.",
+  "POLAR_REQUEST_FAILED": "Impossible d'ouvrir la page de paiement. Veuillez réessayer."
 }

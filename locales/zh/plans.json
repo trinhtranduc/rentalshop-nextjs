@@ -194,6 +194,25 @@
       "products": "商品",
       "customers": "客户",
       "orders": "订单"
+    },
+    "polar": {
+      "perMonths": "/ {months} 个月",
+      "perMonthEach": "≈ {price}/月",
+      "saving": "省 {percent}%",
+      "inApp": "在 AnyRent 应用内购买",
+      "unavailable": "暂时无法购买",
+      "contact": "联系 AnyRent",
+      "renewsInStore": "正在通过 App Store / Google Play 自动续费",
+      "manage": "管理 / 取消套餐",
+      "manageHint": "您的套餐正通过 Polar 用银行卡自动续费。可在管理页面取消或更改银行卡、套餐或周期。",
+      "renew": "续费",
+      "method": "银行卡（Polar）",
+      "confirmHint": "您将前往 Polar 付款页面。套餐每期自动续费，可随时取消。当前套餐的剩余天数会顺延。",
+      "success": "已收到付款。套餐将在几秒内更新。",
+      "cycle": {
+        "semi_annual": "6 个月",
+        "annual": "12 个月"
+      }
     }
   },
   "pricingPage": {

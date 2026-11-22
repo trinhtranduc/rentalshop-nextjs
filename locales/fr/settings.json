@@ -679,7 +679,8 @@
         "CHECK": "Chèque",
         "PAYPAL": "PayPal",
         "IAP_APPLE": "App Store",
-        "IAP_GOOGLE": "Google Play"
+        "IAP_GOOGLE": "Google Play",
+        "POLAR": "Carte (Polar)"
       },
       "history": {
         "title": "Historique du forfait",
@@ -716,7 +717,8 @@
           "REFUNDED": "Remboursé",
           "CANCELLED": "Annulé"
         }
-      }
+      },
+      "manage": "Gérer / résilier le forfait"
     },
     "bank": {
       "title": "Comptes bancaires"

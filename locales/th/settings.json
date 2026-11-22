@@ -679,7 +679,8 @@
         "CHECK": "เช็ค",
         "PAYPAL": "PayPal",
         "IAP_APPLE": "App Store",
-        "IAP_GOOGLE": "Google Play"
+        "IAP_GOOGLE": "Google Play",
+        "POLAR": "บัตร (Polar)"
       },
       "history": {
         "title": "ประวัติแพ็กเกจ",
@@ -716,7 +717,8 @@
           "REFUNDED": "คืนเงินแล้ว",
           "CANCELLED": "ยกเลิกแล้ว"
         }
-      }
+      },
+      "manage": "จัดการ / ยกเลิกแพ็กเกจ"
     },
     "bank": {
       "title": "บัญชีธนาคาร"

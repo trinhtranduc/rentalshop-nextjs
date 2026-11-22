@@ -25,7 +25,7 @@ import {
 import { AlertTriangle, CheckCircle, CreditCard } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useAuth, useSubscriptionStatusInfo } from '@rentalshop/hooks';
-import { formatDateKeyInTimeZone, lemonsqueezyApi, publicPlansApi, normalizeBillingInterval, SHOP_TIMEZONE } from '@rentalshop/utils';
+import { formatDateKeyInTimeZone, lemonsqueezyApi, polarApi, publicPlansApi, normalizeBillingInterval, SHOP_TIMEZONE } from '@rentalshop/utils';
 import { USER_ROLE } from '@rentalshop/constants';
 import type { Plan } from '@rentalshop/types';
 import { useRouter } from 'next/navigation';
@@ -119,7 +119,27 @@ export default function SubscriptionRenewalBottomBar({ onInsetChange }: Subscrip
     return sr || t('expiredHint');
   }, [subscription, status, hasAccess, t]);
 
+  // #1631 Polar on: the owner pays on /plans (Polar prices and checkout) instead of this dialog
+  const [polarOn, setPolarOn] = useState(false);
+  useEffect(() => {
+    if (!showExpiredBar || !isMerchant) return;
+    let alive = true;
+    polarApi
+      .getOffers()
+      .then((r) => {
+        if (alive) setPolarOn(!!(r.success && r.data?.enabled));
+      })
+      .catch(() => undefined);
+    return () => {
+      alive = false;
+    };
+  }, [showExpiredBar, isMerchant]);
+
   const handleOpenPricing = () => {
+    if (polarOn && isMerchant) {
+      router.push('/plans');
+      return;
+    }
     setSelectedPlan(null);
     setBillingCycle('monthly');
     setOpen(true);

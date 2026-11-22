@@ -574,5 +574,11 @@
   "DEPOSIT_PLAN_UPDATED": "Anzahlungsplan aktualisiert",
   "CANCEL_AMOUNTS_MISMATCH": "Der einbehaltene Betrag ist höher als der eingezogene Betrag oder kein gültiger Betrag.",
   "CANCELLED_ORDER_KEEPS_AMOUNT": "Ein stornierter Auftrag, bei dem Anzahlungen einbehalten wurden, bleibt im Verlauf erhalten und kann nicht gelöscht werden.",
-  "ADMIN_REVENUE_SUCCESS": "Umsatz erfolgreich abgerufen"
+  "ADMIN_REVENUE_SUCCESS": "Umsatz erfolgreich abgerufen",
+  "POLAR_NOT_CONFIGURED": "Kartenzahlung ist noch nicht eingerichtet. Bitte wenden Sie sich an den Support.",
+  "POLAR_MANAGE_IN_PORTAL": "Ihr Tarif verlängert sich per Karte. Ändern Sie Tarif oder Zeitraum unter Tarif verwalten / kündigen.",
+  "SUBSCRIPTION_RENEWS_IN_STORE": "Ihr Tarif verlängert sich über den App Store oder Google Play. Schalten Sie die automatische Verlängerung dort aus, bevor Sie im Web bezahlen.",
+  "PLAN_NOT_PURCHASABLE": "Dieser Tarif kann gerade nicht gekauft werden.",
+  "POLAR_CUSTOMER_NOT_FOUND": "Es gibt noch kein Kartenabo zum Verwalten.",
+  "POLAR_REQUEST_FAILED": "Die Zahlungsseite konnte nicht geöffnet werden. Bitte versuchen Sie es erneut."
 }
