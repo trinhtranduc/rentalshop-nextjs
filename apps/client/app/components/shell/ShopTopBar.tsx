@@ -9,11 +9,14 @@ import { NotificationBell } from './NotificationBell';
 import { ICONS, ShellIcon } from './Icon';
 import { buildBreadcrumb, isSearchShortcut } from './breadcrumb';
 import { useBreadcrumbTailValue } from './breadcrumb-tail';
+import { useProductsListHref } from '../../products/list/useProductsListHref';
 
 /** Where am I (#960): menu item › sub-item › page; every crumb but the last is a link. */
 function Breadcrumb() {
   const t = useCommonTranslations();
   const crumbs = buildBreadcrumb(usePathname(), useBreadcrumbTailValue());
+  // #1627 "Sản phẩm" on a product page goes back to the list with the filters and page it had
+  const productsList = useProductsListHref();
   if (crumbs.length === 0) return <span className="flex-1" />;
   const last = crumbs.length - 1;
   return (
@@ -27,7 +30,7 @@ function Breadcrumb() {
             <li key={`${i}-${text}`} className={`${middle} min-w-0 items-center gap-1.5 ${i === last ? 'flex-1 sm:flex-none' : 'flex-none'}`}>
               {i > 0 && <ShellIcon d={ICONS.chevronRight} size={14} className="flex-none text-ar-faint" />}
               {crumb.href && i < last ? (
-                <Link href={crumb.href} className="truncate font-medium text-ar-muted no-underline hover:text-ar-ink">
+                <Link href={crumb.href === '/products' ? productsList : crumb.href} className="truncate font-medium text-ar-muted no-underline hover:text-ar-ink">
                   {text}
                 </Link>
               ) : (

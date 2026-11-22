@@ -56,6 +56,7 @@ import {
   type OutletLite,
   type ProductSource,
 } from './form-model';
+import { useProductsListHref } from '../list/useProductsListHref';
 
 const UPLOAD_ICON = 'M12 20V9M7 14l5-5 5 5M5 4h14';
 const REFRESH_ICON = 'M20 11a8 8 0 0 0-14.9-3.5M4 4v4h4M4 13a8 8 0 0 0 14.9 3.5M20 20v-4h-4';
@@ -446,7 +447,9 @@ export function ProductFormPage({ productId }: { productId: number | null }) {
     setFailed(false);
   }, []);
 
-  const back = isEdit ? `/products/${productId}` : '/products';
+  // #1627 the add form goes back to the list with the filters and page it had (edit goes back to the product)
+  const listHref = useProductsListHref();
+  const back = isEdit ? `/products/${productId}` : listHref;
   const title = isEdit ? t('form.titleEdit') : t('form.titleAdd');
   const backLabel = isEdit && data?.product ? data.product.name : t('form.back');
 
@@ -469,7 +472,7 @@ export function ProductFormPage({ productId }: { productId: number | null }) {
   if (!allowed) {
     return wrap(<Notice text={isEdit ? t('form.noEdit') : t('form.noCreate')} action={<Link href={back} className={outlineBtn}>{t('form.back')}</Link>} />);
   }
-  if (load.kind === 'notFound') return wrap(<Notice text={t('form.notFound')} action={<Link href="/products" className={outlineBtn}>{t('form.back')}</Link>} />);
+  if (load.kind === 'notFound') return wrap(<Notice text={t('form.notFound')} action={<Link href={listHref} className={outlineBtn}>{t('form.back')}</Link>} />);
   if (load.kind === 'failed') {
     return wrap(
       <Notice
@@ -553,7 +556,7 @@ export function ProductFormPage({ productId }: { productId: number | null }) {
       }
       const id = isEdit ? productId : (res.data as { id?: number } | undefined)?.id;
       toastSuccess(isEdit ? t('form.saved') : t('form.created'));
-      router.push(id ? `/products/${id}` : '/products');
+      router.push(id ? `/products/${id}` : listHref);
     } catch (error) {
       setFailed(true);
       toastError(isEdit ? t('form.saveFailed') : t('form.createFailed'), error instanceof Error ? error.message : undefined);
