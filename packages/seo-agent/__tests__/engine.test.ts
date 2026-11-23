@@ -1,6 +1,7 @@
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { ANALYSIS_TRACKS, TEAM_AGENTS, formatIssues, isDue, lintArticle, runAgents, upcomingRuns, type TeamAgentId, type TeamRunHost } from '../entries';
+import { claudeCostUsd, usageOf, type ClaudeUsage } from '../src/core/claudeSpend';
 
 type Row = { batchId: string; agent: TeamAgentId; trigger: string; status: string; summary: string };
 
@@ -87,8 +88,49 @@ describe('@rentalshop/seo-agent', () => {
     walk(join(__dirname, '..', 'src'));
     expect(files.length).toBeGreaterThan(10);
     for (const file of files) {
-      const outside = [...readFileSync(file, 'utf8').matchAll(/from\s+["']([^"']+)["']/g)].map((m) => m[1]).filter((spec) => !spec.startsWith('.') && spec !== 'react');
+      // `from "x"`, a bare `import "x"`, `import("x")` and `require("x")`.
+      const specs = /(?:\bfrom\s*|\bimport\s*\(?\s*|\brequire\s*\(\s*)["']([^"']+)["']/g;
+      const outside = [...readFileSync(file, 'utf8').matchAll(specs)].map((m) => m[1]).filter((spec) => !spec.startsWith('.') && spec !== 'react');
       expect({ file, outside }).toEqual({ file, outside: [] });
     }
+  });
+
+  it('drops the affiliate and risk-page checks for a site without them', () => {
+    const post = {
+      title: 'Cho thuê áo dài',
+      seoDescription: 'Mô tả',
+      thumbnail: '/cover.jpg',
+      content: '<p>Xem <a href="/rui-ro">rủi ro</a>, <a href="/bang-gia">giá</a>, <a href="/lien-he">liên hệ</a>.</p>',
+    };
+    const ids = (rules?: Parameters<typeof lintArticle>[1]) => lintArticle(post, rules).map((c) => c.id);
+    expect(ids()).toHaveLength(16);
+    expect(ids()).toEqual(expect.arrayContaining(['disclosure', 'risk']));
+
+    const plain = lintArticle(post, { disclosure: false, riskPath: null });
+    expect(plain.map((c) => c.id)).toEqual(ids().filter((id) => id !== 'disclosure' && id !== 'risk'));
+    expect(plain.find((c) => c.id === 'links')?.detail).toBe('3 liên kết');
+
+    const own = lintArticle(post, { disclosure: false, riskPath: '/rui-ro/' });
+    expect(own.find((c) => c.id === 'risk')).toMatchObject({ ok: true, detail: '/rui-ro' });
+    expect(own.find((c) => c.id === 'links')?.detail).toBe('2 liên kết');
+  });
+
+  it('costs Claude calls at each model price, cache tokens included', () => {
+    const million = { inputTokens: 1_000_000, outputTokens: 1_000_000 };
+    const usd = (model: string, usage: ClaudeUsage = million) => Number(claudeCostUsd(model, usage).toFixed(4));
+    expect(usd('claude-haiku-5-5', { inputTokens: 50_000, outputTokens: 10_000 })).toBe(0.01);
+    expect(usd('claude-haiku-5-5', { inputTokens: 80_000, outputTokens: 0, cacheReadTokens: 30_000 })).toBe(0.0415);
+    expect(usd('claude-haiku-4-5')).toBe(6);
+    expect(usd('claude-sonnet-5-5')).toBe(12);
+    expect(usd('claude-sonnet-4-5-20250929')).toBe(18);
+    expect(usd('claude-opus-5-5')).toBe(24);
+    expect(usd('claude-fable-5-2')).toBe(48);
+    expect(usd('claude-opus-4-1')).toBe(90);
+    expect(usd('some-new-model')).toBe(90);
+    expect(usd('claude-sonnet-5-5', { inputTokens: 0, outputTokens: 0, cacheWriteTokens: 1_000_000, cacheReadTokens: 1_000_000 })).toBe(4.2);
+
+    expect(usageOf({ usage: { input_tokens: 1200, output_tokens: 340 } })).toEqual({ inputTokens: 1200, outputTokens: 340 });
+    expect(usageOf({ usage: { input_tokens: 5, output_tokens: 6, cache_creation_input_tokens: 7, cache_read_input_tokens: 8 } })).toEqual({ inputTokens: 5, outputTokens: 6, cacheWriteTokens: 7, cacheReadTokens: 8 });
+    expect(usageOf(null)).toEqual({ inputTokens: 0, outputTokens: 0 });
   });
 });
