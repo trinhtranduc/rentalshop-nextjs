@@ -17,3 +17,10 @@ rank reports and the UI pieces, tested on the other site.
 ## Out of scope (next issue)
 Tables for runs and configuration, the `TeamRunHost` and the twelve steps for AnyRent's blog, API routes and
 permissions, the admin pages, the scheduler, keys and spending caps.
+
+## Decision log
+- 2026-11-23: review found two bugs in the shared module; owner said fix them in `seo-agent`. Claude cost now has one
+  price per model, counts cache tokens and Haiku 5.5 long prompts, and an unknown model costs the dearest price.
+  `lintArticle(post, rules)` makes the affiliate and `/risk` checks site rules (default unchanged). Sent upstream as
+  trinhtranduc/seo-agent#1; the same commit is on this branch. dailyrebatefx-web needs two expected values updated in
+  `scripts/check-seo-settings.ts` when it pulls.
