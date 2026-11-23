@@ -2537,4 +2537,8 @@
         <item quantity="one">%1$d-mal</item>
         <item quantity="other">%1$d-mal</item>
     </plurals>
+    <!-- #1633 bill: fees at return -->
+    <string name="bill_return_title">Bei Rückgabe</string>
+    <string name="bill_return_excess_deposit">Anzahlung über der Miete</string>
+    <string name="bill_return_give_back">An Kunden zurück</string>
 </resources>

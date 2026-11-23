@@ -2536,4 +2536,8 @@
     <plurals name="weekly_summary_times">
         <item quantity="other">%1$d ครั้ง</item>
     </plurals>
+    <!-- #1633 bill: fees at return -->
+    <string name="bill_return_title">เมื่อรับคืน</string>
+    <string name="bill_return_excess_deposit">มัดจำส่วนเกิน</string>
+    <string name="bill_return_give_back">คืนให้ลูกค้า</string>
 </resources>
