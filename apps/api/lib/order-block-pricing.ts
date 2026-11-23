@@ -22,7 +22,6 @@ import {
 } from '@rentalshop/utils';
 
 import { readOldAppsMode, type OldAppsMode } from './block-pricing-settings';
-import { stampHourBlockLine } from './order-hour-blocks';
 export type { OldAppsMode };
 
 export interface BlockOptionLike {
@@ -233,21 +232,18 @@ export async function repriceOrderEdit(a: RepriceEditArgs): Promise<RepriceEditR
     const existing = idx >= 0 ? a.existingItems[idx] : undefined;
     if (idx >= 0) used.add(idx);
     const type = (item.pricingType || '').toUpperCase();
-    // #1621: a line sent as HOURLY is an hour-block line, never the stored BLOCK line of the same product
-    let table = existing && existing.pricingType === 'BLOCK' && type !== 'DAILY' && type !== 'HOURLY' ? tableOfSnapshot(existing.pricingSnapshot) : null;
+    let table = existing && existing.pricingType === 'BLOCK' && type !== 'DAILY' ? tableOfSnapshot(existing.pricingSnapshot) : null;
     let optionId: number | null = table ? existing?.pricingOptionId ?? null : null;
     const isNewLine = !table;
-    let product: Awaited<ReturnType<RepriceEditArgs['loadProduct']>> = null;
     if (!table) {
-      product = await a.loadProduct(item.productId);
+      const product = await a.loadProduct(item.productId);
       const option = findBlockOption(product, item);
       table = tableOf(option);
       optionId = option?.id ?? null;
     }
     if (!table) {
-      // #1621: an hour-block line gets (or keeps) its block; any other line never keeps a snapshot sent by the client
-      const hourBlock = stampHourBlockLine(item, product as Parameters<typeof stampHourBlockLine>[1], existing);
-      out.push(hourBlock ? { ...item, ...hourBlock } : { ...item, pricingSnapshot: undefined });
+      // Not a BLOCK line: never keep a snapshot sent by the client
+      out.push({ ...item, pricingSnapshot: undefined });
       continue;
     }
     sawBlock = true;

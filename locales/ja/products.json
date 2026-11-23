@@ -633,8 +633,7 @@
         "depositNegative": "内金はマイナスにできません",
         "stockRequired": "数量は1以上で入力してください",
         "outletStockNegative": "数量はマイナスにできません",
-        "branchRequired": "商品を表示する店舗を1つ以上選んでください",
-        "hourBlocksNeedPrice": "時間ブロックのほかに、1回ごとまたは1日ごとの料金も必要です。"
+        "branchRequired": "商品を表示する店舗を1つ以上選んでください"
       },
       "noCreate": "商品を追加する権限がありません。",
       "noEdit": "商品を編集する権限がありません。",
@@ -646,7 +645,6 @@
       "needOutlet": "商品を追加する前に、店舗を少なくとも1つ追加してください。",
       "goOutlets": "店舗を開く",
       "blockRow": "日数ブロック",
-      "hourRow": "時間ブロック",
       "blockNotSet": "未設定",
       "unitOnce": "đ / 回",
       "unitDay": "đ / 日",
@@ -664,26 +662,6 @@
         "copyLoading": "読み込み中…",
         "close": "閉じる",
         "incomplete": "すべての日と追加1日あたりの金額を入力するか、最後の区分の料金を維持してください。"
-      },
-      "hour": {
-        "summary": "{count}ブロック：{hours}時間",
-        "edit": "時間ブロック料金を編集",
-        "title": "時間ブロック料金",
-        "hint": "時間ブロックごとに1つの料金です。カートで選んだブロックの料金になります。",
-        "listTitle": "時間ブロック",
-        "unit": "時間",
-        "hoursOf": "ブロック{n}の時間",
-        "priceOf": "ブロック{n}の料金",
-        "remove": "ブロック{n}を削除",
-        "add": "+ ブロックを追加",
-        "max": "最大{n}ブロックです。",
-        "save": "料金表を保存",
-        "turnOff": "時間ブロック料金をオフにする",
-        "errors": {
-          "hours": "時間は1〜24の整数で入力してください。",
-          "repeated": "同じ時間数は1つのブロックにだけ使えます。",
-          "price": "すべてのブロックに料金を入力してください（0も可）。"
-        }
       },
       "listing": {
         "branch": "店舗",
@@ -713,7 +691,6 @@
       "hour": "1時間あたりのレンタル",
       "perDay": "{price}/日",
       "perHour": "{price}/時間",
-      "hourBlock": "{n}時間 {price}",
       "default": "初期設定",
       "deposit": "内金",
       "sale": "販売価格",

@@ -580,7 +580,6 @@
   "BLOCK_PRICE_MISMATCH": "The price of a day-block item does not match the price list. Reload the product and try again.",
   "PRICING_TYPE_REQUIRES_UPDATE": "This product uses day-block pricing. Please update the app to place this rental.",
   "BLOCK_TABLE_INVALID": "The day-block price list is not valid. Use 1 to 31 days, prices of 0 or more, and one block price list per product.",
-  "HOUR_BLOCKS_INVALID": "The hour-block prices are not valid. Use whole hours from 1 to 24, each number of hours once, prices of 0 or more, at most 10 blocks, and keep a per-rental or per-day price.",
   "INSTALLMENT_EXCEEDS_TOTAL": "The booking deposit stages add up to more than the order total.",
   "INSTALLMENT_OVERPAID": "This amount is more than the stage allows, or the new total is lower than what was already collected.",
   "INSTALLMENT_ALREADY_PAID": "This booking deposit stage was already collected.",

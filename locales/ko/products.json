@@ -633,8 +633,7 @@
         "depositNegative": "예약금은 음수일 수 없습니다",
         "stockRequired": "수량은 0보다 커야 합니다",
         "outletStockNegative": "수량은 음수일 수 없습니다",
-        "branchRequired": "상품을 표시할 매장을 1개 이상 선택하세요",
-        "hourBlocksNeedPrice": "시간 블록 외에 1회 또는 1일 요금도 필요합니다."
+        "branchRequired": "상품을 표시할 매장을 1개 이상 선택하세요"
       },
       "noCreate": "상품을 추가할 권한이 없습니다.",
       "noEdit": "상품을 수정할 권한이 없습니다.",
@@ -646,7 +645,6 @@
       "needOutlet": "상품을 추가하려면 지점이 하나 이상 필요합니다.",
       "goOutlets": "지점 열기",
       "blockRow": "일수 블록",
-      "hourRow": "시간 블록",
       "blockNotSet": "미설정",
       "unitOnce": "đ / 회",
       "unitDay": "đ / 일",
@@ -664,26 +662,6 @@
         "copyLoading": "불러오는 중…",
         "close": "닫기",
         "incomplete": "모든 날과 하루 추가 금액을 입력하거나 마지막 구간 요금을 유지하세요."
-      },
-      "hour": {
-        "summary": "{count}개 블록: {hours}시간",
-        "edit": "시간 블록 요금 수정",
-        "title": "시간 블록 요금",
-        "hint": "시간 블록마다 요금이 하나씩 있습니다. 장바구니에서 고른 블록의 요금이 적용됩니다.",
-        "listTitle": "시간 블록",
-        "unit": "시간",
-        "hoursOf": "블록 {n}의 시간",
-        "priceOf": "블록 {n}의 요금",
-        "remove": "블록 {n} 삭제",
-        "add": "+ 블록 추가",
-        "max": "최대 {n}개 블록입니다.",
-        "save": "요금표 저장",
-        "turnOff": "시간 블록 요금 끄기",
-        "errors": {
-          "hours": "시간은 1~24 사이의 정수여야 합니다.",
-          "repeated": "같은 시간은 한 블록에만 쓸 수 있습니다.",
-          "price": "모든 블록에 요금을 입력하세요(0도 가능)."
-        }
       },
       "listing": {
         "branch": "매장",
@@ -713,7 +691,6 @@
       "hour": "시간 대여",
       "perDay": "{price}/일",
       "perHour": "{price}/시간",
-      "hourBlock": "{n}시간 {price}",
       "default": "기본",
       "deposit": "예약금",
       "sale": "판매 가격",

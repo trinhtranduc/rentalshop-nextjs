@@ -6,7 +6,7 @@
  * phụ phí rows of the iOS shared receipt). Days are Vietnam civil days, times Vietnam time.
  */
 
-import { blockLineText, blockSnapshotOf, hourBlockSnapshotOf, type BlockSnapshotLike, type HourBlockSnapshot } from '@rentalshop/utils';
+import { blockLineText, blockSnapshotOf, type BlockSnapshotLike } from '@rentalshop/utils';
 
 export const RECEIPT_TIMEZONE = 'Asia/Ho_Chi_Minh';
 
@@ -25,8 +25,8 @@ export interface ReceiptItemInput {
   totalPrice?: number | null;
   rentalDays?: number | null;
   pricingType?: string | null;
-  /** #1189 what a BLOCK line was priced with; #1621 the hour block of an HOURLY line (`{ type: 'HOURLY', hours, price }`) */
-  pricingSnapshot?: BlockSnapshotLike | HourBlockSnapshot | null;
+  /** #1189 what a BLOCK line was priced with */
+  pricingSnapshot?: BlockSnapshotLike | null;
   productName?: string | null;
   product?: { name?: string | null } | null;
   notes?: string | null;
@@ -92,8 +92,6 @@ export interface ReceiptWords {
   /** #1189 day-block line: "Khối {n} ngày" and "Khối {n} ngày + {m} ngày thêm" (without them a BLOCK line prints as before) */
   block?: string;
   blockExtra?: string;
-  /** #1621 hour-block line: "Khối {n} giờ" (without it the line prints its formula only) */
-  hourBlock?: string;
 }
 
 export type ReceiptRowKey = 'deposit' | 'securityDeposit' | 'collateral' | 'damageFee' | 'rentDate' | 'returnDate' | 'createdAt';
@@ -227,10 +225,7 @@ export function buildStages(order: ReceiptOrderInput, isRent: boolean): ReceiptS
   return { items, collected: formatVnd(collected), remaining: formatVnd(remaining) };
 }
 
-/**
- * "1 × 100.000đ/ngày × 26 ngày = 2.600.000đ" (daily rent) or "1 × 100.000đ = 100.000đ".
- * #1621 an hour-block line: "Khối 4 giờ" then "1 × 250.000đ = 250.000đ" (never "/giờ"; an old per-hour line stays as before).
- */
+/** "1 × 100.000đ/ngày × 26 ngày = 2.600.000đ" (daily rent) or "1 × 100.000đ = 100.000đ". */
 export function itemCalcText(item: ReceiptItemInput, isRent: boolean, words: ReceiptWords): string {
   const qty = Math.max(1, num(item.quantity) || 1);
   const unit = num(item.unitPrice);
@@ -243,11 +238,6 @@ export function itemCalcText(item: ReceiptItemInput, isRent: boolean, words: Rec
     const text = blockLineText(block, { block: words.block, blockExtra: words.blockExtra, days: words.days }, formatVnd);
     // two lines: the label, then the formula (a slip is narrow)
     return `${text.label}\n${text.formula}`;
-  }
-  const hourBlock = isRent && pricing === 'HOURLY' ? hourBlockSnapshotOf(item.pricingSnapshot) : null;
-  if (hourBlock) {
-    const formula = `${head} = ${formatVnd(total)}`;
-    return words.hourBlock ? `${words.hourBlock.replace('{n}', String(hourBlock.hours))}\n${formula}` : formula;
   }
   if (isRent && pricing === 'DAILY') {
     const days = Math.max(1, num(item.rentalDays) > 0 ? Math.round(num(item.rentalDays)) : ratio);

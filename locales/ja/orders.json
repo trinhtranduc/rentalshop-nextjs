@@ -659,8 +659,7 @@
         "HOURLY": "1時間あたり · {price}/時間",
         "FIXED": "1回あたり · {price}/回",
         "SALE": "販売価格 · {price}",
-        "BLOCK": "日数ブロック · {price}",
-        "HOUR_BLOCK": "{n}時間ブロック · {price}"
+        "BLOCK": "日数ブロック · {price}"
       },
       "cart": {
         "label": "作成中の注文",
@@ -754,8 +753,7 @@
           "DAILY": "/日",
           "HOURLY": "/時間",
           "OTHER": "",
-          "BLOCK": "レンタル全体",
-          "HOUR_BLOCK": "/ブロック"
+          "BLOCK": "レンタル全体"
         },
         "note": "この注文のみに適用されます。商品の価格は変わりません。",
         "done": "完了",
@@ -939,8 +937,7 @@
         "image": "{name} の写真",
         "block": "{n}日ブロック",
         "blockExtra": "{n}日ブロック + 追加{m}日",
-        "blockDays": "{n}日",
-        "hourBlock": "{n}時間ブロック"
+        "blockDays": "{n}日"
       },
       "notes": {
         "title": "メモ",
@@ -1118,8 +1115,7 @@
         "perHour": "/時間",
         "hours": "{n}時間",
         "block": "{n}日ブロック",
-        "blockExtra": "{n}日ブロック + 追加{m}日",
-        "hourBlock": "{n}時間ブロック"
+        "blockExtra": "{n}日ブロック + 追加{m}日"
       },
       "bankTitle": "振込",
       "bankName": "銀行",

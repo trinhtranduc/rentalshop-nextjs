@@ -11,7 +11,6 @@ jest.mock('@rentalshop/utils', () => ({
   ...(jest.requireActual('../packages/utils/src/core/rental-days') as object),
   ...(jest.requireActual('../packages/utils/src/core/block-pricing') as object),
   ...(jest.requireActual('../packages/utils/src/core/block-line-text') as object),
-  ...(jest.requireActual('../packages/utils/src/core/hour-blocks') as object),
 }));
 import { reorderLines, reorderStart } from '../apps/client/app/orders/create/reorder-model';
 import type { OrderLike, ProductLike } from '../apps/client/app/orders/create/create-model';
