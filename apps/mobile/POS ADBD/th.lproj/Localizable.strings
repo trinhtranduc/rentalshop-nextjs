@@ -3103,3 +3103,9 @@
 "weeklySummary.footer.written" = "เขียนเมื่อ %1$@ · ฉบับถัดไป %2$@";
 "weeklySummary.noOrders" = "สัปดาห์ที่แล้วไม่มีออเดอร์ จึงยังไม่มีอะไรให้สรุป";
 "weeklySummary.error" = "สร้างสรุปไม่สำเร็จ";
+
+/* #1633 bill: fees at return */
+"bill.return.title" = "เมื่อรับคืน";
+"bill.return.collateral" = "เงินประกัน";
+"bill.return.excessDeposit" = "มัดจำส่วนเกิน";
+"bill.return.giveBack" = "คืนให้ลูกค้า";

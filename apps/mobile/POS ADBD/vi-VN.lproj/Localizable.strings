@@ -3319,3 +3319,9 @@
 "weeklySummary.footer.written" = "Viết lúc %1$@ · bản mới vào %2$@";
 "weeklySummary.noOrders" = "Tuần trước chưa có đơn nào, nên chưa có gì để tóm tắt.";
 "weeklySummary.error" = "Chưa tạo được tóm tắt.";
+
+/* #1633 bill: fees at return */
+"bill.return.title" = "Khi nhận trả";
+"bill.return.collateral" = "Thế chân";
+"bill.return.excessDeposit" = "Cọc dư";
+"bill.return.giveBack" = "Trả khách";

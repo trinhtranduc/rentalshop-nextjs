@@ -3321,3 +3321,9 @@
 "weeklySummary.footer.written" = "Written %1$@ · next one %2$@";
 "weeklySummary.noOrders" = "There were no orders last week, so there is nothing to summarize.";
 "weeklySummary.error" = "Could not write the summary.";
+
+/* #1633 bill: fees at return */
+"bill.return.title" = "At return";
+"bill.return.collateral" = "Security deposit";
+"bill.return.excessDeposit" = "Deposit above the rent";
+"bill.return.giveBack" = "Give back";

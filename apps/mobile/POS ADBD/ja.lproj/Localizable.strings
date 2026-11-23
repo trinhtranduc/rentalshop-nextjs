@@ -3103,3 +3103,9 @@
 "weeklySummary.footer.written" = "作成 %1$@ · 次回 %2$@";
 "weeklySummary.noOrders" = "先週は注文がなかったため、まとめる内容がありません。";
 "weeklySummary.error" = "まとめを作成できませんでした。";
+
+/* #1633 bill: fees at return */
+"bill.return.title" = "返却時";
+"bill.return.collateral" = "保証金";
+"bill.return.excessDeposit" = "内金の超過分";
+"bill.return.giveBack" = "お客様へ返金";

@@ -3103,3 +3103,9 @@
 "weeklySummary.footer.written" = "Написано %1$@ · следующая %2$@";
 "weeklySummary.noOrders" = "На прошлой неделе заказов не было, сводить нечего.";
 "weeklySummary.error" = "Не удалось составить сводку.";
+
+/* #1633 bill: fees at return */
+"bill.return.title" = "При возврате";
+"bill.return.collateral" = "Залог";
+"bill.return.excessDeposit" = "Излишек предоплаты";
+"bill.return.giveBack" = "Вернуть клиенту";

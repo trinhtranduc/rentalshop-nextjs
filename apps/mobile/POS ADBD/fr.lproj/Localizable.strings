@@ -3103,3 +3103,9 @@
 "weeklySummary.footer.written" = "Rédigé %1$@ · prochain %2$@";
 "weeklySummary.noOrders" = "Aucune commande la semaine dernière, rien à résumer.";
 "weeklySummary.error" = "Impossible de rédiger le résumé.";
+
+/* #1633 bill: fees at return */
+"bill.return.title" = "Au retour";
+"bill.return.collateral" = "Dépôt de garantie";
+"bill.return.excessDeposit" = "Acompte au-delà de la location";
+"bill.return.giveBack" = "À rendre au client";

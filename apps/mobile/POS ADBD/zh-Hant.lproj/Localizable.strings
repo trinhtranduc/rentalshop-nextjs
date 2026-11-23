@@ -3121,3 +3121,9 @@ App 會事先提醒。";
 "weeklySummary.footer.written" = "撰寫於 %1$@ · 下一份 %2$@";
 "weeklySummary.noOrders" = "上週沒有訂單，因此沒有可摘要的內容。";
 "weeklySummary.error" = "無法產生摘要。";
+
+/* #1633 bill: fees at return */
+"bill.return.title" = "歸還時";
+"bill.return.collateral" = "押金";
+"bill.return.excessDeposit" = "多付訂金";
+"bill.return.giveBack" = "退還客人";

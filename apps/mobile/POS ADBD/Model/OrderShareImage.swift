@@ -72,6 +72,79 @@ enum ShareMoneyRule {
     }
 }
 
+/// #1633 the "Khi nhận trả" / "Đã huỷ" block of every bill: the share image and the printed bill (Android
+/// `BillReturnRule`, web `billReturnBlock`; cases A–H of `.agent/changes/1633-bill-return-fees/spec.md`). Pure.
+/// A rental with a late fee or a surcharge: Thế chân, Cọc dư, Phí trễ, Phụ thu (each only above 0), then "Thu thêm" or
+/// "Trả khách" = fees − collateral money − excess deposit, the whole return (RETURN_ADJUSTMENT payments are not taken off:
+/// after the return they are this settlement). A cancelled rental that kept a surcharge: "Phụ thu" and "Hoàn cho khách"
+/// = collected − kept, as the order detail (#1491). nil (no block, the bill as before): a sale, a draft, a rental without
+/// fees even with a collateral, a cancelled order that kept nothing.
+enum BillReturnRule {
+    struct Row: Equatable {
+        let label: String
+        let amount: Double
+    }
+
+    struct Block: Equatable {
+        let title: String
+        let rows: [Row]
+        let resultLabel: String
+        let result: Double
+        /// "Trả khách" / "Hoàn cho khách" (green on the image); false: "Thu thêm"
+        let givesBack: Bool
+    }
+
+    /// `text` translates a key: the app language on the printed bill, the image's language on the image
+    static func block(orderType: OrderType, isDraft: Bool, status: OrderStatus, total: Double, deposit: Double,
+                      collateralMoney: Double, lateFee: Double, damageFee: Double, cancelKept: Double?,
+                      hasPlan: Bool?, collected: Double?, text: (String) -> String = { $0.localized() }) -> Block? {
+        guard orderType == .rent, !isDraft else { return nil }
+        if status == .cancelled {
+            let kept = max(0, cancelKept ?? 0)
+            guard kept > 0 else { return nil }
+            // #1491: an order without a plan collected its single deposit
+            let paid = hasPlan == true ? (collected ?? 0) : deposit
+            return Block(title: text("Cancelled"), rows: [Row(label: text("deposit.cancel.kept"), amount: kept)],
+                         resultLabel: text("deposit.cancel.refund"), result: max(0, paid - kept), givesBack: true)
+        }
+        let late = max(0, lateFee)
+        let surcharge = max(0, damageFee)
+        guard late + surcharge > 0 else { return nil }
+        let collateral = max(0, collateralMoney)
+        let excess = max(0, deposit - total)
+        var rows: [Row] = []
+        if collateral > 0 { rows.append(Row(label: text("bill.return.collateral"), amount: collateral)) }
+        if excess > 0 { rows.append(Row(label: text("bill.return.excessDeposit"), amount: excess)) }
+        if late > 0 { rows.append(Row(label: text("Late fee"), amount: late)) }
+        if surcharge > 0 { rows.append(Row(label: text("Surcharge"), amount: surcharge)) }
+        let net = late + surcharge - collateral - excess
+        let givesBack = net <= 0
+        return Block(title: text("bill.return.title"), rows: rows,
+                     resultLabel: text(givesBack ? "bill.return.giveBack" : "Collect more"),
+                     result: abs(net), givesBack: givesBack)
+    }
+}
+
+extension BillReturnRule {
+    /// ESC/POS bytes of the block, as `DepositPlanReceipt.printData`: a rule, the title, "Nhãn: số" rows, the result in bold
+    static func printData(_ block: Block) -> Data {
+        var data = Data()
+        func line(_ text: String) { data.append((text.formatStringOriginalCharacter() + "\n").data(using: .utf8) ?? Data()) }
+        data.append(PrinterCommand.selectAlignment(PrinterCommand.Alignment.left.rawValue))
+        data.append(PrinterCommand.selectOrCancleBoldModel(0))
+        line("------------------------------------------------")
+        data.append(PrinterCommand.selectOrCancleBoldModel(1))
+        // accents off first, then upper-case (as SUBTOTAL / TOTAL): the printer has no Vietnamese capitals
+        line(block.title.formatStringOriginalCharacter().uppercased())
+        data.append(PrinterCommand.selectOrCancleBoldModel(0))
+        for row in block.rows { line("\(row.label): \(row.amount.formatStringInCommon())") }
+        data.append(PrinterCommand.selectOrCancleBoldModel(1))
+        line("\(block.resultLabel.formatStringOriginalCharacter().uppercased()): \(block.result.formatStringInCommon())")
+        data.append(PrinterCommand.selectOrCancleBoldModel(0))
+        return data
+    }
+}
+
 /// The facts the image is made from (one order, or the cart before it is an order)
 struct OrderShareSource {
     struct Item: Equatable {
@@ -116,6 +189,10 @@ struct OrderShareSource {
     var stageSummary: InstallmentSummary? = nil
     /// #1354: the order's own note (the one the shop writes on the order); on the image only when the shop turns it on
     var orderNote: String? = nil
+    /// #1633: the return's fees and what a cancelled order kept (`BillReturnRule`)
+    var lateFee: Double = 0
+    var damageFee: Double = 0
+    var cancelKept: Double? = nil
 }
 
 /// #1354 "Hiện ghi chú đơn trên ảnh chia sẻ": who sets it, and when the order's note is on the image (Android `ShareOrderNoteRule`)
@@ -286,6 +363,10 @@ struct OrderShareModel: Equatable {
         case collect(label: String, value: String)
         /// #1368: "Khách đưa lúc nhận đồ", the last box when the collateral is money
         case cash(label: String, value: String)
+        /// #1633: "KHI NHẬN TRẢ" / "ĐÃ HUỶ", the title of the return block
+        case heading(String)
+        /// #1633: "Trả khách" / "Hoàn cho khách", the green box closing the return block ("Thu thêm" is a `collect` box)
+        case giveBack(label: String, value: String)
     }
 
     struct OrderNote: Equatable {
@@ -453,6 +534,19 @@ struct OrderShareModel: Equatable {
             entries.append(.total(label: t.text("share.total"), value: fmt(source.total), tone: .total))
         }
 
+        // #1633: the fees at return, or what a cancelled order kept, under everything above
+        if let block = BillReturnRule.block(orderType: source.orderType, isDraft: source.isDraft, status: source.status,
+                                            total: source.total, deposit: source.deposit,
+                                            collateralMoney: source.collateralMoney, lateFee: source.lateFee,
+                                            damageFee: source.damageFee, cancelKept: source.cancelKept,
+                                            hasPlan: source.hasDepositPlan, collected: source.stageSummary?.collected,
+                                            text: t.text) {
+            entries.append(.heading(block.title))
+            for item in block.rows { entries.append(.row(Row(label: item.label, value: fmt(item.amount)))) }
+            entries.append(block.givesBack ? .giveBack(label: block.resultLabel, value: fmt(block.result))
+                                           : .collect(label: block.resultLabel, value: fmt(block.result)))
+        }
+
         var qr: QR?
         if !source.isDraft, qrSwitchOn, let account = bankAccount {
             let content = "DH" + source.orderNumber
@@ -562,6 +656,9 @@ extension OrderShareSource {
         )
         outletPrintBankQr = detail.outlet.printBankQr
         orderNote = detail.notes
+        lateFee = detail.lateFee
+        damageFee = detail.damageFee
+        cancelKept = detail.cancelKeptAmount
     }
 
     /// An order (old preview screen when the detail cannot load)
@@ -581,6 +678,9 @@ extension OrderShareSource {
         )
         outletPrintBankQr = order.outletPrintBankQr
         orderNote = order.notes
+        lateFee = order.lateFee
+        damageFee = order.damageFee
+        cancelKept = order.cancelKeptAmount
     }
 
     /// The cart before it is an order (draft): no number, no QR
