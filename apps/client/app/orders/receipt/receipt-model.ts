@@ -70,6 +70,10 @@ export interface ReceiptOrderInput {
   installmentSummary?: { collected?: number | null; remaining?: number | null } | null;
   securityDeposit?: number | null;
   damageFee?: number | null;
+  /** #1633: the return's fees and what a cancelled order kept (`billReturnBlock`) */
+  lateFee?: number | null;
+  status?: string | null;
+  cancelKeptAmount?: number | null;
   collateralType?: string | null;
   collateralDetails?: string | null;
   notes?: string | null;
@@ -96,7 +100,25 @@ export interface ReceiptWords {
   hourBlock?: string;
 }
 
-export type ReceiptRowKey = 'deposit' | 'securityDeposit' | 'collateral' | 'damageFee' | 'rentDate' | 'returnDate' | 'createdAt';
+export type ReceiptRowKey = 'deposit' | 'securityDeposit' | 'collateral' | 'rentDate' | 'returnDate' | 'createdAt';
+
+/** #1633 labels of the "Khi nhận trả" / "Đã huỷ" block, under `web.receipt.return` */
+export type ReceiptReturnKey =
+  | 'collateral'
+  | 'excessDeposit'
+  | 'lateFee'
+  | 'surcharge'
+  | 'kept'
+  | 'giveBack'
+  | 'collect'
+  | 'refund';
+
+export interface ReceiptReturnBlock {
+  /** `return.title` ("Khi nhận trả") or `return.cancelTitle` ("Đã huỷ") */
+  kind: 'return' | 'cancel';
+  rows: { key: ReceiptReturnKey; value: string }[];
+  result: { key: ReceiptReturnKey; value: string };
+}
 
 export interface ReceiptRow {
   key: ReceiptRowKey;
@@ -154,6 +176,8 @@ export interface ReceiptModel {
   printNote: string | null;
   /** #1252: null for a one-time deposit, a sale, or a client that did not declare `installments` */
   stages: ReceiptStages | null;
+  /** #1633: the fees at return, or what a cancelled order kept; null for every other order */
+  returnBlock: ReceiptReturnBlock | null;
 }
 
 const num = (v: unknown): number => {
@@ -298,7 +322,6 @@ export function buildReceipt(order: ReceiptOrderInput, sources: ReceiptSources, 
     if (details || (type && type.toLowerCase() !== 'other')) {
       rows.push({ key: 'collateral', value: details, collateralType: type || null });
     }
-    if (num(order.damageFee) > 0) rows.push({ key: 'damageFee', value: formatVnd(order.damageFee) });
     const pickup = formatVnDay(order.pickupPlanAt);
     const ret = formatVnDay(order.returnPlanAt);
     if (pickup) rows.push({ key: 'rentDate', value: pickup });
@@ -339,5 +362,43 @@ export function buildReceipt(order: ReceiptOrderInput, sources: ReceiptSources, 
     total: formatVnd(total),
     printNote: resolvePrintNote(order, outlet),
     stages: buildStages(order, isRent),
+    returnBlock: billReturnBlock(order),
   };
+}
+
+/**
+ * #1633 the "Khi nhận trả" / "Đã huỷ" block of every bill (iOS and Android `BillReturnRule`; cases A–H of
+ * `.agent/changes/1633-bill-return-fees/spec.md`). A rental with a late fee or a surcharge: Thế chân, Cọc dư, Phí trễ,
+ * Phụ thu (each only above 0), then "Thu thêm" or "Trả khách" = fees − collateral money − excess deposit, the whole
+ * return (RETURN_ADJUSTMENT payments are not taken off: after the return they are this settlement). A cancelled rental
+ * that kept a surcharge: "Phụ thu" and "Hoàn cho khách" = collected − kept, as `cancelledOutcome` (#1491). null: a sale,
+ * a draft, a rental without fees even with a collateral, a cancelled order that kept nothing.
+ */
+export function billReturnBlock(order: ReceiptOrderInput): ReceiptReturnBlock | null {
+  if ((order.orderType || 'RENT') !== 'RENT') return null;
+  const status = text(order.status).toUpperCase();
+  if (status === 'DRAFT') return null;
+  if (status === 'CANCELLED') {
+    const kept = Math.max(0, num(order.cancelKeptAmount));
+    if (!(kept > 0)) return null;
+    const plan = order.hasDepositPlan === true && Array.isArray(order.installments) && order.installments.length > 0;
+    const collected = plan ? num(order.installmentSummary?.collected) : Math.max(0, num(order.depositAmount));
+    return {
+      kind: 'cancel',
+      rows: [{ key: 'kept', value: formatVnd(kept) }],
+      result: { key: 'refund', value: formatVnd(Math.max(0, collected - kept)) },
+    };
+  }
+  const late = Math.max(0, num(order.lateFee));
+  const surcharge = Math.max(0, num(order.damageFee));
+  if (!(late + surcharge > 0)) return null;
+  const collateral = Math.max(0, num(order.securityDeposit));
+  const excess = Math.max(0, num(order.depositAmount) - num(order.totalAmount));
+  const rows: ReceiptReturnBlock['rows'] = [];
+  if (collateral > 0) rows.push({ key: 'collateral', value: formatVnd(collateral) });
+  if (excess > 0) rows.push({ key: 'excessDeposit', value: formatVnd(excess) });
+  if (late > 0) rows.push({ key: 'lateFee', value: formatVnd(late) });
+  if (surcharge > 0) rows.push({ key: 'surcharge', value: formatVnd(surcharge) });
+  const net = late + surcharge - collateral - excess;
+  return { kind: 'return', rows, result: { key: net > 0 ? 'collect' : 'giveBack', value: formatVnd(Math.abs(net)) } };
 }

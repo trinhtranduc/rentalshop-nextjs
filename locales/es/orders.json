@@ -1124,7 +1124,19 @@
       "bankTitle": "Transferencia bancaria",
       "bankName": "Banco",
       "bankAccount": "N.º de cuenta",
-      "bankHolder": "Titular"
+      "bankHolder": "Titular",
+      "return": {
+        "title": "Al devolver",
+        "cancelTitle": "Cancelado",
+        "collateral": "Depósito de garantía",
+        "excessDeposit": "Anticipo sobre el alquiler",
+        "lateFee": "Cargo por retraso",
+        "surcharge": "Recargo",
+        "kept": "Recargo",
+        "giveBack": "Devolver al cliente",
+        "collect": "Cobrar adicional",
+        "refund": "Reembolso al cliente"
+      }
     },
     "online": {
       "button": "Reservas en línea",

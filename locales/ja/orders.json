@@ -1124,7 +1124,19 @@
       "bankTitle": "振込",
       "bankName": "銀行",
       "bankAccount": "口座番号",
-      "bankHolder": "名義"
+      "bankHolder": "名義",
+      "return": {
+        "title": "返却時",
+        "cancelTitle": "キャンセル済み",
+        "collateral": "保証金",
+        "excessDeposit": "内金の超過分",
+        "lateFee": "延滞料",
+        "surcharge": "追加料金",
+        "kept": "追加料金",
+        "giveBack": "お客様へ返金",
+        "collect": "追加集金",
+        "refund": "お客様へ返金"
+      }
     },
     "online": {
       "button": "オンライン予約",

@@ -1124,7 +1124,19 @@
       "bankTitle": "Банковский перевод",
       "bankName": "Банк",
       "bankAccount": "Номер счёта",
-      "bankHolder": "Владелец счёта"
+      "bankHolder": "Владелец счёта",
+      "return": {
+        "title": "При возврате",
+        "cancelTitle": "Отменён",
+        "collateral": "Залог",
+        "excessDeposit": "Излишек предоплаты",
+        "lateFee": "Плата за просрочку",
+        "surcharge": "Доплата",
+        "kept": "Доплата",
+        "giveBack": "Вернуть клиенту",
+        "collect": "Доплатить",
+        "refund": "Возврат клиенту"
+      }
     },
     "online": {
       "button": "Онлайн-брони",

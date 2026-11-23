@@ -1124,7 +1124,19 @@
       "bankTitle": "Bank transfer",
       "bankName": "Bank",
       "bankAccount": "Account no.",
-      "bankHolder": "Holder"
+      "bankHolder": "Holder",
+      "return": {
+        "title": "At return",
+        "cancelTitle": "Cancelled",
+        "collateral": "Security deposit",
+        "excessDeposit": "Deposit above the rent",
+        "lateFee": "Late fee",
+        "surcharge": "Surcharge",
+        "kept": "Surcharge",
+        "giveBack": "Give back",
+        "collect": "Collect",
+        "refund": "Refund to customer"
+      }
     },
     "online": {
       "button": "Online bookings",

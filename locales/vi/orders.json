@@ -1124,7 +1124,19 @@
       "bankTitle": "Chuyển khoản",
       "bankName": "Ngân hàng",
       "bankAccount": "STK",
-      "bankHolder": "Chủ TK"
+      "bankHolder": "Chủ TK",
+      "return": {
+        "title": "Khi nhận trả",
+        "cancelTitle": "Đã huỷ",
+        "collateral": "Thế chân",
+        "excessDeposit": "Cọc dư",
+        "lateFee": "Phí trễ",
+        "surcharge": "Phụ thu",
+        "kept": "Phụ thu",
+        "giveBack": "Trả khách",
+        "collect": "Thu thêm",
+        "refund": "Hoàn cho khách"
+      }
     },
     "online": {
       "button": "Đặt online",
