@@ -531,6 +531,8 @@ final class OrderShareMoneyOrderTests: XCTestCase {
             case .stages(let block): return ["STAGES \(block.title)"] + block.stages.map { "\($0.title)|\($0.amount)|\($0.detail)" }
             case .collect(let label, let value): return ["COLLECT \(label)|\(value)"]
             case .cash(let label, let value): return ["CASH \(label)|\(value)"]
+            case .heading(let title): return ["HEADING \(title)"]
+            case .giveBack(let label, let value): return ["GIVEBACK \(label)|\(value)"]
             }
         }
     }
@@ -1115,5 +1117,164 @@ final class OrderShareNoteTests: XCTestCase {
         XCTAssertTrue(cards[1].contains(first) && cards[1].contains(last), "the note is in the items card: \(cards) \(first)...\(last)")
         XCTAssertLessThan(last, cards[2].lowerBound, "and above the QR card")
         XCTAssertLessThan(cards[2].upperBound, height - 60, "the thanks come after the QR card")
+    }
+}
+
+/// #1633 the "Khi nhận trả" / "Đã huỷ" block of every bill: cases A–H of `.agent/changes/1633-bill-return-fees/spec.md`
+final class BillReturnRuleTests: XCTestCase {
+    private let vi = ShareLanguage.make(code: "vi-VN")
+    private let en = ShareLanguage.make(code: "en")
+    private let now = ISO8601DateFormatter().date(from: "2026-10-17T07:00:00Z")!
+
+    private func block(status: OrderStatus = .returned, total: Double = 500_000, deposit: Double = 200_000,
+                       collateral: Double = 0, late: Double = 0, surcharge: Double = 0, kept: Double? = nil,
+                       hasPlan: Bool? = nil, collected: Double? = nil, type: OrderType = .rent, draft: Bool = false,
+                       language: ShareLanguage? = nil) -> BillReturnRule.Block? {
+        BillReturnRule.block(orderType: type, isDraft: draft, status: status, total: total, deposit: deposit,
+                             collateralMoney: collateral, lateFee: late, damageFee: surcharge, cancelKept: kept,
+                             hasPlan: hasPlan, collected: collected, text: (language ?? vi).text)
+    }
+
+    private func rows(_ block: BillReturnRule.Block?) -> [String] {
+        guard let block else { return [] }
+        return [block.title] + block.rows.map { "\($0.label) \(Int($0.amount))" } + ["\(block.resultLabel) \(Int(block.result))"]
+    }
+
+    func testCaseANoFeeNoBlock() {
+        XCTAssertNil(block())
+    }
+
+    func testCaseBFeesBelowCollateralGiveBack() {
+        let b = block(collateral: 1_000_000, late: 100_000, surcharge: 50_000)
+        XCTAssertEqual(rows(b), ["Khi nhận trả", "Thế chân 1000000", "Phí trễ 100000", "Phụ thu 50000", "Trả khách 850000"])
+        XCTAssertEqual(b?.givesBack, true)
+    }
+
+    func testCaseCNoCollateralCollect() {
+        let b = block(surcharge: 150_000)
+        XCTAssertEqual(rows(b), ["Khi nhận trả", "Phụ thu 150000", "Thu thêm 150000"])
+        XCTAssertEqual(b?.givesBack, false)
+    }
+
+    func testCaseDFeesAboveCollateralCollect() {
+        XCTAssertEqual(rows(block(collateral: 100_000, late: 100_000, surcharge: 200_000)),
+                       ["Khi nhận trả", "Thế chân 100000", "Phí trễ 100000", "Phụ thu 200000", "Thu thêm 200000"])
+    }
+
+    func testCaseEExcessDepositIsGivenBack() {
+        XCTAssertEqual(rows(block(total: 300_000, deposit: 500_000, surcharge: 50_000)),
+                       ["Khi nhận trả", "Cọc dư 200000", "Phụ thu 50000", "Trả khách 150000"])
+    }
+
+    func testCaseFFeesEqualCollateralGiveBackZero() {
+        let b = block(collateral: 300_000, surcharge: 300_000)
+        XCTAssertEqual(rows(b), ["Khi nhận trả", "Thế chân 300000", "Phụ thu 300000", "Trả khách 0"])
+        XCTAssertEqual(b?.result.sign, .plus, "never −0")
+    }
+
+    func testCaseGCollateralWithoutFeeNoBlock() {
+        XCTAssertNil(block(collateral: 1_000_000))
+    }
+
+    func testCaseHCancelledKeptRefundsTheRest() {
+        XCTAssertEqual(rows(block(status: .cancelled, deposit: 300_000, kept: 100_000)),
+                       ["Đã huỷ", "Phụ thu 100000", "Hoàn cho khách 200000"])
+        // a plan: what the stages collected, as the order detail (#1491)
+        XCTAssertEqual(rows(block(status: .cancelled, deposit: 0, kept: 100_000, hasPlan: true, collected: 250_000)),
+                       ["Đã huỷ", "Phụ thu 100000", "Hoàn cho khách 150000"])
+        XCTAssertNil(block(status: .cancelled, deposit: 300_000, kept: 0), "nothing kept: no block")
+        XCTAssertNil(block(status: .cancelled, deposit: 300_000, surcharge: 50_000), "a cancelled order's fees are not a return")
+    }
+
+    func testSaleAndDraftNeverHaveTheBlock() {
+        XCTAssertNil(block(surcharge: 50_000, type: .sale))
+        XCTAssertNil(block(surcharge: 50_000, draft: true))
+    }
+
+    func testEnglishWords() {
+        XCTAssertEqual(rows(block(collateral: 1_000_000, late: 100_000, surcharge: 50_000, language: en)),
+                       ["At return", "Security deposit 1000000", "Late fee 100000", "Surcharge 50000", "Give back 850000"])
+        XCTAssertEqual(block(surcharge: 150_000, language: en)?.resultLabel, "Collect more")
+        XCTAssertEqual(rows(block(status: .cancelled, deposit: 300_000, kept: 100_000, language: en)),
+                       ["Cancelled", "Surcharge 100000", "Refund to customer 200000"])
+    }
+
+    // MARK: - Share image
+
+    private func flat(_ source: OrderShareSource) -> [String] {
+        OrderShareModel.make(source, language: vi, now: now, currency: .vnd).money.compactMap { entry -> String? in
+            switch entry {
+            case .row(let row): return "\(row.label)|\(row.value)"
+            case .heading(let title): return "HEADING \(title)"
+            case .giveBack(let label, let value): return "GIVEBACK \(label)|\(value)"
+            case .collect(let label, let value): return "COLLECT \(label)|\(value)"
+            default: return nil
+            }
+        }
+    }
+
+    private func rental(status: OrderStatus = .returned, collateral: Double = 0, late: Double = 0, surcharge: Double = 0,
+                        kept: Double? = nil) -> OrderShareSource {
+        var source = OrderShareImageTests.rent(status: status)
+        source.total = 500_000
+        source.deposit = 200_000
+        source.collateralPapers = nil
+        source.collateralMoney = collateral
+        source.lateFee = late
+        source.damageFee = surcharge
+        source.cancelKept = kept
+        return source
+    }
+
+    func testImageCaseBEndsWithTheReturnBlock() {
+        let lines = flat(rental(collateral: 1_000_000, late: 100_000, surcharge: 50_000))
+        XCTAssertEqual(Array(lines.suffix(5)), ["HEADING Khi nhận trả", "Thế chân|1.000.000đ", "Phí trễ|100.000đ",
+                                                 "Phụ thu|50.000đ", "GIVEBACK Trả khách|850.000đ"])
+    }
+
+    func testImageCaseCCollectsInTheCollectBox() {
+        XCTAssertEqual(Array(flat(rental(surcharge: 150_000)).suffix(3)),
+                       ["HEADING Khi nhận trả", "Phụ thu|150.000đ", "COLLECT Thu thêm|150.000đ"])
+    }
+
+    func testImageWithoutFeesIsUnchanged() {
+        // A and G: the image is the booking view of #1345, whatever the status
+        for (collateral, status) in [(0.0, OrderStatus.returned), (1_000_000, .returned), (1_000_000, .pickuped)] {
+            let lines = flat(rental(status: status, collateral: collateral))
+            XCTAssertFalse(lines.contains { $0.hasPrefix("HEADING") }, "\(collateral) \(status): \(lines)")
+        }
+    }
+
+    func testImageCaseHCancelled() {
+        XCTAssertEqual(Array(flat(rental(status: .cancelled, kept: 100_000)).suffix(3)),
+                       ["HEADING Đã huỷ", "Phụ thu|100.000đ", "GIVEBACK Hoàn cho khách|100.000đ"])
+    }
+
+    func testImageCaseBRendersTaller() {
+        let plain = OrderShareRenderer.image(OrderShareModel.make(rental(collateral: 1_000_000), language: vi, now: now, currency: .vnd))
+        let fees = OrderShareRenderer.image(OrderShareModel.make(rental(collateral: 1_000_000, late: 100_000, surcharge: 50_000),
+                                                                 language: vi, now: now, currency: .vnd))
+        XCTAssertGreaterThan(fees.size.height, plain.size.height + 150, "heading, 3 rows and a box are drawn")
+    }
+
+    // MARK: - Printed bill
+
+    func testPrintedBlockCaseB() throws {
+        let b = try XCTUnwrap(block(collateral: 1_000_000, late: 100_000, surcharge: 50_000))
+        // drop the 3-byte ESC commands (alignment, bold), keep the text
+        let bytes = [UInt8](BillReturnRule.printData(b))
+        var plain: [UInt8] = []
+        var i = 0
+        while i < bytes.count {
+            if bytes[i] == 0x1B { i += 3 } else { plain.append(bytes[i]); i += 1 }
+        }
+        let lines = String(decoding: plain, as: UTF8.self).split(separator: "\n").map(String.init)
+        let n: (Double) -> String = { $0.formatStringInCommon() }
+        XCTAssertEqual(lines, [String(repeating: "-", count: 48),
+                               "KHI NHAN TRA",
+                               "The chan: \(n(1_000_000))",
+                               "Phi tre: \(n(100_000))",
+                               "Phu thu: \(n(50_000))",
+                               "TRA KHACH: \(n(850_000))"])
     }
 }

@@ -2607,4 +2607,8 @@
     <plurals name="weekly_summary_times">
         <item quantity="other">%1$d lượt</item>
     </plurals>
+    <!-- #1633 bill: fees at return -->
+    <string name="bill_return_title">Khi nhận trả</string>
+    <string name="bill_return_excess_deposit">Cọc dư</string>
+    <string name="bill_return_give_back">Trả khách</string>
 </resources>

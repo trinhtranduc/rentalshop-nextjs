@@ -633,8 +633,7 @@
         "depositNegative": "訂金不可為負數",
         "stockRequired": "數量必須大於 0",
         "outletStockNegative": "數量不可為負數",
-        "branchRequired": "請至少勾選一間上架商品的分店",
-        "hourBlocksNeedPrice": "使用小時區間時，還需要按次或按日價格。"
+        "branchRequired": "請至少勾選一間上架商品的分店"
       },
       "noCreate": "您沒有新增商品的權限。",
       "noEdit": "您沒有編輯商品的權限。",
@@ -646,7 +645,6 @@
       "needOutlet": "新增商品前，至少需要一間分店。",
       "goOutlets": "前往分店",
       "blockRow": "依天數區間計價",
-      "hourRow": "依小時區間計價",
       "blockNotSet": "未設定",
       "unitOnce": "元 / 次",
       "unitDay": "元 / 天",
@@ -664,26 +662,6 @@
         "copyLoading": "載入中…",
         "close": "關閉",
         "incomplete": "請輸入每個天數的價格與每天加價，或選擇最後區間價格不變。"
-      },
-      "hour": {
-        "summary": "{count} 個區間：{hours} 小時",
-        "edit": "編輯依小時區間價格",
-        "title": "依小時區間計價",
-        "hint": "每個小時區間一個價格。在購物車選擇哪個區間，就套用該區間的價格。",
-        "listTitle": "小時區間",
-        "unit": "小時",
-        "hoursOf": "第 {n} 個區間的小時數",
-        "priceOf": "第 {n} 個區間的價格",
-        "remove": "刪除第 {n} 個區間",
-        "add": "+ 新增區間",
-        "max": "最多 {n} 個區間。",
-        "save": "儲存價目表",
-        "turnOff": "關閉依小時區間計價",
-        "errors": {
-          "hours": "小時數須為 1 至 24 的整數。",
-          "repeated": "每個小時數只能用於一個區間。",
-          "price": "請為每個區間輸入價格（可為 0）。"
-        }
       },
       "listing": {
         "branch": "分店",
@@ -713,7 +691,6 @@
       "hour": "按小時租借",
       "perDay": "{price}/天",
       "perHour": "{price}/小時",
-      "hourBlock": "{n} 小時 {price}",
       "default": "預設",
       "deposit": "訂金",
       "sale": "售價",

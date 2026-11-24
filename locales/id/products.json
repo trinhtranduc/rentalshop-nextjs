@@ -633,8 +633,7 @@
         "depositNegative": "Uang muka tidak boleh negatif",
         "stockRequired": "Jumlah harus lebih dari 0",
         "outletStockNegative": "Jumlah tidak boleh negatif",
-        "branchRequired": "Centang minimal 1 cabang untuk menampilkan produk",
-        "hourBlocksNeedPrice": "Blok jam juga memerlukan harga per sewa atau per hari."
+        "branchRequired": "Centang minimal 1 cabang untuk menampilkan produk"
       },
       "noCreate": "Anda tidak memiliki izin menambah produk.",
       "noEdit": "Anda tidak memiliki izin mengubah produk.",
@@ -646,7 +645,6 @@
       "needOutlet": "Diperlukan minimal satu cabang sebelum menambah produk.",
       "goOutlets": "Buka Cabang",
       "blockRow": "Per blok hari",
-      "hourRow": "Per blok jam",
       "blockNotSet": "Belum diatur",
       "unitOnce": "VND / sewa",
       "unitDay": "VND / hari",
@@ -664,26 +662,6 @@
         "copyLoading": "Memuat…",
         "close": "Tutup",
         "incomplete": "Isi harga untuk setiap hari dan tambahan per hari, atau pilih tahan harga blok terakhir."
-      },
-      "hour": {
-        "summary": "{count} blok: {hours} jam",
-        "edit": "Ubah harga per blok jam",
-        "title": "Harga per blok jam",
-        "hint": "Setiap blok jam punya satu harga. Di keranjang, blok yang dipilih menentukan harganya.",
-        "listTitle": "Blok jam",
-        "unit": "jam",
-        "hoursOf": "Jam blok {n}",
-        "priceOf": "Harga blok {n}",
-        "remove": "Hapus blok {n}",
-        "add": "+ Tambah blok",
-        "max": "Paling banyak {n} blok.",
-        "save": "Simpan tabel harga",
-        "turnOff": "Matikan harga per blok jam",
-        "errors": {
-          "hours": "Jam harus bilangan bulat 1 sampai 24.",
-          "repeated": "Setiap jumlah jam hanya untuk satu blok.",
-          "price": "Isi harga untuk setiap blok (0 boleh)."
-        }
       },
       "listing": {
         "branch": "Cabang",
@@ -713,7 +691,6 @@
       "hour": "Sewa per jam",
       "perDay": "{price}/hari",
       "perHour": "{price}/jam",
-      "hourBlock": "{n} jam {price}",
       "default": "Default",
       "deposit": "Uang muka",
       "sale": "Harga jual",

@@ -6,10 +6,8 @@
  * collects them; the server then adds `installments[]` and the stage payments to its responses. `block-pricing` (#1189): this client
  * shows and edits day-block price tables and sends the price of a BLOCK line for the server to check. `branch-listing` (#1341): this
  * client shows the "Hiện ở chi nhánh" tick, so the server does not list products for it when it creates an order.
- * `hour-blocks` (#1621): this client shows and edits hour-block prices ("Theo khối giờ"); the server then returns the HOURLY
- * options and every product save from this client replaces the whole option set, so the product form always sends them.
  */
-export const CLIENT_CAPABILITIES: readonly string[] = ['block-pricing', 'installments', 'branch-listing', 'hour-blocks'];
+export const CLIENT_CAPABILITIES: readonly string[] = ['block-pricing', 'installments', 'branch-listing'];
 
 export const CLIENT_CAPABILITIES_HEADER = 'X-Client-Capabilities';
 

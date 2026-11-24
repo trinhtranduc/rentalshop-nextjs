@@ -56,6 +56,72 @@ sealed interface ShareMoney {
 
     /** #1368: "Khách đưa lúc nhận đồ", the last box when the collateral is money */
     data class Cash(val label: ShareText, val value: String) : ShareMoney
+
+    /** #1633: "KHI NHẬN TRẢ" / "ĐÃ HUỶ", the title of the return block */
+    data class Heading(val title: ShareText) : ShareMoney
+
+    /** #1633: "Trả khách" / "Hoàn cho khách", the green box closing the return block ("Thu thêm" is a [Collect] box) */
+    data class GiveBack(val label: ShareText, val value: String) : ShareMoney
+}
+
+/**
+ * #1633 the "Khi nhận trả" / "Đã huỷ" block of every bill: the share image and the printed bill (iOS `BillReturnRule`,
+ * web `billReturnBlock`; cases A–H of `.agent/changes/1633-bill-return-fees/spec.md`). Pure.
+ * A rental with a late fee or a surcharge: Thế chân, Cọc dư, Phí trễ, Phụ thu (each only above 0), then "Thu thêm" or
+ * "Trả khách" = fees − collateral money − excess deposit, the whole return (RETURN_ADJUSTMENT payments are not taken off:
+ * after the return they are this settlement). A cancelled rental that kept a surcharge: "Phụ thu" and "Hoàn cho khách"
+ * = collected − kept, as the order detail (#1491). null (no block, the bill as before): a sale, a draft, a rental without
+ * fees even with a collateral, a cancelled order that kept nothing.
+ */
+object BillReturnRule {
+    data class Row(val label: Int, val amount: Double)
+
+    /** [givesBack]: "Trả khách" / "Hoàn cho khách" (green on the image); false: "Thu thêm" */
+    data class Block(val title: Int, val rows: List<Row>, val resultLabel: Int, val result: Double, val givesBack: Boolean)
+
+    fun block(
+        orderType: String, isDraft: Boolean, status: String, total: Double, deposit: Double, collateralMoney: Double,
+        lateFee: Double, damageFee: Double, cancelKept: Double?, hasPlan: Boolean, collected: Double?,
+    ): Block? {
+        if (!orderType.equals("RENT", ignoreCase = true) || isDraft) return null
+        if (status.equals("CANCELLED", ignoreCase = true)) {
+            val kept = maxOf(0.0, cancelKept ?: 0.0)
+            if (kept <= 0.0) return null
+            // #1491: an order without a plan collected its single deposit
+            val paid = if (hasPlan) collected ?: 0.0 else deposit
+            return Block(
+                R.string.share_status_cancelled, listOf(Row(R.string.deposit_cancel_kept, kept)),
+                R.string.deposit_cancel_refund, maxOf(0.0, paid - kept), givesBack = true,
+            )
+        }
+        val late = maxOf(0.0, lateFee)
+        val surcharge = maxOf(0.0, damageFee)
+        if (late + surcharge <= 0.0) return null
+        val collateral = maxOf(0.0, collateralMoney)
+        val excess = maxOf(0.0, deposit - total)
+        val rows = buildList {
+            if (collateral > 0) add(Row(R.string.detail_collateral_money_row, collateral))
+            if (excess > 0) add(Row(R.string.bill_return_excess_deposit, excess))
+            if (late > 0) add(Row(R.string.detail_late_fee, late))
+            if (surcharge > 0) add(Row(R.string.surcharge, surcharge))
+        }
+        val net = late + surcharge - collateral - excess
+        val givesBack = net <= 0.0
+        return Block(
+            R.string.bill_return_title, rows,
+            if (givesBack) R.string.bill_return_give_back else R.string.detail_collect_more,
+            kotlin.math.abs(net), givesBack,
+        )
+    }
+
+    /** The block of an order from GET /api/orders/{id} */
+    fun of(order: OrderDetail): Block? = block(
+        orderType = order.summary.orderType, isDraft = false, status = order.summary.status,
+        total = order.summary.totalAmount, deposit = order.summary.depositAmount, collateralMoney = order.securityDeposit,
+        lateFee = order.lateFee, damageFee = order.damageFee, cancelKept = order.summary.cancelKeptAmount,
+        hasPlan = com.anyrent.pos.domain.deposit.DepositPlanLogic.hasPlan(order.deposit),
+        collected = order.deposit?.summary?.collected,
+    )
 }
 
 /**
@@ -243,6 +309,14 @@ data class OrderShareModel(
                 entries += ShareMoney.Total(
                     ShareHighlight(ShareText.Res(R.string.share_total), money(summary.totalAmount, currency), ShareTone.GREEN),
                 )
+            }
+            // #1633: the fees at return, or what a cancelled order kept, under everything above
+            BillReturnRule.of(order)?.let { block ->
+                entries += ShareMoney.Heading(ShareText.Res(block.title))
+                block.rows.forEach { row(it.label, money(it.amount, currency)) }
+                val label = ShareText.Res(block.resultLabel)
+                entries += if (block.givesBack) ShareMoney.GiveBack(label, money(block.result, currency))
+                else ShareMoney.Collect(label, money(block.result, currency))
             }
 
             val strip = if (isRent) {

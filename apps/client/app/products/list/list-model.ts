@@ -196,8 +196,6 @@ export interface PricingOptionLike {
   type?: string | null;
   price?: Num;
   unit?: string | null;
-  /** #1621 an hour block's hours (HOURLY option, unit HOUR) */
-  blockSize?: Num;
   isActive?: boolean | null;
 }
 
@@ -267,8 +265,6 @@ export function productPrices(p: ProductLike): ProductPrices {
       if (price == null) continue;
       const type = String(o.type || '').toUpperCase();
       const unit = String(o.unit || '').toUpperCase();
-      // #1621: an hour block ("Khối 4 giờ") is the price of the whole block, never "x/giờ"
-      if (type === 'HOURLY' && o.blockSize != null && toNum(o.blockSize) > 0) continue;
       if (type === 'BLOCK') out.block ??= price;
       else if (type === 'FIXED') out.once ??= price;
       else if (type === 'HOURLY' || (type === 'DAILY' && unit === 'HOUR')) out.hour ??= price;

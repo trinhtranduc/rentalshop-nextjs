@@ -3103,3 +3103,9 @@
 "weeklySummary.footer.written" = "작성 %1$@ · 다음 요약 %2$@";
 "weeklySummary.noOrders" = "지난주에는 주문이 없어 요약할 내용이 없습니다.";
 "weeklySummary.error" = "요약을 만들지 못했습니다.";
+
+/* #1633 bill: fees at return */
+"bill.return.title" = "반납 시";
+"bill.return.collateral" = "보증금";
+"bill.return.excessDeposit" = "예약금 초과분";
+"bill.return.giveBack" = "고객에게 돌려주기";

@@ -41,16 +41,12 @@ describe('pricingOptionsDeleteWhere (#1200)', () => {
 describe('simplifiedProducts.update with an old-style payload (#1200)', () => {
   it('keepBlockOptions: deletes only non-BLOCK options, creates the payload ones', async () => {
     await simplifiedProducts.update(7, oldStylePayload(), { keepBlockOptions: true });
-    // #1621: a caller without allowHourly also keeps the hour blocks it cannot see
-    expect(deleteMany).toHaveBeenCalledWith({ where: { productId: 7, type: { notIn: ['BLOCK', 'HOURLY'] } } });
+    expect(deleteMany).toHaveBeenCalledWith({ where: { productId: 7, type: { not: 'BLOCK' } } });
     expect(createMany.mock.calls[0][0].data.map((o: any) => o.type)).toEqual(['FIXED', 'DAILY']);
   });
 
-  it('without the flag the behaviour is the one from before: all options replaced (#1621: except hour blocks)', async () => {
+  it('without the flag the behaviour is the one from before: all options replaced', async () => {
     await simplifiedProducts.update(7, oldStylePayload());
-    expect(deleteMany).toHaveBeenCalledWith({ where: { productId: 7, type: { notIn: ['HOURLY'] } } });
-    jest.clearAllMocks();
-    await simplifiedProducts.update(7, oldStylePayload(), { allowHourly: true });
     expect(deleteMany).toHaveBeenCalledWith({ where: { productId: 7 } });
   });
 
@@ -93,7 +89,7 @@ describe('the payload observed from an installed app on a BLOCK product (#1200)'
 
   it('no flag (new client / other caller): nothing is skipped', async () => {
     count.mockResolvedValue(1);
-    await simplifiedProducts.update(7, oldPut(), { allowHourly: true });
+    await simplifiedProducts.update(7, oldPut());
     expect(count).not.toHaveBeenCalled();
     expect(deleteMany).toHaveBeenCalledWith({ where: { productId: 7 } });
   });

@@ -659,8 +659,7 @@
         "HOURLY": "每小时 · {price}/小时",
         "FIXED": "每次 · {price}/次",
         "SALE": "售价 · {price}",
-        "BLOCK": "按天数档位 · {price}",
-        "HOUR_BLOCK": "{n} 小时档 · {price}"
+        "BLOCK": "按天数档位 · {price}"
       },
       "cart": {
         "label": "当前订单",
@@ -754,8 +753,7 @@
           "DAILY": "/天",
           "HOURLY": "/小时",
           "OTHER": "",
-          "BLOCK": "整个租期",
-          "HOUR_BLOCK": "/档"
+          "BLOCK": "整个租期"
         },
         "note": "仅对本订单生效，不会更改商品价格。",
         "done": "完成",
@@ -939,8 +937,7 @@
         "image": "{name} 图片",
         "block": "{n} 天档",
         "blockExtra": "{n} 天档 + 额外 {m} 天",
-        "blockDays": "{n} 天",
-        "hourBlock": "{n} 小时档"
+        "blockDays": "{n} 天"
       },
       "notes": {
         "title": "备注",
@@ -1118,13 +1115,24 @@
         "perHour": "/小时",
         "hours": "{n} 小时",
         "block": "{n} 天档",
-        "blockExtra": "{n} 天档 + 额外 {m} 天",
-        "hourBlock": "{n} 小时档"
+        "blockExtra": "{n} 天档 + 额外 {m} 天"
       },
       "bankTitle": "转账",
       "bankName": "银行",
       "bankAccount": "账号",
-      "bankHolder": "户名"
+      "bankHolder": "户名",
+      "return": {
+        "title": "归还时",
+        "cancelTitle": "已取消",
+        "collateral": "押金",
+        "excessDeposit": "多付订金",
+        "lateFee": "超期费",
+        "surcharge": "附加费",
+        "kept": "附加费",
+        "giveBack": "退还客户",
+        "collect": "补收",
+        "refund": "退款给客户"
+      }
     },
     "online": {
       "button": "在线预订",

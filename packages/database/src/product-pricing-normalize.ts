@@ -5,8 +5,6 @@
  *   (a client that sent `pricingSchemaVersion: 2`); BLOCK from any other caller is dropped as before;
  * - a BLOCK option stores its table; its `price` is forced to the day-1 price (old apps read it as FIXED);
  * - exactly one isDefault (the first one when none or several are marked).
- * - #1621 hour blocks: HOURLY rows with `blockSize` 1–24 hours when the caller passes `allowHourly` (a client with the
- *   `hour-blocks` capability); never the default, stored after the other options, shortest first.
  */
 /**
  * #1200: which existing options a "replace the option set" save deletes. A client that does not send
@@ -15,12 +13,11 @@
  */
 export function pricingOptionsDeleteWhere(
   productId: number,
-  opts: { keepBlockOptions?: boolean; payloadHasBlock?: boolean; keepHourlyOptions?: boolean } = {}
-): { productId: number; type?: { not: 'BLOCK' } | { notIn: Array<'BLOCK' | 'HOURLY'> } } {
-  const keepBlock = !!opts.keepBlockOptions && !opts.payloadHasBlock;
-  // #1621: a client without the `hour-blocks` capability (installed apps, an old web tab) cannot see hour blocks
-  if (opts.keepHourlyOptions) return { productId, type: { notIn: keepBlock ? ['BLOCK', 'HOURLY'] : ['HOURLY'] } };
-  return keepBlock ? { productId, type: { not: 'BLOCK' } } : { productId };
+  opts: { keepBlockOptions?: boolean; payloadHasBlock?: boolean } = {}
+): { productId: number; type?: { not: 'BLOCK' } } {
+  return opts.keepBlockOptions && !opts.payloadHasBlock
+    ? { productId, type: { not: 'BLOCK' } }
+    : { productId };
 }
 
 /**
@@ -50,21 +47,7 @@ export function withoutEchoedBlockShim<T extends { type: string; price: number; 
 export interface NormalizePricingOptions {
   /** Accept a BLOCK option (the caller sent `pricingSchemaVersion: 2`) */
   allowBlock?: boolean;
-  /** #1621: accept HOURLY hour-block rows (the caller has the `hour-blocks` capability) */
-  allowHourly?: boolean;
 }
-
-/** #1621 whole hours 1–24 of an HOURLY row, else null */
-function blockHours(o: any): number | null {
-  const n = Number(o?.blockSize);
-  return Number.isInteger(n) && n >= 1 && n <= 24 ? n : null;
-}
-
-const validPrice = (o: any): boolean => {
-  if (o?.price == null || o.price === '') return false;
-  const price = Number(o.price);
-  return Number.isFinite(price) && price >= 0;
-};
 
 const BLOCK_MODES = ['EXTRA_PER_DAY', 'HOLD_LAST'];
 
@@ -84,7 +67,6 @@ function blockTable(o: any): { tiers: number[]; startDay: number | null; mode: s
 
 export function normalizePricingOptions(options: any[] | undefined, opts: NormalizePricingOptions = {}): any[] {
   let blockSeen = false;
-  const hoursSeen = new Set<number>();
   const allowed = (options || []).filter((o) => {
     if (!o) return false;
     if (o.type === 'BLOCK') {
@@ -92,22 +74,14 @@ export function normalizePricingOptions(options: any[] | undefined, opts: Normal
       blockSeen = true;
       return true;
     }
-    if (o.type === 'HOURLY') {
-      // #1621: one row per number of hours; the API refuses a bad set first (hourBlocksIssue)
-      const hours = blockHours(o);
-      if (!opts.allowHourly || hours == null || hoursSeen.has(hours) || !validPrice(o)) return false;
-      hoursSeen.add(hours);
-      return true;
-    }
     if (o.type !== 'FIXED' && o.type !== 'DAILY') return false;
-    return validPrice(o);
+    if (o.price == null || o.price === '') return false;
+    const price = Number(o.price);
+    return Number.isFinite(price) && price >= 0;
   });
-  // #1621: hour blocks never stand alone (a block is never the default price) and come last, shortest first
-  const others = allowed.filter((o) => o.type !== 'HOURLY');
-  if (others.length === 0) return [];
-  const hourly = allowed.filter((o) => o.type === 'HOURLY').sort((a, b) => blockHours(a)! - blockHours(b)!);
+  if (allowed.length === 0) return [];
   let defaultAssigned = false;
-  const normalized = others.map((o, i) => {
+  const normalized = allowed.map((o, i) => {
     const isDefault = !!o.isDefault && !defaultAssigned;
     if (isDefault) defaultAssigned = true;
     const block = o.type === 'BLOCK' ? blockTable(o) : null;
@@ -130,17 +104,5 @@ export function normalizePricingOptions(options: any[] | undefined, opts: Normal
     };
   });
   if (!defaultAssigned) normalized[0].isDefault = true;
-  const after = Math.max(...normalized.map((o) => Number(o.sortOrder) || 0)) + 1;
-  hourly.forEach((o, i) => {
-    normalized.push({
-      type: 'HOURLY',
-      price: Number(o.price),
-      unit: 'HOUR',
-      blockSize: blockHours(o),
-      isDefault: false,
-      isActive: o.isActive ?? true,
-      sortOrder: after + i,
-    });
-  });
   return normalized;
 }

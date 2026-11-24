@@ -557,7 +557,6 @@
   "BLOCK_PRICE_MISMATCH": "按天数分档的商品价格与价目表不一致。请重新加载商品后再试。",
   "PRICING_TYPE_REQUIRES_UPDATE": "该商品使用按天数分档计价。请更新应用后再下租赁订单。",
   "BLOCK_TABLE_INVALID": "按天数分档的价目表无效。请使用 1 到 31 天、不小于 0 的价格，且每个商品只能有一个价目表。",
-  "HOUR_BLOCKS_INVALID": "按小时块价格无效。小时数需为 1 到 24 的整数且不重复，价格需为 0 或以上，最多 10 个块，并保留按次或按天价格。",
   "INSTALLMENT_EXCEEDS_TOTAL": "各阶段订金之和超过了订单总额。",
   "INSTALLMENT_OVERPAID": "该金额超过此阶段允许的数额，或新的总额低于已收金额。",
   "INSTALLMENT_ALREADY_PAID": "该订金阶段已收款。",

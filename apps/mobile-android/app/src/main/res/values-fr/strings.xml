@@ -2537,4 +2537,8 @@
         <item quantity="one">%1$d fois</item>
         <item quantity="other">%1$d fois</item>
     </plurals>
+    <!-- #1633 bill: fees at return -->
+    <string name="bill_return_title">Au retour</string>
+    <string name="bill_return_excess_deposit">Acompte au-delà de la location</string>
+    <string name="bill_return_give_back">À rendre au client</string>
 </resources>

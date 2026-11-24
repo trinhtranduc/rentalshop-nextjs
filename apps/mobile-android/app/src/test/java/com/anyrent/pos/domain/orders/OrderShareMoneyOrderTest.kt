@@ -62,6 +62,8 @@ class OrderShareMoneyOrderTest {
                 entry.stages.map { "${text(it.title, vi)}|${it.amount}|${text(it.detail, vi)} · ${text(it.status, vi)}" }
             is ShareMoney.Collect -> listOf("COLLECT ${text(entry.label, vi)}|${entry.value}")
             is ShareMoney.Cash -> listOf("CASH ${text(entry.label, vi)}|${entry.value}")
+            is ShareMoney.Heading -> listOf("HEADING ${text(entry.title, vi)}")
+            is ShareMoney.GiveBack -> listOf("GIVEBACK ${text(entry.label, vi)}|${entry.value}")
         }
     }
 

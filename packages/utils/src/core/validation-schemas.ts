@@ -170,11 +170,10 @@ const productBaseSchema = z.object({
   // Optional pricing configuration (default FIXED if null or undefined)
   pricingType: z.enum(['FIXED', 'HOURLY', 'DAILY', 'BLOCK']).nullable().default('FIXED'), // Default to FIXED
   durationConfig: z.string().nullable().optional(), // JSON string: { minDuration, maxDuration, defaultDuration } - required for HOURLY/DAILY
-  // Multiple pricing options: FIXED, DAILY, BLOCK (#1189), HOURLY hour blocks (#1621: `blockSize` = hours;
-  // the set is checked by `hourBlocksIssue` and only stored for a client with the `hour-blocks` capability)
+  // Multiple pricing options (Phase 1: FIXED + DAILY only; BLOCK/HOURLY blocked here)
   pricingOptions: z.array(z.object({
     id: z.coerce.number().int().positive().optional(),
-    type: z.enum(['FIXED', 'DAILY', 'BLOCK', 'HOURLY']),
+    type: z.enum(['FIXED', 'DAILY', 'BLOCK']),
     price: z.number().nonnegative('Option price must be non-negative'), // #951: 0đ is a price; BLOCK: day-1 price
     unit: z.enum(['DAY', 'HOUR']).nullable().optional(),
     blockSize: z.number().int().positive().nullable().optional(),
