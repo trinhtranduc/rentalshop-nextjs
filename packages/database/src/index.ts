@@ -327,6 +327,7 @@ export type { DevicePlatform, UpsertDeviceTokenInput } from './device-tokens';
 export {
   notifications,
   findActiveUserIdsForOutlet,
+  findOrderNotificationRecipients,
   createNotificationsForUsers,
   listNotificationsForUser,
   getUnreadNotificationCount,
