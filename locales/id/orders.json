@@ -1124,7 +1124,19 @@
       "bankTitle": "Transfer bank",
       "bankName": "Bank",
       "bankAccount": "No. rekening",
-      "bankHolder": "Atas nama"
+      "bankHolder": "Atas nama",
+      "return": {
+        "title": "Saat pengembalian",
+        "cancelTitle": "Dibatalkan",
+        "collateral": "Uang jaminan",
+        "excessDeposit": "Kelebihan uang muka",
+        "lateFee": "Biaya keterlambatan",
+        "surcharge": "Biaya tambahan",
+        "kept": "Biaya tambahan",
+        "giveBack": "Kembalikan ke pelanggan",
+        "collect": "Tagih tambahan",
+        "refund": "Dikembalikan ke pelanggan"
+      }
     },
     "online": {
       "button": "Pesanan online",

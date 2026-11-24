@@ -3103,3 +3103,9 @@
 "weeklySummary.footer.written" = "Erstellt %1$@ · nächste %2$@";
 "weeklySummary.noOrders" = "Letzte Woche gab es keine Aufträge, daher gibt es nichts zusammenzufassen.";
 "weeklySummary.error" = "Die Übersicht konnte nicht erstellt werden.";
+
+/* #1633 bill: fees at return */
+"bill.return.title" = "Bei Rückgabe";
+"bill.return.collateral" = "Kaution";
+"bill.return.excessDeposit" = "Anzahlung über der Miete";
+"bill.return.giveBack" = "An Kunden zurück";

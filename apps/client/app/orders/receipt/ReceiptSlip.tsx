@@ -83,6 +83,26 @@ function StagesBlock({ stages, ti }: { stages: NonNullable<ReceiptModel['stages'
   );
 }
 
+/** #1633 Khi nhận trả / Đã huỷ: the fees (or what a cancel kept), then Trả khách / Thu thêm / Hoàn cho khách in the total style */
+function ReturnBlock({ block, t }: { block: NonNullable<ReceiptModel['returnBlock']>; t: Tr }) {
+  return (
+    <div data-receipt-return={block.kind}>
+      <hr className="rc-rule" />
+      <div className="rc-strong">{t(block.kind === 'cancel' ? 'return.cancelTitle' : 'return.title')}</div>
+      {block.rows.map((row) => (
+        <div key={row.key} className="rc-row">
+          <span>{t(`return.${row.key}`)}</span>
+          <span>{row.value}</span>
+        </div>
+      ))}
+      <div className="rc-row rc-total" data-return-result={block.result.key}>
+        <span>{t(`return.${block.result.key}`)}</span>
+        <span>{block.result.value}</span>
+      </div>
+    </div>
+  );
+}
+
 export function ReceiptSlip({
   model,
   t,
@@ -177,6 +197,7 @@ export function ReceiptSlip({
       </div>
 
       {model.stages && ti && <StagesBlock stages={model.stages} ti={ti} />}
+      {model.returnBlock && <ReturnBlock block={model.returnBlock} t={t} />}
 
       {model.isRent && (
         <>

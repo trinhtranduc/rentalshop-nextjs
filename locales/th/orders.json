@@ -1124,7 +1124,19 @@
       "bankTitle": "โอนเงิน",
       "bankName": "ธนาคาร",
       "bankAccount": "เลขบัญชี",
-      "bankHolder": "ชื่อบัญชี"
+      "bankHolder": "ชื่อบัญชี",
+      "return": {
+        "title": "เมื่อรับคืน",
+        "cancelTitle": "ยกเลิกแล้ว",
+        "collateral": "เงินประกัน",
+        "excessDeposit": "มัดจำส่วนเกิน",
+        "lateFee": "ค่าธรรมเนียมล่าช้า",
+        "surcharge": "ค่าธรรมเนียมเพิ่มเติม",
+        "kept": "ค่าธรรมเนียมเพิ่มเติม",
+        "giveBack": "คืนให้ลูกค้า",
+        "collect": "เก็บเพิ่ม",
+        "refund": "คืนให้ลูกค้า"
+      }
     },
     "online": {
       "button": "การจองออนไลน์",

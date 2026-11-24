@@ -3103,3 +3103,9 @@
 "weeklySummary.footer.written" = "Ditulis %1$@ · berikutnya %2$@";
 "weeklySummary.noOrders" = "Minggu lalu tidak ada pesanan, jadi belum ada yang bisa diringkas.";
 "weeklySummary.error" = "Ringkasan belum bisa dibuat.";
+
+/* #1633 bill: fees at return */
+"bill.return.title" = "Saat pengembalian";
+"bill.return.collateral" = "Uang jaminan";
+"bill.return.excessDeposit" = "Kelebihan uang muka";
+"bill.return.giveBack" = "Kembalikan ke pelanggan";

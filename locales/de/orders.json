@@ -1124,7 +1124,19 @@
       "bankTitle": "Überweisung",
       "bankName": "Bank",
       "bankAccount": "Kontonr.",
-      "bankHolder": "Kontoinhaber"
+      "bankHolder": "Kontoinhaber",
+      "return": {
+        "title": "Bei Rückgabe",
+        "cancelTitle": "Storniert",
+        "collateral": "Kaution",
+        "excessDeposit": "Anzahlung über der Miete",
+        "lateFee": "Verspätungsgebühr",
+        "surcharge": "Zuschlag",
+        "kept": "Zuschlag",
+        "giveBack": "An Kunden zurück",
+        "collect": "Nachkassieren",
+        "refund": "An Kunden erstatten"
+      }
     },
     "online": {
       "button": "Online-Buchungen",

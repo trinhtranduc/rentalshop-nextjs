@@ -16,6 +16,7 @@ import {
   formatVnDay,
   itemCalcText,
   resolvePrintNote,
+  billReturnBlock,
   type ReceiptOrderInput,
 } from '../apps/client/app/orders/receipt/receipt-model';
 
@@ -146,11 +147,11 @@ describe('buildReceipt', () => {
     ]);
   });
 
-  it('no deposit → value null ("Không cọc"); damage fee printed when set; "Other" collateral without details hidden', () => {
+  it('no deposit → value null ("Không cọc"); the surcharge is in the return block (#1633); "Other" collateral without details hidden', () => {
     const x = buildReceipt({ ...rent, depositAmount: 0, securityDeposit: 0, collateralType: 'Other', collateralDetails: '', damageFee: 70000 }, {}, VI);
+    expect(x.returnBlock).toEqual({ kind: 'return', rows: [{ key: 'surcharge', value: '70.000đ' }], result: { key: 'collect', value: '70.000đ' } });
     expect(x.rows.map((row) => [row.key, row.value])).toEqual([
       ['deposit', null],
-      ['damageFee', '70.000đ'],
       ['rentDate', '17/10/2026'],
       ['returnDate', '11/11/2026'],
       ['createdAt', '06/10/2026 23:02'],
@@ -253,5 +254,61 @@ describe('staged deposit block (#1252)', () => {
     expect(buildReceipt({ ...planned, hasDepositPlan: false }, {}, VI).stages).toBeNull();
     expect(buildReceipt({ ...planned, installments: [] }, {}, VI).stages).toBeNull();
     expect(buildReceipt({ ...planned, orderType: 'SALE' }, {}, VI).stages).toBeNull();
+  });
+});
+
+describe('Khi nhận trả / Đã huỷ block (#1633)', () => {
+  // cases A–H of .agent/changes/1633-bill-return-fees/spec.md: total 500.000, deposit 200.000 unless said
+  const base: ReceiptOrderInput = { orderType: 'RENT', status: 'RETURNED', totalAmount: 500000, depositAmount: 200000 };
+  const lines = (o: Partial<ReceiptOrderInput>) => {
+    const b = billReturnBlock({ ...base, ...o });
+    return b && [b.kind, ...b.rows.map((r) => `${r.key} ${r.value}`), `${b.result.key} ${b.result.value}`];
+  };
+
+  it('A: no fee → no block', () => {
+    expect(lines({})).toBeNull();
+  });
+  it('B: fees below the collateral → Trả khách 850.000', () => {
+    expect(lines({ securityDeposit: 1000000, lateFee: 100000, damageFee: 50000 })).toEqual([
+      'return', 'collateral 1.000.000đ', 'lateFee 100.000đ', 'surcharge 50.000đ', 'giveBack 850.000đ',
+    ]);
+  });
+  it('C: no collateral → Thu thêm 150.000', () => {
+    expect(lines({ damageFee: 150000 })).toEqual(['return', 'surcharge 150.000đ', 'collect 150.000đ']);
+  });
+  it('D: fees above the collateral → Thu thêm 200.000', () => {
+    expect(lines({ securityDeposit: 100000, lateFee: 100000, damageFee: 200000 })).toEqual([
+      'return', 'collateral 100.000đ', 'lateFee 100.000đ', 'surcharge 200.000đ', 'collect 200.000đ',
+    ]);
+  });
+  it('E: deposit above the rent → Cọc dư 200.000, Trả khách 150.000', () => {
+    expect(lines({ totalAmount: 300000, depositAmount: 500000, damageFee: 50000 })).toEqual([
+      'return', 'excessDeposit 200.000đ', 'surcharge 50.000đ', 'giveBack 150.000đ',
+    ]);
+  });
+  it('F: fees equal the collateral → Trả khách 0đ', () => {
+    expect(lines({ securityDeposit: 300000, damageFee: 300000 })).toEqual(['return', 'collateral 300.000đ', 'surcharge 300.000đ', 'giveBack 0đ']);
+  });
+  it('G: collateral without a fee → no block', () => {
+    expect(lines({ securityDeposit: 1000000 })).toBeNull();
+  });
+  it('H: cancelled, surcharge kept → Hoàn cho khách = collected − kept (#1491)', () => {
+    expect(lines({ status: 'CANCELLED', depositAmount: 300000, cancelKeptAmount: 100000 })).toEqual([
+      'cancel', 'kept 100.000đ', 'refund 200.000đ',
+    ]);
+    const plan = {
+      hasDepositPlan: true,
+      installments: [{ key: 'i1', label: 'Giữ chỗ', percent: 50, amount: 250000, status: 'PAID' }],
+      installmentSummary: { collected: 250000, remaining: 0 },
+    } as Partial<ReceiptOrderInput>;
+    expect(lines({ status: 'CANCELLED', depositAmount: 0, cancelKeptAmount: 100000, ...plan })).toEqual(['cancel', 'kept 100.000đ', 'refund 150.000đ']);
+    expect(lines({ status: 'CANCELLED', depositAmount: 300000, cancelKeptAmount: 0 })).toBeNull();
+    expect(lines({ status: 'CANCELLED', damageFee: 50000 })).toBeNull();
+  });
+  it('a sale never has the block; buildReceipt carries it', () => {
+    expect(lines({ orderType: 'SALE', damageFee: 50000 })).toBeNull();
+    expect(buildReceipt({ ...rent, securityDeposit: 1000000, lateFee: 100000, damageFee: 50000, status: 'RETURNED' }, {}, VI).returnBlock?.result)
+      .toEqual({ key: 'giveBack', value: '850.000đ' });
+    expect(buildReceipt(rent, {}, VI).returnBlock).toBeNull();
   });
 });

@@ -1124,7 +1124,19 @@
       "bankTitle": "계좌이체",
       "bankName": "은행",
       "bankAccount": "계좌",
-      "bankHolder": "예금주"
+      "bankHolder": "예금주",
+      "return": {
+        "title": "반납 시",
+        "cancelTitle": "취소됨",
+        "collateral": "보증금",
+        "excessDeposit": "예약금 초과분",
+        "lateFee": "연체료",
+        "surcharge": "추가 요금",
+        "kept": "추가 요금",
+        "giveBack": "고객에게 돌려주기",
+        "collect": "추가 수금",
+        "refund": "고객에게 환불"
+      }
     },
     "online": {
       "button": "온라인 예약",

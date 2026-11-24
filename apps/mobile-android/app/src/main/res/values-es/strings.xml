@@ -2537,4 +2537,8 @@
         <item quantity="one">%1$d vez</item>
         <item quantity="other">%1$d veces</item>
     </plurals>
+    <!-- #1633 bill: fees at return -->
+    <string name="bill_return_title">Al devolver</string>
+    <string name="bill_return_excess_deposit">Anticipo sobre el alquiler</string>
+    <string name="bill_return_give_back">Devolver al cliente</string>
 </resources>

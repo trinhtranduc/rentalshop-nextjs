@@ -2536,4 +2536,8 @@
     <plurals name="weekly_summary_times">
         <item quantity="other">%1$d회</item>
     </plurals>
+    <!-- #1633 bill: fees at return -->
+    <string name="bill_return_title">반납 시</string>
+    <string name="bill_return_excess_deposit">예약금 초과분</string>
+    <string name="bill_return_give_back">고객에게 돌려주기</string>
 </resources>

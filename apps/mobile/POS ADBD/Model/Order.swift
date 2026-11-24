@@ -1527,6 +1527,14 @@ extension Order {
             data.append(DepositPlanReceipt.printData(block))
         }
 
+        // #1633: the fees at return, or what a cancelled order kept (nothing for every other order)
+        if let block = BillReturnRule.block(orderType: orderType, isDraft: false, status: status, total: totalAmount,
+                                            deposit: depositAmount, collateralMoney: securityDeposit, lateFee: lateFee,
+                                            damageFee: damageFee, cancelKept: cancelKeptAmount, hasPlan: hasDepositPlan,
+                                            collected: stageSummary?.collected) {
+            data.append(BillReturnRule.printData(block))
+        }
+
         // Footer for rent orders
         if orderType == .rent {
             // #1308: the outlet's note (server); no note = no "Note" block

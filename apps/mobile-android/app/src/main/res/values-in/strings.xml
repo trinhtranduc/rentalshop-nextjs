@@ -2536,4 +2536,8 @@
     <plurals name="weekly_summary_times">
         <item quantity="other">%1$d kali</item>
     </plurals>
+    <!-- #1633 bill: fees at return -->
+    <string name="bill_return_title">Saat pengembalian</string>
+    <string name="bill_return_excess_deposit">Kelebihan uang muka</string>
+    <string name="bill_return_give_back">Kembalikan ke pelanggan</string>
 </resources>

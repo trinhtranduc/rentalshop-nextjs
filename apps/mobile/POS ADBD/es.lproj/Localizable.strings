@@ -3106,3 +3106,9 @@ Abra el Calendario y lo verá.";
 "weeklySummary.footer.written" = "Escrito %1$@ · el próximo %2$@";
 "weeklySummary.noOrders" = "La semana pasada no hubo pedidos, así que no hay nada que resumir.";
 "weeklySummary.error" = "No se pudo crear el resumen.";
+
+/* #1633 bill: fees at return */
+"bill.return.title" = "Al devolver";
+"bill.return.collateral" = "Depósito de garantía";
+"bill.return.excessDeposit" = "Anticipo sobre el alquiler";
+"bill.return.giveBack" = "Devolver al cliente";

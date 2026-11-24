@@ -1124,7 +1124,19 @@
       "bankTitle": "轉帳",
       "bankName": "銀行",
       "bankAccount": "帳號",
-      "bankHolder": "戶名"
+      "bankHolder": "戶名",
+      "return": {
+        "title": "歸還時",
+        "cancelTitle": "已取消",
+        "collateral": "押金",
+        "excessDeposit": "多付訂金",
+        "lateFee": "逾期費",
+        "surcharge": "加收",
+        "kept": "加收",
+        "giveBack": "退還客人",
+        "collect": "補收",
+        "refund": "退還客人"
+      }
     },
     "online": {
       "button": "線上預訂",

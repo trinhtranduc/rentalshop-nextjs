@@ -3106,3 +3106,9 @@
 "weeklySummary.footer.written" = "撰写于 %1$@ · 下一份 %2$@";
 "weeklySummary.noOrders" = "上周没有订单，因此没有可总结的内容。";
 "weeklySummary.error" = "未能生成摘要。";
+
+/* #1633 bill: fees at return */
+"bill.return.title" = "归还时";
+"bill.return.collateral" = "押金";
+"bill.return.excessDeposit" = "多付订金";
+"bill.return.giveBack" = "退还客户";

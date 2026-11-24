@@ -2536,4 +2536,8 @@
     <plurals name="weekly_summary_times">
         <item quantity="other">%1$d 次</item>
     </plurals>
+    <!-- #1633 bill: fees at return -->
+    <string name="bill_return_title">歸還時</string>
+    <string name="bill_return_excess_deposit">多付訂金</string>
+    <string name="bill_return_give_back">退還客人</string>
 </resources>

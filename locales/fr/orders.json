@@ -1124,7 +1124,19 @@
       "bankTitle": "Virement bancaire",
       "bankName": "Banque",
       "bankAccount": "N° de compte",
-      "bankHolder": "Titulaire du compte"
+      "bankHolder": "Titulaire du compte",
+      "return": {
+        "title": "Au retour",
+        "cancelTitle": "Annulée",
+        "collateral": "Dépôt de garantie",
+        "excessDeposit": "Acompte au-delà de la location",
+        "lateFee": "Frais de retard",
+        "surcharge": "Supplément",
+        "kept": "Supplément",
+        "giveBack": "À rendre au client",
+        "collect": "Encaisser en plus",
+        "refund": "À rembourser au client"
+      }
     },
     "online": {
       "button": "Réservation en ligne",
