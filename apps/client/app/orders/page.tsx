@@ -15,6 +15,9 @@ import { useAuth, useCanExportData } from '@rentalshop/hooks';
 import { bookingRequestsApi, getLocalDateKey, ordersApi } from '@rentalshop/utils';
 import { canSeeBookings } from './online/online-model';
 import { useShopToday } from '../hooks/useShopToday';
+import { CalendarContent } from '../calendar/CalendarView';
+import { ViewSwitch } from './ViewSwitch';
+import { exportScope, filterExportMatchesList, offersSelectAllFiltered, parseOrdersView, type OrdersView } from './orders-view-model';
 import type { OrderFilters } from '@rentalshop/types';
 import { DateRangeField } from '../components/date-range/RangeCalendar';
 import { ICONS, ShellIcon } from '../components/shell/Icon';
@@ -126,7 +129,7 @@ function useStatusCounts(base: OrderFilters | null, nonce: number): Record<strin
 const rangeLabel = (r: { startDate: string; endDate: string }) =>
   `${r.startDate.slice(8)}/${r.startDate.slice(5, 7)} – ${r.endDate.slice(8)}/${r.endDate.slice(5, 7)}`;
 
-export default function OrdersPage() {
+function OrdersListView({ switcher }: { switcher: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -246,31 +249,46 @@ export default function OrdersPage() {
 
   // Orders ticked for "Xuất Excel" (#526); kept across pages and filters until cleared
   const [selected, setSelected] = useState<Set<number>>(() => new Set());
+  // #1641 "Chọn cả N đơn theo bộ lọc": the export follows the filter (every page), not the ticked rows
+  const [allFiltered, setAllFiltered] = useState(false);
+  const clearSelection = () => {
+    setSelected(new Set());
+    setAllFiltered(false);
+  };
   const selection = useMemo(
     () => ({
       ids: selected,
-      toggle: (id: number) =>
+      toggle: (id: number) => {
+        setAllFiltered(false);
         setSelected((cur) => {
           const next = new Set(cur);
           if (next.has(id)) next.delete(id);
           else next.add(id);
           return next;
-        }),
-      setMany: (ids: number[], on: boolean) =>
+        });
+      },
+      setMany: (ids: number[], on: boolean) => {
+        setAllFiltered(false);
         setSelected((cur) => {
           const next = new Set(cur);
           ids.forEach((id) => (on ? next.add(id) : next.delete(id)));
           return next;
-        }),
+        });
+      },
     }),
     [selected],
   );
+
+  const scope = exportScope(selected.size, allFiltered, list.total);
+  // "Cả bộ lọc" only means something for the filter it was chosen under
+  const filterKey = [tab, status, type, dateKind, range?.startDate, range?.endDate, outletIds?.join(','), q].join('|');
+  useEffect(() => setAllFiltered(false), [filterKey]);
 
   const [exporting, setExporting] = useState(false);
   const exportExcel = async () => {
     setExporting(true);
     try {
-      const chosen = Array.from(selected);
+      const chosen = allFiltered ? [] : Array.from(selected);
       const blob = await ordersApi.exportOrders(
         chosen.length
           ? { format: 'excel', orderIds: chosen }
@@ -320,7 +338,10 @@ export default function OrdersPage() {
   return (
     <div className="mx-auto box-border flex w-full max-w-[1280px] flex-col gap-4 px-4 pb-12 pt-6 text-ar-ink sm:px-8">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="m-0 text-2xl font-bold text-ar-ink">{t('title')}</h1>
+        <div className="flex flex-wrap items-center gap-3">
+          <h1 className="m-0 text-2xl font-bold text-ar-ink">{t('title')}</h1>
+          {switcher}
+        </div>
         <div className="flex flex-wrap gap-2">
           {picker && (
             <BranchPicker
@@ -337,19 +358,6 @@ export default function OrdersPage() {
                 <span className="inline-flex h-5 min-w-[22px] items-center justify-center rounded-full bg-ar-danger px-1.5 text-xs font-bold text-white">{pendingBookings}</span>
               )}
             </Link>
-          )}
-          {canExport && tab === 'all' && (
-            <>
-              {selected.size > 0 && (
-                <button type="button" onClick={() => setSelected(new Set())} className={outlineBtn}>
-                  {t('select.clear')}
-                </button>
-              )}
-              <button type="button" onClick={exportExcel} disabled={exporting} className={outlineBtn}>
-                <ShellIcon d={ICONS.download} size={18} />
-                {exporting ? t('exporting') : selected.size > 0 ? t('select.export', { count: selected.size }) : t('export')}
-              </button>
-            </>
           )}
           <Link href="/orders/create" className={primaryBtn}>
             <ShellIcon d={ICONS.plus} size={18} />
@@ -386,6 +394,31 @@ export default function OrdersPage() {
               className="flex h-7 w-7 items-center justify-center rounded-full hover:bg-ar-surface"
             >
               <ShellIcon d={ICONS.close} size={14} />
+            </button>
+          </span>
+        </div>
+      )}
+
+      {canExport && tab === 'all' && scope.kind !== 'none' && (
+        <div
+          data-orders-export-bar
+          className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-ar-primary bg-ar-primary-soft px-4 py-2.5"
+        >
+          <span className="flex flex-wrap items-center gap-x-2 text-sm text-ar-primary-ink">
+            <b>{scope.kind === 'filtered' ? t('select.allChosen', { count: scope.count }) : t('select.count', { count: scope.count })}</b>
+            {offersSelectAllFiltered(selected.size, allFiltered, list.total, filterExportMatchesList({ rangeEnd: range?.endDate ?? null, todayKey, hasSearch: !!q, filteredTotal: list.total })) && (
+              <button type="button" onClick={() => setAllFiltered(true)} className="font-semibold underline">
+                {t('select.all', { count: list.total })}
+              </button>
+            )}
+          </span>
+          <span className="flex flex-wrap gap-2">
+            <button type="button" onClick={clearSelection} className={outlineBtn}>
+              {t('select.clear')}
+            </button>
+            <button type="button" onClick={exportExcel} disabled={exporting} className={primaryBtn}>
+              <ShellIcon d={ICONS.download} size={18} />
+              {exporting ? t('exporting') : t('select.export', { count: scope.count })}
             </button>
           </span>
         </div>
@@ -494,6 +527,26 @@ export default function OrdersPage() {
           />
         )}
       </section>
+    </div>
+  );
+}
+
+/** Bảng | Lịch: the same page, two views. The calendar is the "Lịch giao trả" view without its own page chrome. */
+export default function OrdersPage() {
+  const searchParams = useSearchParams();
+  const t = useTranslations('orders.web');
+  const view: OrdersView = parseOrdersView(searchParams.get('view'));
+  const switcher = <ViewSwitch view={view} />;
+  if (view === 'table') return <OrdersListView switcher={switcher} />;
+  return (
+    <div className="mx-auto box-border flex w-full max-w-[1280px] flex-col gap-4 px-4 pb-12 pt-6 text-ar-ink sm:px-8">
+      <div className="flex flex-wrap items-center gap-3">
+        <h1 className="m-0 text-2xl font-bold text-ar-ink">{t('title')}</h1>
+        {switcher}
+      </div>
+      <React.Suspense fallback={null}>
+        <CalendarContent embedded />
+      </React.Suspense>
     </div>
   );
 }

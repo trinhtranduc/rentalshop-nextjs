@@ -575,7 +575,10 @@
       "row": "Select order #{number}",
       "page": "Select this page",
       "export": "Export Excel ({count} orders)",
-      "clear": "Clear selection"
+      "clear": "Clear selection",
+      "count": "{count} orders selected",
+      "all": "Select all {count} orders matching the filters",
+      "allChosen": "All {count} orders matching the filters selected"
     },
     "create": "New order",
     "editor": {
@@ -1275,6 +1278,11 @@
       "lateDays": "{days} days late",
       "stageShort": "stage {n}",
       "walkIn": "Walk-in customer"
+    },
+    "view": {
+      "label": "View",
+      "table": "Table",
+      "calendar": "Calendar"
     }
   }
 }

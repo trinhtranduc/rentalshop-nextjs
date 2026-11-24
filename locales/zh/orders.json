@@ -575,7 +575,10 @@
       "row": "选择订单 #{number}",
       "page": "选择本页",
       "export": "导出 Excel（{count} 个订单）",
-      "clear": "取消选择"
+      "clear": "取消选择",
+      "count": "已选 {count} 个订单",
+      "all": "选择符合筛选的全部 {count} 个订单",
+      "allChosen": "已选符合筛选的全部 {count} 个订单"
     },
     "create": "新建订单",
     "editor": {
@@ -1275,6 +1278,11 @@
       "lateDays": "逾期 {days} 天",
       "stageShort": "第 {n} 阶段",
       "walkIn": "散客"
+    },
+    "view": {
+      "label": "视图",
+      "table": "表格",
+      "calendar": "日历"
     }
   }
 }
