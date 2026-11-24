@@ -194,10 +194,21 @@ export function formatIssues(content: string): string[] {
 }
 
 /**
+ * Checks that belong to one site, not to every article. `disclosure`: the body must carry an affiliate disclosure line.
+ * `riskPath`: the body must link to that page, and links to it do not count as internal links; null means no such page.
+ */
+export type ArticleRules = { disclosure: boolean; riskPath: string | null };
+/** The rules the module started with (an affiliate site with a risk page). A site without them passes its own. */
+export const DEFAULT_ARTICLE_RULES: ArticleRules = { disclosure: true, riskPath: "/risk" };
+
+const escapeRegExp = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+/**
  * The reviewer's fixed checks against the plan's article standard. Rules only, no AI: a pass here means the draft is
  * ready for a person to read, not that its facts are right.
  */
-export function lintArticle(post: { title: string; seoDescription: string | null; content: string; thumbnail: string | null; seoKeywords?: string[] }): ArticleCheck[] {
+export function lintArticle(post: { title: string; seoDescription: string | null; content: string; thumbnail: string | null; seoKeywords?: string[] }, rules: ArticleRules = DEFAULT_ARTICLE_RULES): ArticleCheck[] {
+  const riskPath = rules.riskPath ? rules.riskPath.replace(/\/+$/, "") || "/" : null;
   // The review box the writer puts on top is for the owner, not part of the article.
   const content = post.content.replace(/^\s*<blockquote>(?:(?!<\/blockquote>)[\s\S])*AI DRAFT[\s\S]*?<\/blockquote>/, "");
   const body = text(content);
@@ -210,11 +221,11 @@ export function lintArticle(post: { title: string; seoDescription: string | null
   const has = (s: string) => words2.length > 0 && words2.every((w) => s.toLowerCase().includes(w));
   const h2 = [...content.matchAll(/<h2\b[^>]*>([\s\S]*?)<\/h2>/gi)].map((m) => text(m[1]));
   const intro = body.split(" ").slice(0, 120).join(" ");
-  const links = new Set([...content.matchAll(/<a\b[^>]*?href="(\/(?!\/)[^"#?]*)/gi)].map((m) => m[1].replace(/\/+$/, "") || "/").filter((p) => p !== "/risk"));
+  const links = new Set([...content.matchAll(/<a\b[^>]*?href="(\/(?!\/)[^"#?]*)/gi)].map((m) => m[1].replace(/\/+$/, "") || "/").filter((p) => p !== riskPath));
   const imgs = [...content.matchAll(/<img\b[^>]*>/gi)].map((m) => m[0]);
   const noAlt = imgs.filter((t) => !/\balt="[^"]{3,}"/i.test(t)).length;
   const kw = (id: string, label: string, where: string): ArticleCheck => ({ id, label, ok: has(where), detail: keyword ? `từ khoá "${keyword}"` : "bài chưa có từ khoá mục tiêu" });
-  return [
+  const checks: (ArticleCheck | null)[] = [
     kw("kwTitle", "Từ khoá mục tiêu có trong tiêu đề", post.title),
     kw("kwIntro", "Từ khoá mục tiêu có trong đoạn mở đầu", intro),
     kw("kwMeta", "Từ khoá mục tiêu có trong mô tả", meta),
@@ -227,11 +238,12 @@ export function lintArticle(post: { title: string; seoDescription: string | null
     { id: "cover", label: "Có ảnh bìa", ok: Boolean(post.thumbnail?.trim()), detail: post.thumbnail?.trim() ? "có" : "chưa có" },
     { id: "takeaways", label: "Có khối tóm tắt đầu bài", ok: /key takeaways|in short|tóm tắt/i.test(body.slice(0, 1500)), detail: "tìm trong 1.500 ký tự đầu" },
     { id: "faq", label: "Có FAQ cuối bài", ok: /<h[23][^>]*>[^<]*(faq|frequently asked|câu hỏi thường gặp)/i.test(content), detail: "tìm tiêu đề FAQ" },
-    { id: "disclosure", label: "Có dòng công bố affiliate", ok: /affiliate|we (may )?earn|commission|hoa hồng/i.test(body), detail: "tìm theo từ khoá, cần người đọc lại" },
-    { id: "risk", label: "Có link tới trang rủi ro", ok: /href="[^"]*\/risk["#/?]/i.test(content) || /href="[^"]*\/risk"/i.test(content), detail: "/risk" },
+    rules.disclosure ? { id: "disclosure", label: "Có dòng công bố affiliate", ok: /affiliate|we (may )?earn|commission|hoa hồng/i.test(body), detail: "tìm theo từ khoá, cần người đọc lại" } : null,
+    riskPath ? { id: "risk", label: "Có link tới trang rủi ro", ok: new RegExp(`href="[^"]*${escapeRegExp(riskPath)}["#/?]`, "i").test(content), detail: riskPath } : null,
     { id: "length", label: "Ít nhất 600 từ", ok: words >= 600, detail: `${words.toLocaleString("vi-VN")} từ` },
     { id: "format", label: "Định dạng bài đúng chuẩn", ok: format.length === 0, detail: format.length ? format.join("; ") : "đoạn mở đầu, mục, đoạn văn đều đúng" },
   ];
+  return checks.filter((c): c is ArticleCheck => c !== null);
 }
 
 export type WatchState = { total: number; top3: number; top10: number; top20: number; beyond: number; none: number; noTarget: number; wrongPage: number; noVolume: number };
