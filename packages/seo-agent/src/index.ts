@@ -8,3 +8,4 @@ export * from "./core/pageAudit";
 export * from "./core/competitors";
 export * from "./core/rankings";
 export * from "./core/rankReport";
+export * from "./core/socialPosts";
