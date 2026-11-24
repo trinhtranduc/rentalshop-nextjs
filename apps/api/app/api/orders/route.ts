@@ -59,7 +59,6 @@ import { buildOrderAuditSnapshot, safeAudit } from '../../../lib/change-timeline
 import { attachOrderBalances, loadCompletedPaymentSums } from '../../../lib/order-balance-batch';
 import { ORDER_SCHEDULE_CONFLICT, type ScheduleConflict } from '../../../lib/schedule-conflict';
 import { hasCapability } from '../../../lib/client-capabilities';
-import { stampHourBlockLine, type HourBlockSnapshot } from '../../../lib/order-hour-blocks';
 import { isOldListingClient } from '../../../lib/product-listing';
 import {
   installmentsView,
@@ -926,17 +925,8 @@ export const POST = withPermissions(['orders.create'])(async (request, { user, u
           let lineUnitPrice = finalUnitPrice;
           let lineTotalPrice = finalTotalPrice;
           let lineType = optionType;
-          let pricingSnapshot: BlockSnapshot | HourBlockSnapshot | undefined;
-          // #1621: a line on an hour block ("Khối 4 giờ") is priced flat like FIXED; the server stamps the block
-          const hourBlock = parsed.data.orderType === ORDER_TYPE.RENT
-            ? stampHourBlockLine({ pricingOptionId: requestedExists ? requestedOptionId : null, pricingType: item.pricingType }, product)
-            : null;
-          if (hourBlock) {
-            lineType = hourBlock.pricingType as PricingType;
-            pricingOptionId = hourBlock.pricingOptionId;
-            pricingSnapshot = hourBlock.pricingSnapshot;
-            rentalDays = hourBlock.rentalDays;
-          } else if (parsed.data.orderType === ORDER_TYPE.RENT) {
+          let pricingSnapshot: BlockSnapshot | undefined;
+          if (parsed.data.orderType === ORDER_TYPE.RENT) {
             const blockOption = findBlockOption(product, { pricingOptionId: item.pricingOptionId, pricingType: item.pricingType });
             const table = tableOf(blockOption);
             if (blockOption && table) {

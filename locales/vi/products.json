@@ -633,8 +633,7 @@
         "depositNegative": "Tiền cọc không được âm",
         "stockRequired": "Số lượng phải lớn hơn 0",
         "outletStockNegative": "Số lượng không được âm",
-        "branchRequired": "Chọn ít nhất 1 chi nhánh để hiện sản phẩm",
-        "hourBlocksNeedPrice": "Khối giờ cần thêm giá Theo lần hoặc Theo ngày."
+        "branchRequired": "Chọn ít nhất 1 chi nhánh để hiện sản phẩm"
       },
       "noCreate": "Bạn không có quyền thêm sản phẩm.",
       "noEdit": "Bạn không có quyền sửa sản phẩm.",
@@ -646,7 +645,6 @@
       "needOutlet": "Cần ít nhất một chi nhánh trước khi thêm sản phẩm.",
       "goOutlets": "Mở Chi nhánh",
       "blockRow": "Theo block ngày",
-      "hourRow": "Theo khối giờ",
       "blockNotSet": "Chưa cài",
       "unitOnce": "đ / lần",
       "unitDay": "đ / ngày",
@@ -664,26 +662,6 @@
         "copyLoading": "Đang tải…",
         "close": "Đóng",
         "incomplete": "Nhập giá cho mọi ngày và số tiền cộng thêm mỗi ngày, hoặc chọn giữ nguyên giá khối cuối."
-      },
-      "hour": {
-        "summary": "{count} khối: {hours} giờ",
-        "edit": "Sửa giá theo khối giờ",
-        "title": "Giá theo khối giờ",
-        "hint": "Mỗi khối giờ một giá. Ở giỏ, chọn khối nào thì tính giá khối đó.",
-        "listTitle": "Khối giờ",
-        "unit": "giờ",
-        "hoursOf": "Số giờ của khối {n}",
-        "priceOf": "Giá của khối {n}",
-        "remove": "Xoá khối {n}",
-        "add": "+ Thêm khối",
-        "max": "Tối đa {n} khối.",
-        "save": "Lưu bảng giá",
-        "turnOff": "Tắt giá theo khối giờ",
-        "errors": {
-          "hours": "Số giờ là số nguyên từ 1 đến 24.",
-          "repeated": "Mỗi số giờ chỉ dùng cho một khối.",
-          "price": "Nhập giá cho mọi khối (0đ cũng được)."
-        }
       },
       "listing": {
         "branch": "Chi nhánh",
@@ -713,7 +691,6 @@
       "hour": "Thuê theo giờ",
       "perDay": "{price}/ngày",
       "perHour": "{price}/giờ",
-      "hourBlock": "{n} giờ {price}",
       "default": "Mặc định",
       "deposit": "Tiền cọc",
       "sale": "Giá bán",

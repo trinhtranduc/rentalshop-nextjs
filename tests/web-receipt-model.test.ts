@@ -7,7 +7,6 @@ import { describe, expect, it, jest } from '@jest/globals';
 // receipt-model takes the day-block text (#1189) from @rentalshop/utils; its barrel pulls in React files
 jest.mock('@rentalshop/utils', () => ({
   ...(jest.requireActual('../packages/utils/src/core/block-line-text') as object),
-  ...(jest.requireActual('../packages/utils/src/core/hour-blocks') as object),
 }));
 import {
   buildReceipt,
@@ -90,40 +89,6 @@ describe('itemCalcText', () => {
   });
   it('a sale line never shows days', () => {
     expect(itemCalcText({ quantity: 3, unitPrice: 10000, totalPrice: 30000, pricingType: 'DAILY' }, false, VI)).toBe('3 × 10.000đ = 30.000đ');
-  });
-});
-
-describe('hour-block lines (#1621)', () => {
-  const VI_HOURS = { ...VI, hourBlock: 'Khối {n} giờ' };
-  const vay4 = { quantity: 1, unitPrice: 250000, totalPrice: 250000, rentalDays: 1, pricingType: 'HOURLY', pricingSnapshot: { type: 'HOURLY' as const, hours: 4, price: 250000 }, productName: 'Váy cưới trắng' };
-  const vest2 = { quantity: 2, unitPrice: 80000, totalPrice: 160000, rentalDays: 1, pricingType: 'HOURLY', pricingSnapshot: { type: 'HOURLY' as const, hours: 2, price: 80000 }, productName: 'Vest nam đen' };
-
-  it('prints "Khối 4 giờ" then the formula, never "/giờ"', () => {
-    expect(itemCalcText(vay4, true, VI_HOURS)).toBe('Khối 4 giờ\n1 × 250.000đ = 250.000đ');
-    expect(itemCalcText(vest2, true, VI_HOURS)).toBe('Khối 2 giờ\n2 × 80.000đ = 160.000đ');
-  });
-
-  it('a 3-day order on Khối 4 giờ is still one block price', () => {
-    expect(itemCalcText({ ...vay4, rentalDays: 3 }, true, VI_HOURS)).toBe('Khối 4 giờ\n1 × 250.000đ = 250.000đ');
-  });
-
-  it('a price typed for the order prints that price under the block', () => {
-    expect(itemCalcText({ ...vay4, unitPrice: 230000, totalPrice: 230000 }, true, VI_HOURS)).toBe('Khối 4 giờ\n1 × 230.000đ = 230.000đ');
-  });
-
-  it('without the block word the formula alone is printed (still no "/giờ")', () => {
-    expect(itemCalcText(vest2, true, VI)).toBe('2 × 80.000đ = 160.000đ');
-  });
-
-  it('an old per-hour line without a snapshot prints as before', () => {
-    expect(itemCalcText({ quantity: 1, unitPrice: 20000, totalPrice: 60000, pricingType: 'HOURLY' }, true, VI_HOURS)).toBe('1 × 20.000đ/giờ × 3 giờ = 60.000đ');
-  });
-
-  it('Váy Khối 4 giờ + Vest Khối 2 giờ (1 bộ) = 330.000đ on the slip', () => {
-    const r = buildReceipt({ orderType: 'RENT', orderNumber: '482913', orderItems: [vay4, { ...vest2, quantity: 1, totalPrice: 80000 }], totalAmount: 330000 }, {}, VI_HOURS);
-    expect(r.items.map((i) => i.calc)).toEqual(['Khối 4 giờ\n1 × 250.000đ = 250.000đ', 'Khối 2 giờ\n1 × 80.000đ = 80.000đ']);
-    expect(r.subtotal).toBe('330.000đ');
-    expect(r.total).toBe('330.000đ');
   });
 });
 

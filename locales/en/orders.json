@@ -659,8 +659,7 @@
         "HOURLY": "Per hour · {price}/hour",
         "FIXED": "Per rental · {price}",
         "SALE": "Sale price · {price}",
-        "BLOCK": "By day block · {price}",
-        "HOUR_BLOCK": "{n}-hour block · {price}"
+        "BLOCK": "By day block · {price}"
       },
       "cart": {
         "label": "Order being created",
@@ -754,8 +753,7 @@
           "DAILY": "/day",
           "HOURLY": "/hr",
           "OTHER": "",
-          "BLOCK": "whole rental",
-          "HOUR_BLOCK": "/block"
+          "BLOCK": "whole rental"
         },
         "note": "Applies to this order only; the product price stays the same.",
         "done": "Done",
@@ -939,8 +937,7 @@
         "image": "Photo of {name}",
         "block": "{n}-day block",
         "blockExtra": "{n}-day block + {m} extra days",
-        "blockDays": "{n} days",
-        "hourBlock": "{n}-hour block"
+        "blockDays": "{n} days"
       },
       "notes": {
         "title": "Notes",
@@ -1118,8 +1115,7 @@
         "perHour": "/hour",
         "hours": "{n} hours",
         "block": "{n}-day block",
-        "blockExtra": "{n}-day block + {m} extra days",
-        "hourBlock": "{n}-hour block"
+        "blockExtra": "{n}-day block + {m} extra days"
       },
       "bankTitle": "Bank transfer",
       "bankName": "Bank",

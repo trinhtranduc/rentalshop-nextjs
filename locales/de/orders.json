@@ -659,8 +659,7 @@
         "HOURLY": "Pro Stunde · {price}/Stunde",
         "FIXED": "Pro Vermietung · {price}",
         "SALE": "Verkaufspreis · {price}",
-        "BLOCK": "Nach Tagesblock · {price}",
-        "HOUR_BLOCK": "{n}-Stunden-Block · {price}"
+        "BLOCK": "Nach Tagesblock · {price}"
       },
       "cart": {
         "label": "Auftrag in Bearbeitung",
@@ -754,8 +753,7 @@
           "DAILY": "/Tag",
           "HOURLY": "/Std.",
           "OTHER": "",
-          "BLOCK": "ganze Mietdauer",
-          "HOUR_BLOCK": "/Block"
+          "BLOCK": "ganze Mietdauer"
         },
         "note": "Gilt nur für diesen Auftrag; der Produktpreis bleibt unverändert.",
         "done": "Fertig",
@@ -939,8 +937,7 @@
         "image": "Foto von {name}",
         "block": "{n}-Tage-Block",
         "blockExtra": "{n}-Tage-Block + {m} zusätzliche Tage",
-        "blockDays": "{n} Tage",
-        "hourBlock": "{n}-Stunden-Block"
+        "blockDays": "{n} Tage"
       },
       "notes": {
         "title": "Notizen",
@@ -1118,8 +1115,7 @@
         "perHour": "/Stunde",
         "hours": "{n} Stunden",
         "block": "{n}-Tage-Block",
-        "blockExtra": "{n}-Tage-Block + {m} zusätzliche Tage",
-        "hourBlock": "{n}-Stunden-Block"
+        "blockExtra": "{n}-Tage-Block + {m} zusätzliche Tage"
       },
       "bankTitle": "Überweisung",
       "bankName": "Bank",

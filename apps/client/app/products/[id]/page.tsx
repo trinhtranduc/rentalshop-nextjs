@@ -10,7 +10,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useFormatCurrency, useToast } from '@rentalshop/ui';
 import { useAuth, usePermissions } from '@rentalshop/hooks';
-import { hourBlocksOf, productsApi, SHOP_TIMEZONE } from '@rentalshop/utils';
+import { productsApi, SHOP_TIMEZONE } from '@rentalshop/utils';
 import { ICONS, ShellIcon } from '../../components/shell/Icon';
 import { cardClass, outlineBtn, primaryBtn, Skeleton, type T } from '../../orders/list/parts';
 import { Modal } from '../../orders/create/parts';
@@ -178,8 +178,6 @@ export default function ProductDetailPage() {
     { stock: 0, available: 0, renting: 0 },
   );
   const cost = Number(p.costPrice) || 0;
-  // #1621 "2 giờ 150.000đ · 4 giờ 250.000đ · 8 giờ 400.000đ" (edited on the product form)
-  const hourBlocks = hourBlocksOf(p.pricingOptions);
 
   const runDelete = async () => {
     setDeleting(true);
@@ -273,12 +271,6 @@ export default function ProductDetailPage() {
               />
               {prices.block != null && <PriceRow label={t('detail.block.modeBlock')} value={t('price.blockFrom', { price: money(prices.block) })} badge={draftFromProduct(p).mode === 'BLOCK' ? t('detail.default') : undefined} />}
               {prices.hour != null && <PriceRow label={t('detail.hour')} value={t('detail.perHour', { price: money(prices.hour) })} />}
-              {hourBlocks.length > 0 && (
-                <PriceRow
-                  label={t('form.hourRow')}
-                  value={<span className="block whitespace-normal text-right" data-hour-blocks-detail>{hourBlocks.map((b) => t('detail.hourBlock', { n: b.hours, price: money(b.price) })).join(' · ')}</span>}
-                />
-              )}
               <PriceRow label={t('detail.deposit')} value={money(Number(p.deposit) || 0)} />
               <PriceRow label={t('detail.sale')} value={prices.sale != null ? money(prices.sale) : '—'} />
               {canManageProducts && cost > 0 && <PriceRow label={t('detail.cost')} value={money(cost)} />}

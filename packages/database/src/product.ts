@@ -690,8 +690,7 @@ export async function updateProduct(
       // Deleting an option sets OrderItem.pricingOptionId to NULL (FK onDelete: SetNull);
       // OrderItem keeps its pricingType snapshot so historical orders stay correct.
       await tx.productPricingOption.deleteMany({
-        // #1621: this path never accepts hour blocks, so it never deletes them
-        where: pricingOptionsDeleteWhere(id, { keepBlockOptions: input.keepBlockOptions, keepHourlyOptions: true }),
+        where: pricingOptionsDeleteWhere(id, { keepBlockOptions: input.keepBlockOptions }),
       });
       if (normalizedOptions.length > 0) {
         await tx.productPricingOption.createMany({
@@ -1346,7 +1345,7 @@ export const simplifiedProducts = {
   /**
    * Create new product (simplified API)
    */
-  create: async (data: any, options: { allowHourly?: boolean } = {}) => {
+  create: async (data: any) => {
     try {
       if ('barcode' in data) data.barcode = normalizeBarcode(data.barcode);
       // Get merchant ID for default category fallback
@@ -1391,8 +1390,7 @@ export const simplifiedProducts = {
 
       // Multiple pricing options: normalize, sync default -> rentPrice/pricingType, nest for create
       if (Array.isArray(data.pricingOptions)) {
-        // #1621: hour blocks only from a client with the `hour-blocks` capability
-        const normalized = normalizePricingOptions(data.pricingOptions, { allowBlock, allowHourly: options.allowHourly });
+        const normalized = normalizePricingOptions(data.pricingOptions, { allowBlock });
         if (normalized.length > 0) {
           const def = normalized.find((o) => o.isDefault) || normalized[0];
           data.rentPrice = def.price;
@@ -1428,7 +1426,7 @@ export const simplifiedProducts = {
   /**
    * Update product (simplified API)
    */
-  update: async (id: number, data: any, options: { keepBlockOptions?: boolean; allowHourly?: boolean } = {}) => {
+  update: async (id: number, data: any, options: { keepBlockOptions?: boolean } = {}) => {
     if ('barcode' in data) data.barcode = normalizeBarcode(data.barcode);
     // #1189: only a client that sent `pricingSchemaVersion: 2` may save a BLOCK option; never a Product column
     const allowBlock = data.pricingSchemaVersion === 2;
@@ -1437,7 +1435,7 @@ export const simplifiedProducts = {
     let hasOptions = Array.isArray(data.pricingOptions);
     let normalized: any[] = [];
     if (hasOptions) {
-      normalized = normalizePricingOptions(data.pricingOptions, { allowBlock, allowHourly: options.allowHourly });
+      normalized = normalizePricingOptions(data.pricingOptions, { allowBlock });
       delete data.pricingOptions;
       // #1215: the FIXED row an installed app got from a BLOCK option is not a new option; BLOCK stays the default
       let blockIsDefault = false;
@@ -1500,8 +1498,7 @@ export const simplifiedProducts = {
     return await prisma.$transaction(async (tx) => {
       // #1200: an old client (no pricingSchemaVersion) keeps the BLOCK options it cannot see
       await tx.productPricingOption.deleteMany({
-        // #1621: a client without the `hour-blocks` capability keeps the hour blocks it cannot see
-        where: pricingOptionsDeleteWhere(id, { keepBlockOptions: options.keepBlockOptions, keepHourlyOptions: !options.allowHourly }),
+        where: pricingOptionsDeleteWhere(id, { keepBlockOptions: options.keepBlockOptions }),
       });
       if (normalized.length > 0) {
         await tx.productPricingOption.createMany({

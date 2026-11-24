@@ -1,6 +1,6 @@
 # Giá theo khối giờ (Theo khối giờ)
 
-Issue: #1621 · Author: Trinh Tran (với Claude) · Status: accepted · Created: 2026-11-18
+Issue: #1621 · Author: Trinh Tran (với Claude) · Status: reverted · Created: 2026-11-18
 
 ## Problem
 
@@ -35,6 +35,8 @@ Kiểm được: các ca tiền ở `spec.md` (Váy 2/4/8 giờ, Vest 2 giờ ×
 - (không còn) Mọi câu đã chốt ngày 2026-11-18, xem Decision log.
 
 ## Decision log
+
+- 2026-11-23 — Chủ shop: "tôi muốn remove feature block giờ". Gỡ khỏi `dev` ở #1635 (revert #1622); đóng PR #1624, #1626 và issue #1623, #1625. Các branch `feat/1621-*` giữ lại để làm lại sau.
 
 - 2026-11-18 — Tạm dừng bản đầy đủ (chọn giờ, trùng giờ); chỉ làm khối giờ ở sản phẩm (chủ shop: "chỉ đơn giản ở product cho chọn block giờ thôi").
 - 2026-11-18 — Chốt mockup bản gọn (tab "Thuê theo giờ", https://claude.ai/artifact/9b56KwErJWiGpiyFEfyEY4 v285) (chủ shop: "chốt").
