@@ -1,6 +1,6 @@
 # Spec — Chủ shop nhận thông báo đơn của mọi chi nhánh
 
-Issue: #1639 · Status: draft · Intent: ./intent.md
+Issue: #1639 · Status: in-progress · Intent: ./intent.md
 
 ## Behavior
 Shop M: chi nhánh A, B, C. Chủ shop `O` (MERCHANT, `outletId` = A). Nhân viên `SA` (A), `SB` (B), quản lý `AB` (OUTLET_ADMIN, B). C không có nhân viên.

@@ -5,9 +5,9 @@ import {
   createNotificationsForUsers,
   db,
   deactivateTokensByPushToken,
-  findActivePushTokensForOutlet,
   findActivePushTokensForUsers,
   findActiveUserIdsForOutlet,
+  findOrderNotificationRecipients,
 } from '@rentalshop/database';
 import { formatFullName } from '@rentalshop/utils';
 
@@ -250,17 +250,33 @@ function getFirebaseApp(): App | null {
  * Persist inbox rows for all active outlet users, then send FCM to devices.
  * Fail-open: never throws to callers.
  */
+/** #1639 A shop with two or more branches names the branch, so the owner can tell where the order is. */
+export function withOutletName(body: string, outletName: string | null, shopHasManyOutlets: boolean): string {
+  return shopHasManyOutlets && outletName ? `${body} · ${outletName}` : body;
+}
+
 export async function sendOrderPushToOutlet(
   outletId: number,
   payload: OrderPushPayload
 ): Promise<{ sent: number; failed: number; inbox: number }> {
-  const { title, body } = buildNotificationCopy(payload);
+  const copy = buildNotificationCopy(payload);
   const data = buildNotificationData(payload);
+  const title = copy.title;
+  let body = copy.body;
+
+  // #1639 Same people for the inbox and the push: the outlet's users and the shop owner(s).
+  let userIds: number[] = [];
+  try {
+    const recipients = await findOrderNotificationRecipients(outletId);
+    userIds = recipients.userIds;
+    body = withOutletName(body, recipients.outletName, recipients.shopHasManyOutlets);
+  } catch (error) {
+    console.error('❌ Failed to resolve order notification recipients:', error);
+  }
 
   // 1) Always try to save inbox (even if FCM is not configured / no tokens)
   let inbox = 0;
   try {
-    const userIds = await findActiveUserIdsForOutlet(outletId);
     inbox = await createNotificationsForUsers(userIds, {
       type: payload.type,
       title,
@@ -277,7 +293,7 @@ export async function sendOrderPushToOutlet(
     return { sent: 0, failed: 0, inbox };
   }
 
-  const devices = await findActivePushTokensForOutlet(outletId);
+  const devices = await findActivePushTokensForUsers(userIds);
   const tokens = [...new Set(devices.map((d) => d.pushToken).filter(Boolean))];
 
   if (tokens.length === 0) {
