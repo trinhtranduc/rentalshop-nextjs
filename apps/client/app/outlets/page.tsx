@@ -19,7 +19,7 @@ import { ICONS, ShellIcon } from '../components/shell/Icon';
 import { Skeleton, TableFooter, cardClass, outlineBtn, primaryBtn, type T } from '../orders/list/parts';
 import { isAddOutletEnabled } from '../../lib/outlets';
 import { Modal } from '../orders/create/parts';
-import { OutletFormDialog, RowMenu, smallBtn } from './parts';
+import { OutletFormDialog, RowMenu, linkTypeText, smallBtn } from './parts';
 import {
   EMPTY_OUTLET_FORM,
   OUTLET_DEFAULT_PAGE_SIZE,
@@ -411,6 +411,7 @@ export default function OutletsPage() {
         title={t('detail.title')}
         onClose={() => setDialog(null)}
         closeLabel={t('form.close')}
+        roomy
         footer={
           view ? (
             <>
@@ -449,6 +450,17 @@ export default function OutletsPage() {
                 <dd className={`m-0 whitespace-pre-wrap text-[15px] ${value ? 'text-ar-ink-2' : 'text-ar-faint'}`}>{value || t('detail.none')}</dd>
               </div>
             ))}
+            <div className="flex flex-col gap-1">
+              <dt className="text-sm font-semibold text-ar-muted">{t('form.links.title')}</dt>
+              <dd className="m-0 flex flex-col gap-1 text-[15px]" data-outlet-links-view>
+                {(view.links || []).length === 0 && <span className="text-ar-faint">{t('detail.none')}</span>}
+                {(view.links || []).map((link) => (
+                  <a key={`${link.type}-${link.url}`} href={link.url} target="_blank" rel="noopener noreferrer" className="break-all text-ar-primary-ink">
+                    {link.type === 'other' && link.label ? link.label : linkTypeText(t, link.type)}: {link.url}
+                  </a>
+                ))}
+              </dd>
+            </div>
             <div className="flex flex-col gap-1">
               <dt className="text-sm font-semibold text-ar-muted">{t('cols.createdAt')}</dt>
               <dd className="m-0 text-[15px] tabular-nums text-ar-ink-2">{formatOutletDate(view.createdAt)}</dd>

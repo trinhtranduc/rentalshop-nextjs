@@ -3,17 +3,14 @@
 import React from 'react';
 import { MessageCircle, Phone } from 'lucide-react';
 import { LanguageSwitcher } from '@rentalshop/ui';
+import { OUTLET_LINK_BRAND_NAMES } from '@rentalshop/utils';
 import { useLocale, useTranslations } from 'next-intl';
 import { isPublicLocale } from '@rentalshop/constants';
 import { shopInitials, telLink, zaloLink } from '../lib/public-shop';
+import { showsOutletPicker, showsPhoneZaloButton, type PickerOutlet } from '../lib/outlet-picker';
+import { LinkIcon } from './LinkIcon';
 
-export interface PublicOutlet {
-  id: number;
-  name: string;
-  address?: string | null;
-  phone?: string | null;
-  city?: string | null;
-}
+export type PublicOutlet = PickerOutlet;
 
 interface MerchantHeaderProps {
   merchant: {
@@ -22,18 +19,24 @@ interface MerchantHeaderProps {
     address?: string | null;
     phone?: string | null;
   };
+  /** Active branches, the main one first (#1643) */
   outlets?: PublicOutlet[];
+  /** The branch shown (#1643); the picker appears from 2 branches */
+  selected?: PublicOutlet;
+  onSelect?: (outlet: PublicOutlet) => void;
 }
 
 /** #1146: the 12 public languages; the choice (NEXT_PUBLIC_LOCALE) reloads the same shop page */
 const samePage = () => `${window.location.pathname}${window.location.search}`;
 
 /** #665 — shop name, outlet address and the Gọi / Nhắn Zalo buttons */
-export function MerchantHeader({ merchant, outlets = [] }: MerchantHeaderProps) {
+export function MerchantHeader({ merchant, outlets = [], selected, onSelect }: MerchantHeaderProps) {
   const t = useTranslations('products.public');
   const current = useLocale();
   const locale = isPublicLocale(current) ? current : 'vi';
-  const outlet = outlets[0];
+  const outlet = selected ?? outlets[0];
+  const many = showsOutletPicker(outlets);
+  const links = outlet?.links ?? [];
   const phone = outlet?.phone || merchant.phone || null;
   const tel = telLink(phone);
   const zalo = zaloLink(phone);
@@ -53,10 +56,45 @@ export function MerchantHeader({ merchant, outlets = [] }: MerchantHeaderProps) 
               <LanguageSwitcher variant="compact" publicLocale={locale} publicPath={samePage} />
             </div>
           </div>
+          {many && (
+            <div role="group" aria-label={t('outlets')} className="mt-2 flex flex-wrap gap-1.5" data-shop-outlet-picker>
+              {outlets.map((o) => (
+                <button
+                  key={o.id}
+                  type="button"
+                  aria-pressed={o.id === outlet?.id}
+                  onClick={() => onSelect?.(o)}
+                  className={`rounded-full border-[1.5px] px-3 py-1 text-[13px] font-semibold ${
+                    o.id === outlet?.id ? 'border-slate-900 bg-slate-900 text-white' : 'border-slate-200 bg-white text-slate-900 hover:bg-slate-50'
+                  }`}
+                >
+                  {o.name}
+                  {o.isDefault ? ` · ${t('mainOutlet')}` : ''}
+                </button>
+              ))}
+            </div>
+          )}
           {place && <p className="mt-1 text-sm text-slate-600">{place}</p>}
           {merchant.description && <p className="mt-0.5 text-sm text-slate-600">{merchant.description}</p>}
+          {links.length > 0 && (
+            <ul className="m-0 mt-2.5 flex list-none flex-wrap gap-2 p-0" aria-label={t('links')} data-shop-links>
+              {links.map((link) => (
+                <li key={`${link.type}-${link.url}`}>
+                  <a
+                    href={link.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex h-[34px] items-center gap-1.5 rounded-full border-[1.5px] border-slate-200 bg-white pl-2 pr-3 text-[13px] font-semibold text-slate-900 hover:bg-slate-50"
+                  >
+                    <LinkIcon type={link.type} />
+                    {link.type === 'other' && link.label ? link.label : OUTLET_LINK_BRAND_NAMES[link.type] ?? t(`linkTypes.${link.type}`)}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
-        {(tel || zalo) && (
+        {(tel || (zalo && showsPhoneZaloButton(outlet))) && (
           <div className="flex w-full gap-2.5 sm:w-auto">
             {tel && (
               <a
@@ -67,7 +105,7 @@ export function MerchantHeader({ merchant, outlets = [] }: MerchantHeaderProps) 
                 {phone}
               </a>
             )}
-            {zalo && (
+            {zalo && showsPhoneZaloButton(outlet) && (
               <a
                 href={zalo}
                 target="_blank"

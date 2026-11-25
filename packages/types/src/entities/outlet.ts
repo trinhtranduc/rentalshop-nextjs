@@ -19,6 +19,13 @@ import {
 // CORE OUTLET INTERFACES
 // ============================================================================
 
+/** #1643: a link of a branch (shown on the public shop page); same shape as `@rentalshop/utils` `OutletLink` */
+export interface OutletLinkEntry {
+  type: 'website' | 'facebook' | 'instagram' | 'tiktok' | 'youtube' | 'zalo' | 'other';
+  url: string;
+  label?: string;
+}
+
 /**
  * Main Outlet interface - consolidated from multiple sources
  * Combines outlet-data.ts and outlets/outlet.ts definitions
@@ -28,6 +35,7 @@ export interface Outlet extends BaseEntityWithMerchant, Address, ContactInfo {
   name: string;
   description?: string;
   printNote?: string | null; // Printed at the bottom of RENT receipts (#347)
+  links?: OutletLinkEntry[]; // #1643 public shop page links, at most 6
   printBankQr?: boolean; // Bank block + VietQR on bills (#628)
   isActive: boolean;
   isDefault?: boolean; // Indicates if this is the default outlet for the merchant
@@ -55,6 +63,7 @@ export interface OutletCreateInput extends BaseFormInput {
   country?: string;
   description?: string;
   printNote?: string | null; // Printed at the bottom of RENT receipts (#347)
+  links?: OutletLinkEntry[]; // #1643 public shop page links, at most 6
   printBankQr?: boolean; // Bank block + VietQR on bills (#628)
   merchantId: number;
   avatar?: string; // Avatar image URL
@@ -74,6 +83,7 @@ export interface OutletUpdateInput extends BaseUpdateInput {
   country?: string;
   description?: string;
   printNote?: string | null; // Printed at the bottom of RENT receipts (#347)
+  links?: OutletLinkEntry[]; // #1643 public shop page links, at most 6
   printBankQr?: boolean; // Bank block + VietQR on bills (#628)
   isActive?: boolean;
   isDefault?: boolean;
@@ -113,6 +123,7 @@ export interface OutletSearchResult {
   country?: string;  // Outlet country
   description?: string;
   printNote?: string | null; // Printed at the bottom of RENT receipts (#347)
+  links?: OutletLinkEntry[]; // #1643 public shop page links, at most 6
   printBankQr?: boolean; // Bank block + VietQR on bills (#628)
   isActive: boolean;
   isDefault?: boolean;  // Indicates if this is the default outlet for the merchant

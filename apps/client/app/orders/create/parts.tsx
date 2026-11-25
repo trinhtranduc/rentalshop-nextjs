@@ -27,6 +27,7 @@ export function Modal({
   footer,
   closeLabel,
   wide = false,
+  roomy = false,
 }: {
   open: boolean;
   title: string;
@@ -36,6 +37,8 @@ export function Modal({
   closeLabel: string;
   /** Room for two calendar months side by side */
   wide?: boolean;
+  /** Forms and pickers with long values (customer pick, branch edit): 640px instead of 480px */
+  roomy?: boolean;
 }) {
   const id = useId();
   const panelRef = useRef<HTMLDivElement>(null);
@@ -58,7 +61,7 @@ export function Modal({
         role="dialog"
         aria-modal="true"
         aria-labelledby={id}
-        className={`relative flex max-h-[92vh] w-full flex-col rounded-t-2xl bg-ar-surface text-ar-ink shadow-xl sm:rounded-2xl ${wide ? 'sm:max-w-[720px]' : 'sm:max-w-[480px]'}`}
+        className={`relative flex max-h-[92vh] w-full flex-col rounded-t-2xl bg-ar-surface text-ar-ink shadow-xl sm:rounded-2xl ${wide ? 'sm:max-w-[720px]' : roomy ? 'sm:max-w-[640px]' : 'sm:max-w-[480px]'}`}
       >
         <div className="flex items-center justify-between gap-3 border-b border-ar-line-soft px-5 py-4">
           <h2 id={id} className="m-0 text-lg font-bold">
@@ -281,6 +284,7 @@ export function CustomerDialog({
       title={adding ? t('editor.customer.newTitle') : t('editor.customer.title')}
       onClose={onClose}
       closeLabel={t('editor.close')}
+      roomy
       footer={
         adding ? (
           <>

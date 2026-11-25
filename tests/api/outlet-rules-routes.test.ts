@@ -24,6 +24,7 @@ jest.mock('@rentalshop/database', () => ({ db: mockDb, prisma: mockPrisma }));
 
 jest.mock('@rentalshop/utils', () => ({
   ...jest.requireActual('../../packages/utils/src/core/validation-schemas'),
+  ...jest.requireActual('../../packages/utils/src/core/outlet-links'),
   handleApiError: (e: any) => ({ response: { success: false, message: String(e) }, statusCode: 500 }),
   ResponseBuilder: {
     error: (code: string) => ({ success: false, code, message: code, error: code }),

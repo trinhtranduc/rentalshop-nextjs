@@ -134,7 +134,27 @@
       "create": "新增分店",
       "save": "儲存",
       "saving": "儲存中…",
-      "close": "關閉"
+      "close": "關閉",
+      "links": {
+        "title": "連結",
+        "hint": "顯示在此分店的公開店鋪頁面上。",
+        "add": "新增連結",
+        "remove": "刪除連結",
+        "typeLabel": "連結類型",
+        "urlLabel": "連結位址",
+        "labelPlaceholder": "連結名稱",
+        "used": "已使用 {count} / {max}",
+        "err": {
+          "invalid": "連結似乎不正確，例如 {example}",
+          "platform": "不是有效的{type}連結，例如 {example}",
+          "labelRequired": "請輸入連結名稱",
+          "labelTooLong": "最多 {max} 個字元"
+        },
+        "type": {
+          "website": "網站",
+          "other": "其他"
+        }
+      }
     },
     "detail": {
       "title": "分店詳情",

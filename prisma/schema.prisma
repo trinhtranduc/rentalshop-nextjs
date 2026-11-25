@@ -256,6 +256,8 @@ model Outlet {
   printBankQr  Boolean       @default(false)
   /// #1124 this outlet takes online booking requests (only when Merchant.onlineBookingEnabled)
   acceptsOnlineBooking Boolean @default(true)
+  /// #1643 links shown on the public shop page: [{ type, url, label? }], at most 6 (`@rentalshop/utils` outlet-links). Null = none yet.
+  links        Json?
   isActive     Boolean       @default(true)
   isDefault    Boolean       @default(false)
   createdAt    DateTime      @default(now())

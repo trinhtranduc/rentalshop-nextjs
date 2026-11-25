@@ -1,8 +1,16 @@
 /**
  * Chi nhánh (#545): pure helpers for the shop-web outlets and outlet bank-account pages.
- * No `@rentalshop/*` imports so `tests/web-outlets-model.test.ts` runs them under both TZ.
+ * Only the pure link rules come from `@rentalshop/utils` (#1643); `tests/web-outlets-model.test.ts` loads them from source
+ * and runs everything under both TZ.
  */
 
+import {
+  OUTLET_LINKS_MAX,
+  normalizeOutletLink,
+  type OutletLink,
+  type OutletLinkError,
+  type OutletLinkType,
+} from '@rentalshop/utils';
 import { PAGE_SIZE_PRESETS, parsePageSize } from '../orders/page-size';
 
 export const OUTLET_PAGE_SIZES = PAGE_SIZE_PRESETS;
@@ -56,6 +64,7 @@ export interface OutletLike {
   phone?: string | null;
   description?: string | null;
   printNote?: string | null;
+  links?: OutletLink[] | null;
   isActive?: boolean | null;
   isDefault?: boolean | null;
   createdAt?: string | Date | null;
@@ -78,6 +87,59 @@ export interface OutletForm {
   country: string;
   description: string;
   printNote: string;
+  /** #1643 */
+  links: OutletLinkRow[];
+}
+
+/** #1643: one line of the "Liên kết" group; `label` only matters for the `other` type */
+export interface OutletLinkRow {
+  type: OutletLinkType;
+  url: string;
+  label: string;
+}
+
+export const OUTLET_LINK_TYPE_ORDER: OutletLinkType[] = ['website', 'facebook', 'instagram', 'tiktok', 'youtube', 'zalo', 'other'];
+
+/** Shown in the error under a wrong link: what a right one looks like (addresses are not translated). */
+export const OUTLET_LINK_EXAMPLES: Record<OutletLinkType, string> = {
+  website: 'https://tenshop.vn',
+  facebook: 'https://facebook.com/tenshop',
+  instagram: 'https://instagram.com/tenshop',
+  tiktok: 'https://tiktok.com/@tenshop',
+  youtube: 'https://youtube.com/@tenshop',
+  zalo: 'https://zalo.me/0901234567',
+  other: 'https://tenshop.vn/dat-lich',
+};
+
+export const MAX_OUTLET_LINKS = OUTLET_LINKS_MAX;
+export const emptyLinkRow = (type: OutletLinkType = 'website'): OutletLinkRow => ({ type, url: '', label: '' });
+const rowIsBlank = (row: OutletLinkRow) => !row.url.trim();
+
+/** Row index → what is wrong. A row with no address is skipped (not an error). */
+export function validateLinkRows(rows: OutletLinkRow[]): Record<number, OutletLinkError> {
+  const found: Record<number, OutletLinkError> = {};
+  rows.forEach((row, index) => {
+    if (rowIsBlank(row)) return;
+    const result = normalizeOutletLink(row);
+    if (!result.ok) found[index] = result.error;
+  });
+  return found;
+}
+
+/** The list the API stores: blank rows dropped, each address normalised, repeats removed, at most 6. */
+export function outletLinksPayload(rows: OutletLinkRow[]): OutletLink[] {
+  const seen = new Set<string>();
+  const links: OutletLink[] = [];
+  for (const row of rows) {
+    if (rowIsBlank(row)) continue;
+    const result = normalizeOutletLink(row);
+    if (!result.ok) continue;
+    const key = `${result.link.type}|${result.link.url}|${result.link.label ?? ''}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    links.push(result.link);
+  }
+  return links.slice(0, OUTLET_LINKS_MAX);
 }
 
 export const EMPTY_OUTLET_FORM: OutletForm = {
@@ -90,6 +152,7 @@ export const EMPTY_OUTLET_FORM: OutletForm = {
   country: '',
   description: '',
   printNote: '',
+  links: [],
 };
 
 export function outletFormFrom(o: OutletLike): OutletForm {
@@ -103,6 +166,7 @@ export function outletFormFrom(o: OutletLike): OutletForm {
     country: o.country || '',
     description: o.description || '',
     printNote: o.printNote || '',
+    links: (o.links || []).map((l) => ({ type: l.type, url: l.url, label: l.label || '' })),
   };
 }
 
@@ -116,8 +180,9 @@ export function validateOutlet(form: OutletForm): { name?: OutletFieldError; pri
   return errors;
 }
 
-/** POST /api/outlets body, same fields the old add dialog sent (no print note on create). */
+/** POST /api/outlets body, same fields the old add dialog sent (no print note on create); `links` only when there are any. */
 export function outletCreatePayload(form: OutletForm, merchantId: number) {
+  const links = outletLinksPayload(form.links);
   return {
     name: form.name.trim(),
     address: form.address.trim(),
@@ -128,13 +193,15 @@ export function outletCreatePayload(form: OutletForm, merchantId: number) {
     phone: form.phone.trim(),
     description: form.description.trim(),
     merchantId,
+    ...(links.length > 0 ? { links } : {}),
   };
 }
 
 /** PUT /api/outlets?id= body, same fields the old edit dialog sent (blank print note clears it server-side). */
 export function outletUpdatePayload(id: number, form: OutletForm) {
   const { name, address, city, state, zipCode, country, phone, description } = outletCreatePayload(form, 0);
-  return { id, name, address, city, state, zipCode, country, phone, description, printNote: form.printNote };
+  // `links` is always sent on edit so that emptying the group clears them (absent would mean unchanged)
+  return { id, name, address, city, state, zipCode, country, phone, description, printNote: form.printNote, links: outletLinksPayload(form.links) };
 }
 
 export type OutletAction = 'view' | 'edit' | 'bank' | 'disable' | 'enable';

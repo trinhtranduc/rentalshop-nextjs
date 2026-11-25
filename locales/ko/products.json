@@ -877,6 +877,13 @@
       "errorNetwork": "연결할 수 없습니다. 네트워크를 확인한 뒤 다시 시도하세요.",
       "errorGeneric": "지금은 검색할 수 없습니다. 다시 시도하세요."
     },
-    "priceHidden": "문의"
+    "priceHidden": "문의",
+    "outlets": "지점",
+    "mainOutlet": "본점",
+    "links": "상점 링크",
+    "linkTypes": {
+      "website": "웹사이트",
+      "other": "기타"
+    }
   }
 }

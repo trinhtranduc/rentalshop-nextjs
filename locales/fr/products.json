@@ -877,6 +877,13 @@
       "errorNetwork": "Pas de connexion. Vérifiez votre réseau et réessayez.",
       "errorGeneric": "La recherche n’a pas fonctionné. Réessayez."
     },
-    "priceHidden": "Nous contacter"
+    "priceHidden": "Nous contacter",
+    "outlets": "Succursales",
+    "mainOutlet": "principale",
+    "links": "Liens de la boutique",
+    "linkTypes": {
+      "website": "Site web",
+      "other": "Autre"
+    }
   }
 }
