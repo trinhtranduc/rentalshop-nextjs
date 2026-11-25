@@ -2,10 +2,9 @@
  * Client capabilities (#1200): which new behaviours the caller understands.
  *
  * A client sends `X-Client-Capabilities: installments, block-pricing` (comma-separated tokens, any case).
- * No header, an empty header or an unusable value = no capability = an old client. The iOS / Android builds on
- * `main-real` send `installments, block-pricing, branch-listing` (iOS `DepositPlan.swift`, Android `DepositPlan.kt`),
- * so a new behaviour needs a new token. Server code gives old clients the response they decode today and gives a
- * capable client the new data.
+ * No header, an empty header or an unusable value = no capability = an old client (the iOS / Android
+ * builds installed on `main-real` never send it). Server code gives old clients the response they
+ * decode today and gives a capable client the new data.
  *
  * Self-contained on purpose (no workspace import): route tests mock `@rentalshop/utils`.
  */
@@ -16,10 +15,8 @@ export const CLIENT_CAPABILITIES_HEADER = 'x-client-capabilities';
  * Tokens the server knows. Add a token here in the PR that ships the behaviour.
  * `branch-listing` (#1341): the client shows the "Hiện ở chi nhánh" tick, so the server does not list products for it
  * (an old app has no tick: the server lists the products it puts on an order, see lib/product-listing.ts).
- * `hour-blocks` (#1621): the client shows and saves HOURLY hour-block options ("Theo khối giờ"); without it the server
- * hides them and keeps them when the client saves the product (lib/block-pricing-legacy.ts, products routes).
  */
-export type ClientCapability = 'installments' | 'block-pricing' | 'branch-listing' | 'hour-blocks';
+export type ClientCapability = 'installments' | 'block-pricing' | 'branch-listing';
 
 interface HeaderSource {
   get(name: string): string | null;

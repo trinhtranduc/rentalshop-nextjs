@@ -310,6 +310,19 @@ object ThermalPrinter {
                 bold(false)
             }
 
+            // #1633: the fees at return, or what a cancelled order kept (nothing for every other order); iOS `BillReturnRule.printData`
+            val back = com.anyrent.pos.domain.orders.BillReturnRule.of(order)
+            if (back != null && planText != null) {
+                text(divider)
+                bold(true)
+                text(planText(ShareText.Res(back.title)).uppercase(Locale.getDefault()))
+                bold(false)
+                back.rows.forEach { text("${planText(ShareText.Res(it.label))}: ${money.format(it.amount)}") }
+                bold(true)
+                text("${planText(ShareText.Res(back.resultLabel)).uppercase(Locale.getDefault())}: ${money.format(back.result)}")
+                bold(false)
+            }
+
             if (isRent) {
                 // #1308: no note on the outlet = no "Note" block
                 if (config.note.isNotBlank()) {

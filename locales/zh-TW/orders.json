@@ -659,8 +659,7 @@
         "HOURLY": "按小時 · {price}/小時",
         "FIXED": "按次 · {price}/次",
         "SALE": "售價 · {price}",
-        "BLOCK": "依天數區間 · {price}",
-        "HOUR_BLOCK": "{n} 小時區間 · {price}"
+        "BLOCK": "依天數區間 · {price}"
       },
       "cart": {
         "label": "目前訂單",
@@ -754,8 +753,7 @@
           "DAILY": "/天",
           "HOURLY": "/小時",
           "OTHER": "",
-          "BLOCK": "整段租期",
-          "HOUR_BLOCK": "/區間"
+          "BLOCK": "整段租期"
         },
         "note": "僅適用於此訂單，不會變更商品價格。",
         "done": "完成",
@@ -939,8 +937,7 @@
         "image": "{name} 的圖片",
         "block": "{n} 天區間",
         "blockExtra": "{n} 天區間 + 加 {m} 天",
-        "blockDays": "{n} 天",
-        "hourBlock": "{n} 小時區間"
+        "blockDays": "{n} 天"
       },
       "notes": {
         "title": "備註",
@@ -1118,13 +1115,24 @@
         "perHour": "/小時",
         "hours": "{n} 小時",
         "block": "{n} 天區間",
-        "blockExtra": "{n} 天區間 + 加 {m} 天",
-        "hourBlock": "{n} 小時區間"
+        "blockExtra": "{n} 天區間 + 加 {m} 天"
       },
       "bankTitle": "轉帳",
       "bankName": "銀行",
       "bankAccount": "帳號",
-      "bankHolder": "戶名"
+      "bankHolder": "戶名",
+      "return": {
+        "title": "歸還時",
+        "cancelTitle": "已取消",
+        "collateral": "押金",
+        "excessDeposit": "多付訂金",
+        "lateFee": "逾期費",
+        "surcharge": "加收",
+        "kept": "加收",
+        "giveBack": "退還客人",
+        "collect": "補收",
+        "refund": "退還客人"
+      }
     },
     "online": {
       "button": "線上預訂",

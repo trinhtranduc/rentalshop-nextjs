@@ -2539,4 +2539,8 @@
         <item quantity="many">%1$d раз</item>
         <item quantity="other">%1$d раза</item>
     </plurals>
+    <!-- #1633 bill: fees at return -->
+    <string name="bill_return_title">При возврате</string>
+    <string name="bill_return_excess_deposit">Излишек предоплаты</string>
+    <string name="bill_return_give_back">Вернуть клиенту</string>
 </resources>

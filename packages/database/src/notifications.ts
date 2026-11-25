@@ -32,6 +32,38 @@ export async function findActiveUserIdsForOutlet(outletId: number): Promise<numb
 }
 
 /**
+ * #1639 Who gets an order notification for this outlet: the outlet's own active users plus the shop owner(s), the
+ * active MERCHANT users of the same merchant (their `outletId` is only the branch made at sign-up, so the outlet query
+ * alone would miss every other branch). Outlet staff and admins of other outlets are never added.
+ * `shopHasManyOutlets` lets the caller name the branch in the text (a one-branch shop needs no name).
+ */
+export async function findOrderNotificationRecipients(outletId: number): Promise<{
+  userIds: number[];
+  outletName: string | null;
+  shopHasManyOutlets: boolean;
+}> {
+  const outlet = await prisma.outlet.findUnique({
+    where: { id: outletId },
+    select: { name: true, merchantId: true },
+  });
+  const [outletUserIds, owners, activeOutlets] = await Promise.all([
+    findActiveUserIdsForOutlet(outletId),
+    outlet
+      ? prisma.user.findMany({
+          where: { merchantId: outlet.merchantId, role: 'MERCHANT', isActive: true, deletedAt: null },
+          select: { id: true },
+        })
+      : Promise.resolve([] as { id: number }[]),
+    outlet ? prisma.outlet.count({ where: { merchantId: outlet.merchantId, isActive: true } }) : Promise.resolve(0),
+  ]);
+  return {
+    userIds: [...new Set([...outletUserIds, ...owners.map((u) => u.id)])],
+    outletName: outlet?.name?.trim() || null,
+    shopHasManyOutlets: activeOutlets >= 2,
+  };
+}
+
+/**
  * Create one inbox row per user (same title/body/data).
  */
 export async function createNotificationsForUsers(

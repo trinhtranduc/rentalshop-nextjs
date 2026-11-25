@@ -324,6 +324,24 @@ enum OrderShareRenderer {
                        in: CGRect(x: box.maxX - 16 - valueW, y: box.minY, width: valueW, height: box.height),
                        align: .right, vCenter: true, shrink: true)
                 y = box.maxY + 12
+            case .heading(let title):
+                // #1633: "KHI NHẬN TRẢ" / "ĐÃ HUỶ", like the stages' title
+                y += 2
+                y += p.text(title.uppercased(with: Locale(identifier: "vi")), font: font(13, .bold), color: C.muted,
+                            x: innerX, y: y, width: innerW, lines: 1, kern: 1.2) + 10
+            case .giveBack(let label, let value):
+                // #1633: "Trả khách" / "Hoàn cho khách", green like a paid total
+                let box = CGRect(x: innerX, y: y, width: innerW, height: 54)
+                p.fill(box, radius: 16, color: C.paidBg)
+                let valueFont = font(24, .heavy)
+                let valueW = min(innerW * 0.65, ceil(p.size(value, font: valueFont).width))
+                p.text(label, font: font(16, .bold), color: C.paid,
+                       in: CGRect(x: box.minX + 16, y: box.minY, width: box.width - valueW - 44, height: box.height),
+                       align: .left, vCenter: true)
+                p.text(value, font: valueFont, color: C.paid,
+                       in: CGRect(x: box.maxX - 16 - valueW, y: box.minY, width: valueW, height: box.height),
+                       align: .right, vCenter: true, shrink: true)
+                y = box.maxY + 12
             }
         }
         y -= 12

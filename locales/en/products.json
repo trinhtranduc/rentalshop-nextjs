@@ -633,8 +633,7 @@
         "depositNegative": "Booking deposit cannot be negative",
         "stockRequired": "Quantity must be more than 0",
         "outletStockNegative": "Quantity cannot be negative",
-        "branchRequired": "Tick at least one branch to show the product",
-        "hourBlocksNeedPrice": "Hour blocks also need a per-rental or per-day price."
+        "branchRequired": "Tick at least one branch to show the product"
       },
       "noCreate": "You do not have permission to add products.",
       "noEdit": "You do not have permission to edit products.",
@@ -646,7 +645,6 @@
       "needOutlet": "Add at least one outlet before adding products.",
       "goOutlets": "Open Outlets",
       "blockRow": "Per day-block",
-      "hourRow": "Per hour-block",
       "blockNotSet": "Not set",
       "unitOnce": "đ / rental",
       "unitDay": "đ / day",
@@ -664,26 +662,6 @@
         "copyLoading": "Loading…",
         "close": "Close",
         "incomplete": "Fill every day and the amount added for each extra day, or keep the last block price."
-      },
-      "hour": {
-        "summary": "{count, plural, one {# block} other {# blocks}}: {hours} h",
-        "edit": "Edit hour-block prices",
-        "title": "Hour-block pricing",
-        "hint": "One price for each block of hours. In the cart, the block you pick sets the price.",
-        "listTitle": "Hour blocks",
-        "unit": "h",
-        "hoursOf": "Hours of block {n}",
-        "priceOf": "Price of block {n}",
-        "remove": "Remove block {n}",
-        "add": "+ Add block",
-        "max": "At most {n} blocks.",
-        "save": "Save price list",
-        "turnOff": "Turn off hour-block pricing",
-        "errors": {
-          "hours": "Hours must be a whole number from 1 to 24.",
-          "repeated": "Each number of hours can be used for one block only.",
-          "price": "Enter a price for every block (0 is allowed)."
-        }
       },
       "listing": {
         "branch": "Branch",
@@ -713,7 +691,6 @@
       "hour": "Rent per hour",
       "perDay": "{price}/day",
       "perHour": "{price}/hour",
-      "hourBlock": "{n} h {price}",
       "default": "Default",
       "deposit": "Booking deposit",
       "sale": "Sale price",

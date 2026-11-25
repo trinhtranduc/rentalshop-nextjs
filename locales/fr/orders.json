@@ -659,8 +659,7 @@
         "HOURLY": "Par heure · {price}/heure",
         "FIXED": "Par location · {price}/fois",
         "SALE": "Prix de vente · {price}",
-        "BLOCK": "Par tranche de jours · {price}",
-        "HOUR_BLOCK": "Tranche de {n} heures · {price}"
+        "BLOCK": "Par tranche de jours · {price}"
       },
       "cart": {
         "label": "Commande en cours",
@@ -754,8 +753,7 @@
           "DAILY": "/jour",
           "HOURLY": "/heure",
           "OTHER": "",
-          "BLOCK": "pour toute la période",
-          "HOUR_BLOCK": "/tranche"
+          "BLOCK": "pour toute la période"
         },
         "note": "Valable uniquement pour cette commande, ne modifie pas le prix du produit.",
         "done": "Terminé",
@@ -939,8 +937,7 @@
         "image": "Photo {name}",
         "block": "Tranche de {n} jours",
         "blockExtra": "Tranche de {n} jours + {m} jours en plus",
-        "blockDays": "{n} jours",
-        "hourBlock": "Tranche de {n} heures"
+        "blockDays": "{n} jours"
       },
       "notes": {
         "title": "Notes",
@@ -1118,13 +1115,24 @@
         "perHour": "/heure",
         "hours": "{n} heures",
         "block": "Tranche de {n} jours",
-        "blockExtra": "Tranche de {n} jours + {m} jours en plus",
-        "hourBlock": "Tranche de {n} heures"
+        "blockExtra": "Tranche de {n} jours + {m} jours en plus"
       },
       "bankTitle": "Virement bancaire",
       "bankName": "Banque",
       "bankAccount": "N° de compte",
-      "bankHolder": "Titulaire du compte"
+      "bankHolder": "Titulaire du compte",
+      "return": {
+        "title": "Au retour",
+        "cancelTitle": "Annulée",
+        "collateral": "Dépôt de garantie",
+        "excessDeposit": "Acompte au-delà de la location",
+        "lateFee": "Frais de retard",
+        "surcharge": "Supplément",
+        "kept": "Supplément",
+        "giveBack": "À rendre au client",
+        "collect": "Encaisser en plus",
+        "refund": "À rembourser au client"
+      }
     },
     "online": {
       "button": "Réservation en ligne",

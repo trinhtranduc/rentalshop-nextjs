@@ -2641,4 +2641,8 @@
         <item quantity="one">%1$d time</item>
         <item quantity="other">%1$d times</item>
     </plurals>
+    <!-- #1633 bill: fees at return -->
+    <string name="bill_return_title">At return</string>
+    <string name="bill_return_excess_deposit">Deposit above the rent</string>
+    <string name="bill_return_give_back">Give back</string>
 </resources>
