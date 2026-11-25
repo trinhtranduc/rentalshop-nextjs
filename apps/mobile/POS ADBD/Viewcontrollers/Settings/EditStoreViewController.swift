@@ -5,7 +5,9 @@
 //  The shop / branch form (#484, board CH-sua; #1313): the v2 form of "Sửa khách hàng" (label above the field, no icons).
 //  - shop (the owner): name (required), phone, tax id, ĐỊA CHỈ (street, ward / district, province), KHÁC (country, postal
 //    code, description). Saves through `PUT /api/settings/merchant`; no website.
-//  - branch: name (required), phone, address (required). Saves through `PUT /api/outlets?id=`. Read-only (no Lưu) for staff.
+//  - branch: name (required), phone, address (required), and (#1643) the links shown on its public shop page (website,
+//    Facebook, Instagram, TikTok, YouTube, Zalo, other; max 6; edited on `OutletLinkEditorViewController`). Saves through
+//    `PUT /api/outlets?id=`. Read-only (no Lưu) for staff.
 //
 
 import UIKit
@@ -49,6 +51,14 @@ class EditStoreViewController: BaseViewControler {
     private let cancelButton = V2.secondaryButton("customers.v2.cancel".localized())
     private let formScroll = CustomerFormScrollView()
     private var keyboardManagerWasEnabled = true
+
+    /// #1643: links of the branch. `unavailable` (not loaded, e.g. an older API) hides the section and keeps `links` out of the save.
+    private enum LinksState { case loading, ready, unavailable }
+    private var links: [OutletLink] = []
+    private var linksState: LinksState = .unavailable
+    private let linksSection = UIStackView()
+    private let linksList = UIStackView()
+    private let linksFooter = V2.label(size: DS.TextSize.secondary, color: DS.Color.textMuted, lines: 0)
 
     /// Country as the picker returns it (the button shows a placeholder while empty)
     private var country: String = "" {
@@ -125,8 +135,9 @@ class EditStoreViewController: BaseViewControler {
                 descriptionBlock(),
             ]
         } else {
-            parts.append(field(editable ? requiredTitle("Address".localized()) : plainTitle("Address".localized()), addressField,
-                              accessibility: "Address".localized()))
+            let addressBlock = field(editable ? requiredTitle("Address".localized()) : plainTitle("Address".localized()), addressField,
+                                     accessibility: "Address".localized())
+            parts += [addressBlock, linksSectionView()]
         }
         let form = UIStackView(arrangedSubviews: parts)
         form.axis = .vertical
@@ -135,6 +146,7 @@ class EditStoreViewController: BaseViewControler {
         for title in [addressTitle, otherTitle] {
             if let index = parts.firstIndex(of: title), index > 0 { form.setCustomSpacing(20, after: parts[index - 1]) }
         }
+        if let index = parts.firstIndex(of: linksSection), index > 0 { form.setCustomSpacing(24, after: parts[index - 1]) }
         if !editable { setFieldsEnabled(false) }
 
         let scroll = formScroll
@@ -326,6 +338,153 @@ class EditStoreViewController: BaseViewControler {
         descriptionPlaceholder.isHidden = !(descriptionView.text ?? "").isEmpty
     }
 
+    // MARK: - Links (#1643)
+
+    /// "Liên kết (hiện ở trang shop)", the rows in a bordered box, "＋ Thêm liên kết", "Đã dùng n / 6"
+    private func linksSectionView() -> UIView {
+        // normal case, like the field titles (the owner asked: not "LIÊN KẾT"); ĐỊA CHỈ / KHÁC keep their upper case
+        let title = V2.label("shopinfo.links.title".localized(), size: DS.TextSize.body, weight: .bold, lines: 0)
+        title.accessibilityTraits = UIAccessibilityTraitHeader
+        title.accessibilityIdentifier = "branchLinksSection"
+        linksList.axis = .vertical
+        linksList.layer.borderWidth = 1
+        linksList.layer.borderColor = V2.border.cgColor
+        linksList.layer.cornerRadius = 12
+        linksList.clipsToBounds = true
+        linksList.backgroundColor = .white
+        linksSection.axis = .vertical
+        linksSection.spacing = 8
+        [title, linksList, linksFooter].forEach(linksSection.addArrangedSubview)
+        linksSection.isHidden = true
+        return linksSection
+    }
+
+    private func renderLinks() {
+        linksList.arrangedSubviews.forEach {
+            linksList.removeArrangedSubview($0)
+            $0.removeFromSuperview()
+        }
+        // Staff see the rows only (and nothing when there are none); a branch whose links did not load shows no section
+        linksSection.isHidden = linksState == .unavailable || (linksState == .ready && !editable && links.isEmpty)
+        linksFooter.isHidden = !(editable && linksState == .ready)
+        switch linksState {
+        case .unavailable:
+            return
+        case .loading:
+            linksList.addArrangedSubview(linkRow(label: nil, value: "Loading...".localized(), tag: nil))
+            return
+        case .ready:
+            break
+        }
+        for (index, link) in links.enumerated() {
+            if index > 0 { linksList.addArrangedSubview(V2.divider()) }
+            linksList.addArrangedSubview(linkRow(label: link.type == .other ? (link.label ?? link.type.title) : link.type.title,
+                                                 value: link.url, tag: editable ? index : nil, identifier: "branchLinkRow_\(index)"))
+        }
+        if editable && links.count < OutletLinkLogic.maxLinks {
+            if !links.isEmpty { linksList.addArrangedSubview(V2.divider()) }
+            let add = UIControl()
+            add.isAccessibilityElement = true
+            add.accessibilityIdentifier = "branchLinkAdd"
+            add.accessibilityLabel = "shopinfo.links.add".localized()
+            add.accessibilityTraits = UIAccessibilityTraitButton
+            let text = V2.label("＋ " + "shopinfo.links.add".localized(), size: DS.TextSize.input, weight: .bold, color: DS.Color.primary)
+            text.isUserInteractionEnabled = false
+            add.addSubview(text)
+            text.snp.makeConstraints { make in
+                make.leading.equalToSuperview().offset(14)
+                make.centerY.equalToSuperview()
+            }
+            add.snp.makeConstraints { make in make.height.equalTo(52) }
+            add.addTarget(self, action: #selector(addLinkTapped), for: .touchUpInside)
+            linksList.addArrangedSubview(add)
+        }
+        linksFooter.text = String(format: "shopinfo.links.used".localized(), links.count)
+    }
+
+    /// Small type name above, the address under it; tappable (a chevron) when `tag` is the link's index
+    private func linkRow(label: String?, value: String, tag: Int?, identifier: String? = nil) -> UIView {
+        let row = UIControl()
+        let top = V2.label(label, size: DS.TextSize.secondary, color: DS.Color.textMuted)
+        top.isHidden = label == nil
+        let bottom = V2.label(value, size: DS.TextSize.input, color: label == nil ? DS.Color.textMuted : DS.Color.text)
+        bottom.lineBreakMode = .byTruncatingMiddle
+        let texts = UIStackView(arrangedSubviews: [top, bottom])
+        texts.axis = .vertical
+        texts.spacing = 2
+        texts.isUserInteractionEnabled = false
+        row.addSubview(texts)
+        texts.snp.makeConstraints { make in
+            make.leading.equalToSuperview().offset(14)
+            make.top.bottom.equalToSuperview().inset(10)
+            make.trailing.equalToSuperview().offset(tag == nil ? -14 : -34)
+        }
+        row.snp.makeConstraints { make in make.height.greaterThanOrEqualTo(56) }
+        row.isAccessibilityElement = true
+        row.accessibilityIdentifier = identifier
+        row.accessibilityLabel = [label, value].compactMap { $0 }.joined(separator: ", ")
+        if let tag {
+            let chevron = UIImageView(image: DS.symbol("chevron.right", DS.Icon.sm, weight: .semibold))
+            chevron.tintColor = UIColor(hexString: "94A3B8")
+            chevron.isUserInteractionEnabled = false
+            row.addSubview(chevron)
+            chevron.snp.makeConstraints { make in
+                make.trailing.equalToSuperview().offset(-12)
+                make.centerY.equalToSuperview()
+            }
+            row.tag = tag
+            row.accessibilityTraits = UIAccessibilityTraitButton
+            row.addTarget(self, action: #selector(linkRowTapped(_:)), for: .touchUpInside)
+        }
+        return row
+    }
+
+    @objc private func addLinkTapped() { openLinkEditor(index: nil) }
+    @objc private func linkRowTapped(_ sender: UIControl) { openLinkEditor(index: sender.tag) }
+
+    private func openLinkEditor(index: Int?) {
+        guard editable, linksState == .ready else { return }
+        view.endEditing(true)
+        let editor = OutletLinkEditorViewController()
+        if let index, links.indices.contains(index) { editor.initial = links[index] }
+        editor.suggestedType = OutletLinkType.allCases.first { type in !links.contains { $0.type == type } } ?? .other
+        editor.onDone = { [weak self] link in
+            guard let self else { return }
+            if let index, self.links.indices.contains(index) { self.links[index] = link } else { self.links.append(link) }
+            // the same link twice is kept once, like the API does
+            var seen: [OutletLink] = []
+            self.links = self.links.filter { item in
+                if seen.contains(item) { return false }
+                seen.append(item)
+                return true
+            }
+            self.renderLinks()
+        }
+        if let index {
+            editor.onDelete = { [weak self] in
+                guard let self, self.links.indices.contains(index) else { return }
+                self.links.remove(at: index)
+                self.renderLinks()
+            }
+        }
+        navigationController?.pushViewController(editor, animated: true)
+    }
+
+    /// The own branch comes from the login payload, which has no `links`: ask the list once (the section waits meanwhile)
+    private func loadLinks(branchId: Int) {
+        linksState = .loading
+        OutletService.shared.getOutlets(limit: 200) { [weak self] outlets, _ in
+            guard let self else { return }
+            if let entries = outlets?.first(where: { $0.id == branchId })?.links {
+                self.links = OutletLinkLogic.parseStored(entries)
+                self.linksState = .ready
+            } else {
+                self.linksState = .unavailable
+            }
+            self.renderLinks()
+        }
+    }
+
     // MARK: - Data
 
     override func setupData() {
@@ -347,6 +506,13 @@ class EditStoreViewController: BaseViewControler {
             storeNameField.text = outlet?.name ?? ""
             phoneField.text = outlet?.phone ?? ""
             addressField.text = outlet?.address ?? ""
+            if let entries = outlet?.links {
+                links = OutletLinkLogic.parseStored(entries)
+                linksState = .ready
+            } else if let id = outlet?.id {
+                loadLinks(branchId: id)
+            }
+            renderLinks()
         }
         updateDescriptionPlaceholder()
     }
@@ -439,7 +605,9 @@ class EditStoreViewController: BaseViewControler {
     }
 
     private func saveBranch() {
-        let form = BranchFormValues(name: storeNameField.text ?? "", phone: phoneField.text ?? "", address: addressField.text ?? "")
+        // `links` only when they were loaded: an unknown list is never sent, so the branch keeps what it has
+        let form = BranchFormValues(name: storeNameField.text ?? "", phone: phoneField.text ?? "", address: addressField.text ?? "",
+                                    links: linksState == .ready ? links : nil)
         switch ShopInfoLogic.problem(branch: form) {
         case .nameRequired?:
             showNameError("Store name is required".localized())

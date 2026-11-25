@@ -12,3 +12,4 @@ Status: in-progress. Skills: `api-compat-review`, `db-migration`, `i18n-keys`, `
 8. Tests `tests/outlet-links.test.ts`, `tests/api/outlet-links-api.test.ts`, `tests/public-outlet-picker.test.ts` (TZ không liên quan, không có ngày).
 9. `.agent/api-changes/LOG.md` thêm dòng #1643 `planned`.
 10. Verify: tsc client/api (so baseline 149 / 94), jest, e2e thật trên web local (headed Chrome): nhập link ở form, mở trang shop 2 chi nhánh, chọn chi nhánh, Zalo dự phòng; kiểm tra 400px và dark.
+11. PR 2 (app): iOS `Model/ShopInfo.swift`, `Model/Outlet.swift`, `EditStoreViewController.swift`, `OutletLinkEditorViewController.swift`; Android `OutletLinkLogic.kt`, `BranchLinksUi.kt`, `ApiParity.kt`, `ShopInfoScreens.kt`, `StoreInfoV2Form.kt`; chuỗi ×12 / ×12. App chỉ gửi `links` khi đã đọc được từ API (nil = không biết, không gửi). Không đổi API.

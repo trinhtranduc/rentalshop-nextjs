@@ -3109,3 +3109,20 @@
 "bill.return.collateral" = "Dépôt de garantie";
 "bill.return.excessDeposit" = "Acompte au-delà de la location";
 "bill.return.giveBack" = "À rendre au client";
+/* #1643: links of a branch (Thông tin cửa hàng) */
+"shopinfo.links.title" = "Liens (affichés sur la page de la boutique)";
+"shopinfo.links.add" = "Ajouter un lien";
+"shopinfo.links.used" = "%d / 6 utilisés. Les clients voient ces liens en ouvrant la page boutique de cette succursale.";
+"shopinfo.links.typeTitle" = "Type";
+"shopinfo.links.urlTitle" = "Adresse du lien";
+"shopinfo.links.labelTitle" = "Nom";
+"shopinfo.links.labelPlaceholder" = "p. ex. Shopee";
+"shopinfo.links.remove" = "Supprimer le lien";
+"shopinfo.links.hint" = "https:// est ajouté s'il manque.";
+"shopinfo.links.tooMany" = "Vous pouvez ajouter jusqu'à 6 liens.";
+"shopinfo.links.err.invalid" = "Saisissez un lien, par exemple tenshop.vn ou https://tenshop.vn";
+"shopinfo.links.err.platform" = "Ce lien n'appartient pas au réseau choisi.";
+"shopinfo.links.err.labelRequired" = "Saisissez un nom pour ce lien.";
+"shopinfo.links.err.labelTooLong" = "Le nom comporte 30 caractères au maximum.";
+"shopinfo.links.type.website" = "Site web";
+"shopinfo.links.type.other" = "Autre";

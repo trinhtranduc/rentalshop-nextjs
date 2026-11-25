@@ -3109,3 +3109,20 @@
 "bill.return.collateral" = "Залог";
 "bill.return.excessDeposit" = "Излишек предоплаты";
 "bill.return.giveBack" = "Вернуть клиенту";
+/* #1643: links of a branch (Thông tin cửa hàng) */
+"shopinfo.links.title" = "Ссылки (показываются на странице магазина)";
+"shopinfo.links.add" = "Добавить ссылку";
+"shopinfo.links.used" = "Использовано %d / 6. Клиенты видят эти ссылки, открыв страницу магазина этого филиала.";
+"shopinfo.links.typeTitle" = "Тип";
+"shopinfo.links.urlTitle" = "Адрес ссылки";
+"shopinfo.links.labelTitle" = "Название";
+"shopinfo.links.labelPlaceholder" = "напр. Shopee";
+"shopinfo.links.remove" = "Удалить ссылку";
+"shopinfo.links.hint" = "https:// добавляется, если его нет.";
+"shopinfo.links.tooMany" = "Можно добавить не более 6 ссылок.";
+"shopinfo.links.err.invalid" = "Введите ссылку, например tenshop.vn или https://tenshop.vn";
+"shopinfo.links.err.platform" = "Эта ссылка не относится к выбранной сети.";
+"shopinfo.links.err.labelRequired" = "Введите название для этой ссылки.";
+"shopinfo.links.err.labelTooLong" = "Название — не более 30 символов.";
+"shopinfo.links.type.website" = "Сайт";
+"shopinfo.links.type.other" = "Другое";
