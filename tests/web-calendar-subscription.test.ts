@@ -44,7 +44,14 @@ describe('subscriptionBlocked', () => {
 });
 
 describe('the calendar page (#849)', () => {
-  const source = fs.readFileSync(path.resolve(__dirname, '../apps/client/app/calendar/page.tsx'), 'utf8');
+  // #1641: /calendar only redirects to the Orders page; the calendar itself lives in CalendarView
+  const source = fs.readFileSync(path.resolve(__dirname, '../apps/client/app/calendar/CalendarView.tsx'), 'utf8');
+  const page = fs.readFileSync(path.resolve(__dirname, '../apps/client/app/calendar/page.tsx'), 'utf8');
+
+  it('keeps old /calendar links working by sending them to Orders > Lịch', () => {
+    expect(page).toMatch(/orders\?\$\{calendarRedirectQuery\(/);
+  });
+
 
   it('reads the subscription status again on every load and retry', () => {
     expect(source).toMatch(/subscriptionsApi\s*\.getCurrentUserSubscriptionStatus\(\)/);
