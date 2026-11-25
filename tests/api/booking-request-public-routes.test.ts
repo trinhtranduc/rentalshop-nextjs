@@ -79,6 +79,51 @@ describe('GET /api/public/[tenantKey]/availability', () => {
     expect(JSON.stringify(res.body)).not.toMatch(/available|booked|stock/);
   });
 
+  describe('#1646 "Hiện còn / hết trên lịch đặt thuê"', () => {
+    const q = 'productId=11&outletId=3&from=2026-10-19&to=2026-10-23';
+    const seedOrders = () => {
+      mockStore.orders.push({ id: 1, outletId: 3, productId: 11, quantity: 1, status: 'RESERVED', orderType: 'RENT', pickupPlanAt: vnDay('2026-10-21'), returnPlanAt: vnDay('2026-10-22') });
+      mockStore.orders.push({ id: 2, outletId: 3, productId: 11, quantity: 1, status: 'PICKUPED', orderType: 'RENT', pickupPlanAt: vnDay('2026-10-22'), returnPlanAt: vnDay('2026-10-22') });
+    };
+
+    it('switch on: every day also carries the units left (past 0), status unchanged', async () => {
+      mockStore.merchants[0].showPublicStock = true;
+      seedOrders();
+      const res: any = await availability(jsonRequest(url(q)), params());
+      expect(res.status).toBe(200);
+      expect(res.body.data.days).toEqual([
+        { date: '2026-10-19', status: 'full', available: 0 },
+        { date: '2026-10-20', status: 'free', available: 2 },
+        { date: '2026-10-21', status: 'free', available: 1 },
+        { date: '2026-10-22', status: 'full', available: 0 },
+        { date: '2026-10-23', status: 'free', available: 2 },
+      ]);
+    });
+
+    it('switch off or missing (not migrated): no count in the answer', async () => {
+      seedOrders();
+      const missing: any = await availability(jsonRequest(url(q)), params());
+      expect(JSON.stringify(missing.body)).not.toContain('available');
+      mockStore.merchants[0].showPublicStock = false;
+      const off: any = await availability(jsonRequest(url(q)), params());
+      expect(JSON.stringify(off.body)).not.toContain('available');
+    });
+
+    it('a failing read of the column means off, the calendar still answers', async () => {
+      const original = mockClient.merchant.findUnique;
+      mockClient.merchant.findUnique = jest.fn(async (args: any) => {
+        if (args?.select?.showPublicStock) throw new Error('column "showPublicStock" does not exist');
+        return original(args);
+      });
+      const spy = jest.spyOn(console, 'error').mockImplementation(() => undefined);
+      const res: any = await availability(jsonRequest(url(q)), params());
+      spy.mockRestore();
+      expect(res.status).toBe(200);
+      expect(res.body.data.days).toHaveLength(5);
+      expect(JSON.stringify(res.body)).not.toContain('available');
+    });
+  });
+
   it('403 BOOKING_DISABLED when the shop has not turned booking on', async () => {
     mockStore.merchants[0].onlineBookingEnabled = false;
     const res: any = await availability(jsonRequest(url('productId=11&outletId=3&from=2026-10-20&to=2026-10-21')), params());

@@ -22,6 +22,7 @@ const timezoneSchema = z.string().min(1).max(64).refine(isValidTimeZone, 'Unknow
  *   otherwise). A body with only that field updates just the setting (no name required).
  * - `onlineBookingEnabled` (#1124, boolean "Nhận đặt online"): role MERCHANT or ADMIN only, like allowOverlappingOrders.
  * - `showPublicPrice` (#1174, boolean "Hiện giá trên trang shop"): role MERCHANT or ADMIN only, like onlineBookingEnabled.
+ * - `showPublicStock` (#1646, boolean "Hiện còn / hết trên lịch đặt thuê"): role MERCHANT or ADMIN only, like showPublicPrice.
  * - `blockPricing` (#1189, `{ oldApps: 'recompute' | 'block' }` "Với app cũ"): role MERCHANT only (403
  *   INSUFFICIENT_PERMISSIONS otherwise, ADMIN included). Stored in `Merchant.settings.blockPricing.oldApps`, merged into
  *   the other keys of `settings`; any other value is 400 INVALID_INPUT. A body with only that field updates just it.
@@ -70,6 +71,7 @@ export const PUT = withPermissions(['merchant.manage'])(async (request: NextRequ
       allowOverlappingOrders,
       onlineBookingEnabled,
       showPublicPrice,
+      showPublicStock,
       timezone,
       blockPricing,
       shareOrderNote,
@@ -96,6 +98,22 @@ export const PUT = withPermissions(['merchant.manage'])(async (request: NextRequ
     // #1124 "Nhận đặt online": boolean, shop owner (or platform ADMIN) only
     if (onlineBookingEnabled !== undefined) {
       if (typeof onlineBookingEnabled !== 'boolean') {
+        return NextResponse.json(
+          ResponseBuilder.error('INVALID_INPUT'),
+          { status: API.STATUS.BAD_REQUEST }
+        );
+      }
+      if (user.role !== USER_ROLE.MERCHANT && user.role !== USER_ROLE.ADMIN) {
+        return NextResponse.json(
+          ResponseBuilder.error('INSUFFICIENT_PERMISSIONS'),
+          { status: API.STATUS.FORBIDDEN }
+        );
+      }
+    }
+
+    // #1646 "Hiện còn / hết trên lịch đặt thuê": boolean, shop owner (or platform ADMIN) only
+    if (showPublicStock !== undefined) {
+      if (typeof showPublicStock !== 'boolean') {
         return NextResponse.json(
           ResponseBuilder.error('INVALID_INPUT'),
           { status: API.STATUS.BAD_REQUEST }
@@ -194,7 +212,7 @@ export const PUT = withPermissions(['merchant.manage'])(async (request: NextRequ
     // every other body is the business-info form as before and still needs a name.
     const BUSINESS_FIELDS = ['name', 'phone', 'address', 'city', 'state', 'zipCode', 'country', 'businessType', 'taxId', 'website', 'description', 'tenantKey'];
     const settingOnly =
-      (allowOverlappingOrders !== undefined || onlineBookingEnabled !== undefined || showPublicPrice !== undefined || timezone !== undefined || blockPricing !== undefined || shareOrderNote !== undefined || language !== undefined) &&
+      (allowOverlappingOrders !== undefined || onlineBookingEnabled !== undefined || showPublicPrice !== undefined || showPublicStock !== undefined || timezone !== undefined || blockPricing !== undefined || shareOrderNote !== undefined || language !== undefined) &&
       BUSINESS_FIELDS.every((field) => body[field] === undefined);
 
     // Validate required fields
@@ -275,6 +293,9 @@ export const PUT = withPermissions(['merchant.manage'])(async (request: NextRequ
     if (showPublicPrice !== undefined) {
       updateData.showPublicPrice = showPublicPrice;
     }
+    if (showPublicStock !== undefined) {
+      updateData.showPublicStock = showPublicStock;
+    }
     if (timezone !== undefined) {
       updateData.timezone = timezone;
     }
@@ -331,6 +352,8 @@ export const PUT = withPermissions(['merchant.manage'])(async (request: NextRequ
         // #1124 additive; false when off or missing
         onlineBookingEnabled: (updatedMerchant as { onlineBookingEnabled?: boolean }).onlineBookingEnabled === true,
         showPublicPrice: (updatedMerchant as { showPublicPrice?: boolean }).showPublicPrice !== false,
+        // #1646 additive; false when off or missing
+        showPublicStock: (updatedMerchant as { showPublicStock?: boolean }).showPublicStock === true,
         // #1189 additive; 'recompute' when unset
         blockPricing: { oldApps: readOldAppsMode((updatedMerchant as { settings?: unknown }).settings) },
         // #1344 additive; false when unset

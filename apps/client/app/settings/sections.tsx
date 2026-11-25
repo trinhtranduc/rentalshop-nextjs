@@ -571,6 +571,9 @@ export function PublicPageSection({
   showPublicPrice = true,
   canEditPrice = false,
   onPriceChanged,
+  showPublicStock = false,
+  bookingOn = false,
+  onStockChanged,
 }: {
   tenantKey: string;
   publicProductLink?: string | null;
@@ -581,6 +584,10 @@ export function PublicPageSection({
   showPublicPrice?: boolean;
   canEditPrice?: boolean;
   onPriceChanged?: () => void;
+  /** #1646 Hiện còn / hết trên lịch đặt thuê; only works while "Nhận đặt online" is on */
+  showPublicStock?: boolean;
+  bookingOn?: boolean;
+  onStockChanged?: () => void;
 }) {
   const origin = useOrigin();
   const ts = useTranslations('settings');
@@ -592,8 +599,13 @@ export function PublicPageSection({
   const [priceSaving, setPriceSaving] = useState(false);
   const priceTitleId = useId();
   const priceHintId = useId();
+  const [stockOn, setStockOn] = useState(showPublicStock);
+  const [stockSaving, setStockSaving] = useState(false);
+  const stockTitleId = useId();
+  const stockHintId = useId();
   useEffect(() => setValue(tenantKey), [tenantKey]);
   useEffect(() => setPriceOn(showPublicPrice), [showPublicPrice]);
+  useEffect(() => setStockOn(showPublicStock), [showPublicStock]);
   const togglePrice = async (next: boolean) => {
     if (!canEditPrice) return;
     setPriceOn(next);
@@ -608,6 +620,23 @@ export function PublicPageSection({
       toastError(ts('messages.errorTitle'), error instanceof Error && error.message ? error.message : t('publicPage.showPrice'));
     } finally {
       setPriceSaving(false);
+    }
+  };
+  const stockEnabled = canEditPrice && bookingOn;
+  const toggleStock = async (next: boolean) => {
+    if (!stockEnabled) return;
+    setStockOn(next);
+    setStockSaving(true);
+    try {
+      const res = await bookingRequestsApi.setShowPublicStock(next);
+      if (!res.success) throw new Error(res.error || '');
+      toastSuccess(ts('messages.successTitle'), t('publicPage.showStock'));
+      onStockChanged?.();
+    } catch (error) {
+      setStockOn(!next);
+      toastError(ts('messages.errorTitle'), error instanceof Error && error.message ? error.message : t('publicPage.showStock'));
+    } finally {
+      setStockSaving(false);
     }
   };
   const dirty = value !== tenantKey;
@@ -673,6 +702,21 @@ export function PublicPageSection({
             </span>
           </span>
           <Switch checked={priceOn} onChange={togglePrice} disabled={!canEditPrice || priceSaving} labelledBy={priceTitleId} describedBy={priceHintId} />
+        </div>
+      </section>
+      <section className={`${cardClass} flex flex-col gap-4 px-5 py-4 ${bookingOn ? '' : 'opacity-60'}`} data-show-public-stock-setting>
+        <div className="flex min-h-[44px] items-start justify-between gap-3">
+          <span className="flex flex-col gap-1">
+            <h2 id={stockTitleId} className="m-0 text-lg font-bold">
+              {t('publicPage.showStock')}
+            </h2>
+            <span id={stockHintId} className="text-sm text-ar-muted">
+              {t('publicPage.showStockHint')}
+              {!bookingOn && ` ${t('publicPage.showStockNeedsBooking')}`}
+              {!canEditPrice && ` ${t('publicPage.ownerOnly')}`}
+            </span>
+          </span>
+          <Switch checked={stockOn && bookingOn} onChange={toggleStock} disabled={!stockEnabled || stockSaving} labelledBy={stockTitleId} describedBy={stockHintId} />
         </div>
       </section>
     </>

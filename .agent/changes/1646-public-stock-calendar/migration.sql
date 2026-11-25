@@ -1,0 +1,1 @@
+ALTER TABLE "Merchant" ADD COLUMN "showPublicStock" BOOLEAN NOT NULL DEFAULT false;

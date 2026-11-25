@@ -419,6 +419,7 @@ export const simplifiedUsers = {
             language: true, // #1539 shop language for emails, GET /api/users/profile
             onlineBookingEnabled: true, // #1124 online booking switch for GET /api/users/profile
             ...({ showPublicPrice: true } as object), // #1174 public catalogue prices (column after migrate)
+            ...({ showPublicStock: true } as object), // #1646 stock on the public booking calendar (column after migrate)
             settings: true, // #1189/#1199 shop settings JSON (depositMode reaches the client with the profile)
             isActive: true,
             planId: true,

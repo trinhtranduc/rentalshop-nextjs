@@ -35,6 +35,8 @@ interface PublicProductGridProps {
   imageSearchAvailable?: boolean;
   /** #1174: false → catalogue shows Liên hệ */
   showPublicPrice?: boolean;
+  /** #1646: the booking calendar shows units left under each day */
+  showPublicStock?: boolean;
 }
 
 const SHOP_TIME_ZONE = 'Asia/Ho_Chi_Minh';
@@ -47,7 +49,7 @@ const browserStorage = () => {
 };
 
 /** #665 — search, category chips, product cards and the detail sheet */
-export function PublicProductGrid({ products, categories, currency, phone, pagination, tenantKey, onlineBooking = false, outlets = [], imageSearchAvailable = false, showPublicPrice = true }: PublicProductGridProps) {
+export function PublicProductGrid({ products, categories, currency, phone, pagination, tenantKey, onlineBooking = false, outlets = [], imageSearchAvailable = false, showPublicPrice = true, showPublicStock = false }: PublicProductGridProps) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -288,6 +290,7 @@ export function PublicProductGrid({ products, categories, currency, phone, pagin
               ? {
                   tenantKey,
                   enabled: true,
+                  showStock: showPublicStock,
                   outlets,
                   todayKey,
                   draft,
