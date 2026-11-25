@@ -2433,10 +2433,8 @@
     <string name="signup_country">國家／地區</string>
     <string name="signup_country_search">搜尋國家／地區</string>
     <string name="signup_country_empty">找不到符合的國家／地區</string>
-    <string name="signup_country_hint">貨幣 %1$s · 越南文電子郵件 · 可在設定中變更。</string>
+    <string name="signup_country_hint">貨幣 %1$s · 可在設定中變更。</string>
     <string name="signup_app_language">vi</string>
-    <string name="settings_email_language">電子郵件語言</string>
-    <string name="settings_email_language_hint">驗證、重設密碼與方案通知的電子郵件將以此語言寄出。</string>
     <string-array name="history_kinds">
         <item>ORDER_CREATED|建立訂單</item>
         <item>ORDER_EDITED|修改訂單</item>

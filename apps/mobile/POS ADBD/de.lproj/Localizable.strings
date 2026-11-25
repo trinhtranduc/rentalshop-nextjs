@@ -3074,12 +3074,9 @@
 "order.reorder.limit" = "10 Warenkörbe sind geöffnet. Schließen Sie einen Warenkorb, bevor Sie erneut bestellen.";
 "order.reorder.failed" = "Die Bestellung zum erneuten Bestellen konnte nicht gelesen werden";
 "authv2.country" = "Land";
-"authv2.countryHint" = "Währung %@ · E-Mails auf Vietnamesisch · in den Einstellungen änderbar.";
+"authv2.countryHint" = "Währung %@ · in den Einstellungen änderbar.";
 "authv2.country.search" = "Land suchen";
 "authv2.country.empty" = "Kein passendes Land";
-"shopinfo.emailLanguage" = "E-Mail-Sprache";
-"shopinfo.emailLanguage.hint" = "Bestätigungs-, Passwort-Zurücksetzungs- und Tarif-E-Mails werden in dieser Sprache gesendet.";
-"shopinfo.emailLanguage.failed" = "Die E-Mail-Sprache konnte nicht gespeichert werden. Bitte versuchen Sie es erneut.";
 
 /* #1612 AI weekly summary on Tổng quan (floating button and sheet) */
 "weeklySummary.title" = "Wochenübersicht";

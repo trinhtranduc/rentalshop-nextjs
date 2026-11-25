@@ -556,9 +556,7 @@
       "currencyHint": "Cómo se muestran los precios en la web y en la página de la tienda. Los importes no se convierten automáticamente.",
       "currencyConfirmTitle": "¿Cambiar la moneda a {code}?",
       "currencyConfirmBody": "Todos los precios de la web y de la página de la tienda se mostrarán en {code}. Los importes no cambian ni se convierten ({example}).",
-      "currencyConfirmOk": "Cambiar a {code}",
-      "emailLanguage": "Idioma de los emails",
-      "emailLanguageHint": "Los emails de verificación, de restablecimiento de contraseña y de avisos del plan se enviarán en este idioma."
+      "currencyConfirmOk": "Cambiar a {code}"
     },
     "outlets": {
       "title": "Sucursales",

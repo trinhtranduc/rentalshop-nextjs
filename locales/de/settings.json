@@ -556,9 +556,7 @@
       "currencyHint": "Wie Preise im Web und auf der Geschäftsseite angezeigt werden. Beträge werden nicht umgerechnet.",
       "currencyConfirmTitle": "Währung auf {code} umstellen?",
       "currencyConfirmBody": "Alle Preise im Web und auf der Geschäftsseite werden in {code} angezeigt. Die Beträge bleiben gleich, es wird nichts umgerechnet ({example}).",
-      "currencyConfirmOk": "Auf {code} umstellen",
-      "emailLanguage": "E-Mail-Sprache",
-      "emailLanguageHint": "Bestätigungs-, Passwort-zurücksetzen- und Tarif-E-Mails werden in dieser Sprache gesendet."
+      "currencyConfirmOk": "Auf {code} umstellen"
     },
     "outlets": {
       "title": "Filialen",

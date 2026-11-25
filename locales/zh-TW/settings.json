@@ -556,9 +556,7 @@
       "currencyHint": "說明價格在網頁與店家頁面的顯示方式。金額不會自動換算。",
       "currencyConfirmTitle": "要將幣別改為 {code} 嗎？",
       "currencyConfirmBody": "網頁與店家頁面的所有價格都將以 {code} 顯示。金額維持不變，不做換算（{example}）。",
-      "currencyConfirmOk": "改為 {code}",
-      "emailLanguage": "Email 語言",
-      "emailLanguageHint": "驗證、重設密碼及方案相關的 Email 都會以此語言寄出。"
+      "currencyConfirmOk": "改為 {code}"
     },
     "outlets": {
       "title": "分店",

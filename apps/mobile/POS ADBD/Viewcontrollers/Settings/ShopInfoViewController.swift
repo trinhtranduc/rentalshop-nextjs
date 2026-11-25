@@ -40,10 +40,7 @@ final class ShopInfoViewController: BaseViewControler {
     private var branches: [BranchRow] = []
     private var outlets: [Outlet] = []
     private var loaded = false
-    /// #1539 (app): Ngôn ngữ email, nil until the profile sends `merchant.language`
-    private var emailLanguage: SignupLanguage?
-    private var savingEmailLanguage = false
-    private var shopRows: [ShopInfoLogic.ShopRow] { ShopInfoLogic.shopRows(emailLanguage: emailLanguage) }
+    private var shopRows: [ShopInfoLogic.ShopRow] { ShopInfoLogic.shopRows() }
 
     private var shopName: String { (User.account()?.merchant?.name ?? "").trimmingCharacters(in: .whitespacesAndNewlines) }
 
@@ -103,7 +100,6 @@ final class ShopInfoViewController: BaseViewControler {
                 user.merchant?.zipCode = saved.zipCode
                 user.merchant?.description = saved.description
                 User.save(user: user)
-                self?.emailLanguage = EmailLanguageLogic.visibleLanguage(role: user.role, profileLanguage: saved.language)
                 self?.table.reloadData()
             }
         }
@@ -126,46 +122,6 @@ final class ShopInfoViewController: BaseViewControler {
             NotificationCenter.default.post(name: .shopBranchCountDidChange, object: nil, userInfo: ["count": rows.count])
             self.loaded = true
             self.table.reloadData()
-        }
-    }
-
-    /// #1539 (app): Tiếng Việt / English, the current one checked; another one is saved right away
-    private func chooseEmailLanguage(from cell: UIView?) {
-        guard let current = emailLanguage, !savingEmailLanguage else { return }
-        let sheet = UIAlertController(title: "shopinfo.emailLanguage".localized(), message: nil, preferredStyle: .actionSheet)
-        for language in SignupLanguage.allCases {
-            let action = UIAlertAction(title: language.label, style: .default) { [weak self] _ in
-                guard language != current else { return }
-                self?.saveEmailLanguage(language)
-            }
-            action.setValue(language == current, forKey: "checked")
-            sheet.addAction(action)
-        }
-        sheet.addAction(UIAlertAction(title: "settings.v2.currency.cancel".localized(), style: .cancel))
-        if let popover = sheet.popoverPresentationController {
-            popover.sourceView = cell ?? view
-            popover.sourceRect = (cell ?? view).bounds
-        }
-        present(sheet, animated: true)
-    }
-
-    /// PUT /api/settings/merchant `{ language }`; a failure keeps the old value
-    private func saveEmailLanguage(_ language: SignupLanguage) {
-        savingEmailLanguage = true
-        showProgressText(text: "Processing...".localized())
-        TabsV2APIService.shared.setEmailLanguage(language) { [weak self] saved, error in
-            DispatchQueue.main.async {
-                guard let self else { return }
-                self.savingEmailLanguage = false
-                self.hideProgress()
-                if let saved, error == nil {
-                    self.emailLanguage = saved
-                    self.table.reloadData()
-                    return
-                }
-                let failure = error ?? NSError.errorWithOwnMessage(message: "shopinfo.emailLanguage.failed".localized(), domain: "RC")
-                UIAlertController.errorAlert(parent: self, error: failure)
-            }
         }
     }
 
@@ -206,28 +162,6 @@ extension ShopInfoViewController: UITableViewDataSource, UITableViewDelegate {
         section == 0 ? shopRows.count : branches.count
     }
 
-    /// #1539 (app): what Ngôn ngữ email is for, under it
-    func tableView(_ tableView: UITableView, viewForFooterInSection section: Int) -> UIView? {
-        guard section == 0, emailLanguage != nil else { return nil }
-        let hint = V2.label("shopinfo.emailLanguage.hint".localized(), size: DS.TextSize.secondary, color: DS.Color.textMuted, lines: 0)
-        let footer = UIView()
-        footer.addSubview(hint)
-        hint.snp.makeConstraints { make in
-            make.top.equalToSuperview().offset(8)
-            make.bottom.equalToSuperview().offset(-12)
-            make.leading.trailing.equalToSuperview().inset(DS.Spacing.lg)
-        }
-        return footer
-    }
-
-    func tableView(_ tableView: UITableView, heightForFooterInSection section: Int) -> CGFloat {
-        section == 0 && emailLanguage != nil ? UITableViewAutomaticDimension : 0
-    }
-
-    func tableView(_ tableView: UITableView, estimatedHeightForFooterInSection section: Int) -> CGFloat {
-        section == 0 && emailLanguage != nil ? 44 : 0
-    }
-
     func tableView(_ tableView: UITableView, viewForHeaderInSection section: Int) -> UIView? {
         if section == 0 { return V2.sectionHeader("settings.v2.group.store".localized()) }
         let hint = V2.label("shopinfo.tapToEdit".localized(), size: DS.TextSize.secondary, color: DS.Color.textMuted)
@@ -248,13 +182,8 @@ extension ShopInfoViewController: UITableViewDataSource, UITableViewDelegate {
                 return cell
             }
             let cell = tableView.dequeueReusableCell(withIdentifier: SettingsDetailV2Cell.reuseId, for: indexPath) as! SettingsDetailV2Cell
-            if row == .emailLanguage, let language = emailLanguage {
-                cell.configure(title: "shopinfo.emailLanguage".localized(), value: language.label, accessory: .chevron)
-                cell.accessibilityIdentifier = "emailLanguage"
-            } else {
-                cell.configure(title: "settings.v2.currency".localized(), value: ShopCurrencyStore.current.rawValue, accessory: .chevron)
-                cell.accessibilityIdentifier = nil
-            }
+            cell.configure(title: "settings.v2.currency".localized(), value: ShopCurrencyStore.current.rawValue, accessory: .chevron)
+            cell.accessibilityIdentifier = nil
             return cell
         }
         let cell = tableView.dequeueReusableCell(withIdentifier: BranchCell.reuseId, for: indexPath) as! BranchCell
@@ -270,7 +199,6 @@ extension ShopInfoViewController: UITableViewDataSource, UITableViewDelegate {
             switch shopRows[indexPath.row] {
             case .shop: openShopForm()
             case .currency: ShopCurrencyUI.choose(from: self) { [weak self] in self?.table.reloadData() }
-            case .emailLanguage: chooseEmailLanguage(from: tableView.cellForRow(at: indexPath))
             }
         } else {
             openBranchForm(branches[indexPath.row])

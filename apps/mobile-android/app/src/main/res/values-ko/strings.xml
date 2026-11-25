@@ -2433,10 +2433,8 @@
     <string name="signup_country">국가</string>
     <string name="signup_country_search">국가 검색</string>
     <string name="signup_country_empty">일치하는 국가가 없습니다</string>
-    <string name="signup_country_hint">통화 %1$s · 이메일 기본 언어 베트남어 · 설정에서 변경할 수 있습니다.</string>
+    <string name="signup_country_hint">통화 %1$s · 설정에서 변경할 수 있습니다.</string>
     <string name="signup_app_language">vi</string>
-    <string name="settings_email_language">이메일 언어</string>
-    <string name="settings_email_language_hint">인증, 비밀번호 재설정, 요금제 알림 이메일은 이 언어로 발송됩니다.</string>
     <string-array name="history_kinds">
         <item>ORDER_CREATED|주문 생성</item>
         <item>ORDER_EDITED|주문 수정</item>

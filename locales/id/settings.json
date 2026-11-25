@@ -556,9 +556,7 @@
       "currencyHint": "Cara harga ditampilkan di web dan halaman toko. Jumlah tidak dikonversi otomatis.",
       "currencyConfirmTitle": "Ubah mata uang ke {code}?",
       "currencyConfirmBody": "Semua harga di web dan halaman toko akan ditampilkan dalam {code}. Jumlahnya tetap sama, tidak dikonversi ({example}).",
-      "currencyConfirmOk": "Ubah ke {code}",
-      "emailLanguage": "Bahasa email",
-      "emailLanguageHint": "Email verifikasi, atur ulang kata sandi, dan pemberitahuan paket dikirim dalam bahasa ini."
+      "currencyConfirmOk": "Ubah ke {code}"
     },
     "outlets": {
       "title": "Cabang",

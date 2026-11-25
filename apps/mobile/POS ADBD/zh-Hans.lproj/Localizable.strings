@@ -3077,12 +3077,9 @@
 "order.reorder.limit" = "当前已打开 10 个购物车。请先关闭一个再重新下单。";
 "order.reorder.failed" = "无法读取订单以便重新下单";
 "authv2.country" = "国家/地区";
-"authv2.countryHint" = "货币 %@ · 邮件使用越南语 · 可在设置中更改。";
+"authv2.countryHint" = "货币 %@ · 可在设置中更改。";
 "authv2.country.search" = "搜索国家/地区";
 "authv2.country.empty" = "没有匹配的国家/地区";
-"shopinfo.emailLanguage" = "邮件语言";
-"shopinfo.emailLanguage.hint" = "验证、重置密码和套餐邮件将使用此语言发送。";
-"shopinfo.emailLanguage.failed" = "无法保存邮件语言，请重试。";
 
 /* #1612 AI weekly summary on Tổng quan (floating button and sheet) */
 "weeklySummary.title" = "每周摘要";

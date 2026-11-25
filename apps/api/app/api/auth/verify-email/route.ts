@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { db, verifyEmailByToken } from '@rentalshop/database';
 import { generateToken } from '@rentalshop/auth/server';
 import { handleApiError, ResponseBuilder, clientSafeErrorText } from '@rentalshop/utils';
-import { shopLanguage } from '@rentalshop/constants';
+import { emailLanguageFor } from '@rentalshop/constants';
 
 const verifyEmailSchema = z.object({
   token: z.string().min(1, 'Token is required'),
@@ -170,7 +170,7 @@ export async function resendVerification(request: NextRequest) {
       userName,
       verification.token,
       // #1539 in the shop language (no shop / unset: Vietnamese)
-      shopLanguage((user.merchant as { language?: unknown } | null | undefined)?.language)
+      emailLanguageFor(user.merchant as { country?: unknown; language?: unknown } | null | undefined)
     );
 
     if (!emailResult.success) {

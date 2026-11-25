@@ -3074,12 +3074,9 @@
 "order.reorder.limit" = "Sedang membuka 10 keranjang. Tutup salah satu lalu pesan ulang.";
 "order.reorder.failed" = "Tidak dapat membaca pesanan untuk dipesan ulang";
 "authv2.country" = "Negara";
-"authv2.countryHint" = "Mata uang %@ · Email dalam bahasa Indonesia · dapat diubah di Pengaturan.";
+"authv2.countryHint" = "Mata uang %@ · dapat diubah di Pengaturan.";
 "authv2.country.search" = "Cari negara";
 "authv2.country.empty" = "Tidak ada negara yang cocok";
-"shopinfo.emailLanguage" = "Bahasa email";
-"shopinfo.emailLanguage.hint" = "Email verifikasi, atur ulang kata sandi, dan pemberitahuan paket dikirim dalam bahasa ini.";
-"shopinfo.emailLanguage.failed" = "Bahasa email tidak tersimpan. Silakan coba lagi.";
 
 /* #1612 AI weekly summary on Tổng quan (floating button and sheet) */
 "weeklySummary.title" = "Ringkasan mingguan";

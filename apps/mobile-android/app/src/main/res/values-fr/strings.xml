@@ -2433,10 +2433,8 @@
     <string name="signup_country">Pays</string>
     <string name="signup_country_search">Rechercher un pays</string>
     <string name="signup_country_empty">Aucun pays correspondant</string>
-    <string name="signup_country_hint">Devise %1$s · E-mails en vietnamien · modifiable dans les Réglages.</string>
+    <string name="signup_country_hint">Devise %1$s · modifiable dans les Réglages.</string>
     <string name="signup_app_language">vi</string>
-    <string name="settings_email_language">Langue des e-mails</string>
-    <string name="settings_email_language_hint">Les e-mails de vérification, de réinitialisation du mot de passe et d\'abonnement sont envoyés dans cette langue.</string>
     <string-array name="history_kinds">
         <item>ORDER_CREATED|Créer la commande</item>
         <item>ORDER_EDITED|Modifier la commande</item>

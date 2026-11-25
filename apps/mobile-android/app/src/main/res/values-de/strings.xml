@@ -2433,10 +2433,8 @@
     <string name="signup_country">Land</string>
     <string name="signup_country_search">Land suchen</string>
     <string name="signup_country_empty">Kein passendes Land gefunden</string>
-    <string name="signup_country_hint">Währung %1$s · E-Mails auf Vietnamesisch · in den Einstellungen änderbar.</string>
+    <string name="signup_country_hint">Währung %1$s · in den Einstellungen änderbar.</string>
     <string name="signup_app_language">vi</string>
-    <string name="settings_email_language">E-Mail-Sprache</string>
-    <string name="settings_email_language_hint">Bestätigungs-, Passwort-zurücksetzen- und Tarif-E-Mails werden in dieser Sprache gesendet.</string>
     <string-array name="history_kinds">
         <item>ORDER_CREATED|Auftrag erstellt</item>
         <item>ORDER_EDITED|Auftrag bearbeitet</item>

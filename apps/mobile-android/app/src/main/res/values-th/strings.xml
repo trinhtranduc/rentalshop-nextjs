@@ -2433,10 +2433,8 @@
     <string name="signup_country">ประเทศ</string>
     <string name="signup_country_search">ค้นหาประเทศ</string>
     <string name="signup_country_empty">ไม่พบประเทศที่ตรงกัน</string>
-    <string name="signup_country_hint">สกุลเงิน %1$s · อีเมลภาษาเวียดนาม · เปลี่ยนได้ในการตั้งค่า</string>
+    <string name="signup_country_hint">สกุลเงิน %1$s · เปลี่ยนได้ในการตั้งค่า</string>
     <string name="signup_app_language">vi</string>
-    <string name="settings_email_language">ภาษาอีเมล</string>
-    <string name="settings_email_language_hint">อีเมลยืนยันตัวตน ตั้งรหัสผ่านใหม่ และแจ้งเตือนแพ็กเกจ จะส่งเป็นภาษานี้</string>
     <string-array name="history_kinds">
         <item>ORDER_CREATED|สร้างออเดอร์</item>
         <item>ORDER_EDITED|แก้ไขออเดอร์</item>

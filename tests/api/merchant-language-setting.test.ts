@@ -150,6 +150,39 @@ describe('profile carries merchant.language (#1539)', () => {
   });
 });
 
+describe('#1648 the language in use follows the shop country', () => {
+  const profileFor2 = async (merchantExtra: any) => {
+    ctx = as('MERCHANT');
+    mockDb.users.findById.mockResolvedValue({
+      id: 10, email: 'u@x', role: 'MERCHANT', merchantId: 2,
+      merchant: { ...MERCHANT_ROW, ...merchantExtra },
+    });
+    const res: any = await getProfile(req());
+    return res.body.data.merchant;
+  };
+
+  it('profile: a country decides (Vietnam vi, Japan ja, other en) over the stored language', async () => {
+    expect((await profileFor2({ country: 'Vietnam', language: 'en' })).language).toBe('vi');
+    expect((await profileFor2({ country: 'Japan', language: 'vi' })).language).toBe('ja');
+    expect((await profileFor2({ country: 'United States', language: 'vi' })).language).toBe('en');
+  });
+
+  it('profile: no country keeps the stored language as before #1648', async () => {
+    expect((await profileFor2({ country: null, language: 'en' })).language).toBe('en');
+    expect((await profileFor2({ language: null })).language).toBe('vi');
+  });
+
+  it('PUT { language } from an installed app is still accepted and stored; the answer says the language in use', async () => {
+    ctx = as('MERCHANT');
+    mockDb.users.findById.mockResolvedValue({ id: 10, merchant: { id: 2 } });
+    mockDb.merchants.update.mockImplementation(async (_id: number, data: any) => ({ ...MERCHANT_ROW, country: 'Vietnam', ...data }));
+    const res: any = await putMerchantSettings(req({ language: 'en' }));
+    expect(res.status).toBe(200);
+    expect(mockDb.merchants.update).toHaveBeenCalledWith(2, { language: 'en' });
+    expect(res.body.data.language).toBe('vi'); // Vietnam: emails stay Vietnamese
+  });
+});
+
 describe('the login answer is not touched (#1459 golden): Settings reads the profile instead', () => {
   it('no language key in the login merchant', async () => {
     mockDb.merchants.findById.mockResolvedValue({ ...MERCHANT_ROW, currency: 'USD', subscription: null, language: 'en' });

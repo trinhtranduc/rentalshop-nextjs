@@ -3074,12 +3074,9 @@
 "order.reorder.limit" = "カートは10件まで開けます。カートを1つ閉じてから再注文してください。";
 "order.reorder.failed" = "再注文する注文を読み込めませんでした";
 "authv2.country" = "国・地域";
-"authv2.countryHint" = "通貨 %@ · メールは日本語 · 設定から変更できます。";
+"authv2.countryHint" = "通貨 %@ · 設定から変更できます。";
 "authv2.country.search" = "国・地域を検索";
 "authv2.country.empty" = "該当する国・地域がありません";
-"shopinfo.emailLanguage" = "メールの言語";
-"shopinfo.emailLanguage.hint" = "確認メール、パスワード再設定、プランのお知らせは、この言語で送信されます。";
-"shopinfo.emailLanguage.failed" = "メールの言語を保存できませんでした。もう一度お試しください。";
 
 /* #1612 AI weekly summary on Tổng quan (floating button and sheet) */
 "weeklySummary.title" = "週間まとめ";

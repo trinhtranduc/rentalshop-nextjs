@@ -1355,7 +1355,7 @@ export const simplifiedSubscriptions = {
       where: { id },
       include: {
         // #1539 language: subscription emails go out in the shop language
-        merchant: { select: { id: true, name: true, email: true, language: true } },
+        merchant: { select: { id: true, name: true, email: true, language: true, country: true } },
         // basePrice + currency: renew / extend price from the plan (#779; was 0); limits: allowWebAccess change on plan change
         plan: { select: { id: true, name: true, basePrice: true, currency: true, limits: true } },
         payments: {

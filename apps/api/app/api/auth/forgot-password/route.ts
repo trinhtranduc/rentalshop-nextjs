@@ -4,7 +4,7 @@ import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { db, createPasswordResetToken } from '@rentalshop/database';
 import { sendPasswordResetEmail } from '@rentalshop/utils';
 import { passwordResetRateLimiter } from '@rentalshop/middleware';
-import { shopLanguage } from '@rentalshop/constants';
+import { emailLanguageFor } from '@rentalshop/constants';
 
 // ============================================================================
 // VALIDATION SCHEMA
@@ -118,7 +118,7 @@ export async function POST(request: NextRequest) {
         userName,
         passwordReset.token,
         // #1539 in the shop language (no shop / unset: Vietnamese)
-        shopLanguage((user.merchant as { language?: unknown } | null | undefined)?.language)
+        emailLanguageFor(user.merchant as { country?: unknown; language?: unknown } | null | undefined)
       );
 
       console.log('📬 [Forget Password] Email result:', {

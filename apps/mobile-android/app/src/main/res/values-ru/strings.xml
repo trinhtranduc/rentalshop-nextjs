@@ -2433,10 +2433,8 @@
     <string name="signup_country">Страна</string>
     <string name="signup_country_search">Поиск страны</string>
     <string name="signup_country_empty">Подходящих стран нет</string>
-    <string name="signup_country_hint">Валюта %1$s · письма на вьетнамском · можно изменить в настройках.</string>
+    <string name="signup_country_hint">Валюта %1$s · можно изменить в настройках.</string>
     <string name="signup_app_language">vi</string>
-    <string name="settings_email_language">Язык писем</string>
-    <string name="settings_email_language_hint">Письма для подтверждения, сброса пароля и уведомления о тарифе отправляются на этом языке.</string>
     <string-array name="history_kinds">
         <item>ORDER_CREATED|Создание заказа</item>
         <item>ORDER_EDITED|Изменение заказа</item>

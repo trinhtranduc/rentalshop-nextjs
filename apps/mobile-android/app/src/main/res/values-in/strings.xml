@@ -2433,10 +2433,8 @@
     <string name="signup_country">Negara</string>
     <string name="signup_country_search">Cari negara</string>
     <string name="signup_country_empty">Tidak ada negara yang cocok</string>
-    <string name="signup_country_hint">Mata uang %1$s · Email dalam bahasa Vietnam · dapat diubah di Pengaturan.</string>
+    <string name="signup_country_hint">Mata uang %1$s · dapat diubah di Pengaturan.</string>
     <string name="signup_app_language">vi</string>
-    <string name="settings_email_language">Bahasa email</string>
-    <string name="settings_email_language_hint">Email verifikasi, atur ulang kata sandi, dan pemberitahuan paket dikirim dalam bahasa ini.</string>
     <string-array name="history_kinds">
         <item>ORDER_CREATED|Buat pesanan</item>
         <item>ORDER_EDITED|Ubah pesanan</item>

@@ -1757,9 +1757,9 @@ final class AnyRentE2ETests: XCTestCase {
         e2e.backToLogin()
     }
 
-    /// #1541 Thông tin cửa hàng → Ngôn ngữ email (owner): pick the other language, the row shows it.
-    /// Prints `E2E_NOTE: emailLanguage <before> -> <after>` for the DB check.
-    func test0dEmailLanguageSetting() throws {
+    /// #1648 Thông tin cửa hàng (owner): the shop card and Tiền tệ only. There is no Ngôn ngữ email row any more:
+    /// the email language follows the shop's country.
+    func test0dNoEmailLanguageRow() throws {
         try e2e.requireFlag("newSettings")
         guard e2e.role == "merchant" else { throw XCTSkip("owner only") }
         try e2e.start()
@@ -1769,22 +1769,11 @@ final class AnyRentE2ETests: XCTestCase {
         XCTAssertTrue(info.waitForExistence(timeout: 8), "the Thông tin cửa hàng row")
         e2e.tapRow(info)
         sleep(3)
-        let row = app.descendants(matching: .any)["emailLanguage"]
-        for _ in 0..<3 where !(row.exists && row.isHittable) { app.swipeUp() }
-        XCTAssertTrue(row.waitForExistence(timeout: 8), "Ngôn ngữ email row for the owner")
-        let before = app.staticTexts["English"].exists ? "English" : "Tiếng Việt"
-        let after = before == "English" ? "Tiếng Việt" : "English"
-        e2e.shot("e1-store-info-email-language")
-        row.tap()
-        let choice = app.buttons[after]
-        XCTAssertTrue(choice.waitForExistence(timeout: 5), "\(after) in the sheet")
-        e2e.shot("e2-email-language-sheet")
-        choice.tap()
-        sleep(3)
-        e2e.dismissAlerts()
-        XCTAssertTrue(app.staticTexts[after].waitForExistence(timeout: 8), "the row now reads \(after)")
-        e2e.note("emailLanguage \(before) -> \(after)")
-        e2e.shot("e3-email-language-saved")
+        let currency = app.staticTexts.matching(NSPredicate(format: "label IN %@", ["Currency", "Tiền tệ"])).firstMatch
+        XCTAssertTrue(currency.waitForExistence(timeout: 8), "Tiền tệ row")
+        XCTAssertFalse(app.descendants(matching: .any)["emailLanguage"].exists, "no Ngôn ngữ email row")
+        XCTAssertFalse(app.staticTexts.matching(NSPredicate(format: "label IN %@", ["Email language", "Ngôn ngữ email"])).firstMatch.exists)
+        e2e.shot("e1-store-info-no-email-language")
     }
 
     /// #1643 Thông tin cửa hàng → a branch → Liên kết (owner): a bad Instagram link is refused, a good one is added, "Khác" needs a name,
