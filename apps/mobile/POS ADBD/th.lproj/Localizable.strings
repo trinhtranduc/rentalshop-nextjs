@@ -3109,3 +3109,20 @@
 "bill.return.collateral" = "เงินประกัน";
 "bill.return.excessDeposit" = "มัดจำส่วนเกิน";
 "bill.return.giveBack" = "คืนให้ลูกค้า";
+/* #1643: links of a branch (Thông tin cửa hàng) */
+"shopinfo.links.title" = "ลิงก์ (แสดงในหน้าร้าน)";
+"shopinfo.links.add" = "เพิ่มลิงก์";
+"shopinfo.links.used" = "ใช้ไปแล้ว %d / 6 ลูกค้าจะเห็นลิงก์เหล่านี้เมื่อเปิดหน้าร้านของสาขานี้";
+"shopinfo.links.typeTitle" = "ประเภท";
+"shopinfo.links.urlTitle" = "ที่อยู่ลิงก์";
+"shopinfo.links.labelTitle" = "ชื่อ";
+"shopinfo.links.labelPlaceholder" = "เช่น Shopee";
+"shopinfo.links.remove" = "ลบลิงก์";
+"shopinfo.links.hint" = "ระบบจะเติม https:// ให้หากไม่มี";
+"shopinfo.links.tooMany" = "เพิ่มลิงก์ได้สูงสุด 6 ลิงก์";
+"shopinfo.links.err.invalid" = "ใส่ลิงก์ เช่น tenshop.vn หรือ https://tenshop.vn";
+"shopinfo.links.err.platform" = "ลิงก์นี้ไม่ใช่ของเครือข่ายที่เลือก";
+"shopinfo.links.err.labelRequired" = "ใส่ชื่อสำหรับลิงก์นี้";
+"shopinfo.links.err.labelTooLong" = "ชื่อยาวได้ไม่เกิน 30 ตัวอักษร";
+"shopinfo.links.type.website" = "เว็บไซต์";
+"shopinfo.links.type.other" = "อื่น ๆ";

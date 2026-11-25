@@ -2541,4 +2541,20 @@
     <string name="bill_return_title">Bei Rückgabe</string>
     <string name="bill_return_excess_deposit">Anzahlung über der Miete</string>
     <string name="bill_return_give_back">An Kunden zurück</string>
+    <string name="shopinfo_links_title">Links (auf der Shop-Seite sichtbar)</string>
+    <string name="shopinfo_links_hint">Wird auf der öffentlichen Shop-Seite dieser Filiale angezeigt.</string>
+    <string name="shopinfo_links_add">Link hinzufügen</string>
+    <string name="shopinfo_links_edit_title">Link bearbeiten</string>
+    <string name="shopinfo_links_done">Fertig</string>
+    <string name="shopinfo_links_used">%1$d / %2$d verwendet</string>
+    <string name="shopinfo_links_type_title">Linktyp</string>
+    <string name="shopinfo_links_url_title">Linkadresse</string>
+    <string name="shopinfo_links_label_title">Linkname</string>
+    <string name="shopinfo_links_remove">Link entfernen</string>
+    <string name="shopinfo_links_err_invalid">Der Link scheint falsch zu sein, zum Beispiel %1$s</string>
+    <string name="shopinfo_links_err_platform">Das ist kein gültiger %1$s-Link, zum Beispiel %2$s</string>
+    <string name="shopinfo_links_err_label_required">Namen für den Link eingeben</string>
+    <string name="shopinfo_links_err_label_too_long">Höchstens %1$d Zeichen</string>
+    <string name="shopinfo_links_type_website">Webseite</string>
+    <string name="shopinfo_links_type_other">Sonstiges</string>
 </resources>

@@ -1787,6 +1787,170 @@ final class AnyRentE2ETests: XCTestCase {
         e2e.shot("e3-email-language-saved")
     }
 
+    /// #1643 Thông tin cửa hàng → a branch → Liên kết (owner): a bad Instagram link is refused, a good one is added, "Khác" needs a name,
+    /// a link is edited and another deleted, Lưu keeps them after reopening the branch. Prints `E2E_NOTE: branchLinks <before> -> <after>`.
+    func test0eBranchLinks() throws {
+        try e2e.requireFlag("newSettings")
+        guard e2e.role == "merchant" else { throw XCTSkip("owner only") }
+        try e2e.start()
+        e2e.tapTab(["Settings", "Cài đặt", "Setting"], index: nil)
+        sleep(3)
+        let info = app.staticTexts.matching(NSPredicate(format: "label IN %@", ["Store Information", "Thông tin cửa hàng"])).firstMatch
+        XCTAssertTrue(info.waitForExistence(timeout: 8), "the Thông tin cửa hàng row")
+        e2e.tapRow(info)
+        sleep(3)
+        e2e.shot("l1-store-info")
+
+        // the second branch (the main one stays untouched for other runs): the cell after the shop card, Tiền tệ,
+        // (when shown) Ngôn ngữ email and the main branch
+        func openFirstBranch() {
+            let shopRows = app.descendants(matching: .any)["emailLanguage"].exists ? 3 : 2
+            let cell = app.cells.element(boundBy: shopRows + 1)
+            XCTAssertTrue(cell.waitForExistence(timeout: 8), "a branch row")
+            e2e.tapRow(cell)
+            sleep(3)
+        }
+        func linkRows() -> [XCUIElement] {
+            (0..<8).map { app.descendants(matching: .any)["branchLinkRow_\($0)"] }.filter { $0.exists }
+        }
+        func scrollToLinks() {
+            let add = app.descendants(matching: .any)["branchLinksSection"]
+            for _ in 0..<4 where !(add.exists && add.isHittable) { app.swipeUp() }
+        }
+        func fill(_ field: XCUIElement, _ text: String) {
+            field.tap()
+            // the field's own clear (x) button empties it; a tap on the text can leave the caret mid-text
+            let clear = field.buttons.firstMatch
+            if clear.waitForExistence(timeout: 1), (field.value as? String).map({ !$0.isEmpty && $0 != field.placeholderValue }) ?? false { clear.tap() }
+            field.typeText(text)
+        }
+        func chooseType(_ raw: String) {
+            let row = app.descendants(matching: .any)["linkTypeRow_\(raw)"]
+            XCTAssertTrue(row.waitForExistence(timeout: 5), "type row \(raw)")
+            row.tap()
+        }
+
+        openFirstBranch()
+        let section = app.descendants(matching: .any)["branchLinksSection"]
+        for _ in 0..<4 where !section.exists { app.swipeUp() }
+        XCTAssertTrue(section.waitForExistence(timeout: 10), "the Liên kết section on the branch form")
+        scrollToLinks()
+        let before = linkRows().count
+        e2e.shot("l2-branch-form-links")
+
+        // 1) Instagram with a link of another network: refused with a red line, nothing is added
+        app.descendants(matching: .any)["branchLinkAdd"].tap()
+        chooseType("instagram")
+        let url = app.textFields["linkUrlField"]
+        XCTAssertTrue(url.waitForExistence(timeout: 5), "the address field")
+        fill(url, "tiktok.com/@laneanhbridal")
+        app.buttons["linkDoneButton"].tap()
+        XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label IN %@", ["This link is not from the selected network.", "Link này không thuộc mạng đã chọn."])).firstMatch
+            .waitForExistence(timeout: 5), "platform error under the address")
+        e2e.shot("l3-instagram-wrong-network")
+        // 2) the right one
+        fill(url, "instagram.com/laneanhbridal")
+        e2e.shot("l4-instagram-good")
+        app.buttons["linkDoneButton"].tap()
+        sleep(1)
+        scrollToLinks()
+        XCTAssertEqual(linkRows().count, before + 1, "Instagram added")
+        e2e.shot("l5-instagram-added")
+
+        // 3) Khác needs a name
+        app.descendants(matching: .any)["branchLinkAdd"].tap()
+        chooseType("other")
+        fill(app.textFields["linkUrlField"], "shopee.vn/laneanhbridal")
+        app.buttons["linkDoneButton"].tap()
+        XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label IN %@", ["Enter a name for this link.", "Nhập tên cho liên kết này."])).firstMatch
+            .waitForExistence(timeout: 5), "name required for Khác")
+        e2e.shot("l6-other-needs-name")
+        fill(app.textFields["linkLabelField"], "Shopee")
+        app.buttons["linkDoneButton"].tap()
+        sleep(1)
+        scrollToLinks()
+        XCTAssertEqual(linkRows().count, before + 2, "Khác added")
+        e2e.shot("l7-other-added")
+
+        // 4) edit Instagram (row `before`), 5) delete Khác (row `before + 1`)
+        e2e.tapRow(app.descendants(matching: .any)["branchLinkRow_\(before)"])
+        fill(app.textFields["linkUrlField"], "instagram.com/laneanh.bridal")
+        e2e.shot("l8-edit-instagram")
+        app.buttons["linkDoneButton"].tap()
+        sleep(1)
+        scrollToLinks()
+        e2e.tapRow(app.descendants(matching: .any)["branchLinkRow_\(before + 1)"])
+        let remove = app.buttons["linkDeleteButton"]
+        XCTAssertTrue(remove.waitForExistence(timeout: 5), "Xóa liên kết on an existing link")
+        e2e.shot("l9-delete-other")
+        remove.tap()
+        sleep(1)
+        scrollToLinks()
+        XCTAssertEqual(linkRows().count, before + 1, "Khác deleted")
+        e2e.shot("l10-before-save")
+
+        // Lưu, then reopen the branch: Instagram is still there
+        let save = e2e.button(["Save", "Lưu"])
+        XCTAssertTrue(save.waitForExistence(timeout: 5), "Lưu")
+        save.tap()
+        sleep(4)
+        e2e.dismissAlerts()
+        e2e.shot("l11-saved")
+        openFirstBranch()
+        for _ in 0..<4 where !section.exists { app.swipeUp() }
+        XCTAssertTrue(section.waitForExistence(timeout: 10), "the Liên kết section after reopening")
+        scrollToLinks()
+        XCTAssertEqual(linkRows().count, before + 1, "the saved links are back after reopening")
+        e2e.shot("l12-reopened")
+        e2e.note("branchLinks \(before) -> \(linkRows().count)")
+    }
+
+    /// #1643 the own branch of a non-owner: the branch manager adds a Facebook link (the login payload has no links, so the form
+    /// loads them first) and saves; staff see the saved rows only, with no "＋ Thêm liên kết". Run as `--account manager` then `--account staff`
+    /// on a branch of its own (E2E_MANAGER_EMAIL / E2E_STAFF_EMAIL with the same outlet number).
+    func test0fOwnBranchLinks() throws {
+        try e2e.requireFlag("newSettings")
+        guard e2e.role == "manager" || e2e.role == "staff" else { throw XCTSkip("branch manager or staff only") }
+        try e2e.start()
+        e2e.tapTab(["Settings", "Cài đặt", "Setting"], index: nil)
+        sleep(3)
+        let info = app.staticTexts.matching(NSPredicate(format: "label IN %@", ["Branch Information", "Thông tin chi nhánh"])).firstMatch
+        XCTAssertTrue(info.waitForExistence(timeout: 8), "the Thông tin chi nhánh row")
+        e2e.tapRow(info)
+        sleep(3)
+        let section = app.descendants(matching: .any)["branchLinksSection"]
+        let add = app.descendants(matching: .any)["branchLinkAdd"]
+        let facebook = app.descendants(matching: .any)["branchLinkRow_0"]
+        if e2e.role == "manager" {
+            XCTAssertTrue(section.waitForExistence(timeout: 10), "the Liên kết section appears once the links are loaded")
+            e2e.shot("o1-manager-form")
+            add.tap()
+            let row = app.descendants(matching: .any)["linkTypeRow_facebook"]
+            XCTAssertTrue(row.waitForExistence(timeout: 5), "type list")
+            row.tap()
+            let url = app.textFields["linkUrlField"]
+            url.tap()
+            url.typeText("facebook.com/laneanhbridal")
+            e2e.shot("o2-manager-facebook")
+            app.buttons["linkDoneButton"].tap()
+            sleep(1)
+            XCTAssertTrue(facebook.waitForExistence(timeout: 5), "Facebook row")
+            e2e.shot("o3-manager-added")
+            let save = e2e.button(["Save", "Lưu"])
+            XCTAssertTrue(save.waitForExistence(timeout: 5), "Lưu")
+            save.tap()
+            sleep(4)
+            e2e.dismissAlerts()
+            e2e.shot("o4-manager-saved")
+        } else {
+            XCTAssertTrue(section.waitForExistence(timeout: 10), "staff see the saved links")
+            XCTAssertTrue(facebook.waitForExistence(timeout: 5), "the Facebook row")
+            XCTAssertFalse(add.exists, "staff cannot add a link")
+            e2e.shot("o5-staff-read-only")
+        }
+        e2e.note("ownBranchLinks \(e2e.role)")
+    }
+
     func test5bOrderExtendEditPrint() throws {
         try e2e.requireFlag("newOrders")
         try e2e.requireFlag("newOrderDetail")

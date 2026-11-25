@@ -2540,4 +2540,20 @@
     <string name="bill_return_title">반납 시</string>
     <string name="bill_return_excess_deposit">예약금 초과분</string>
     <string name="bill_return_give_back">고객에게 돌려주기</string>
+    <string name="shopinfo_links_title">링크 (쇼핑 페이지에 표시)</string>
+    <string name="shopinfo_links_hint">이 지점의 공개 쇼핑 페이지에 표시됩니다.</string>
+    <string name="shopinfo_links_add">링크 추가</string>
+    <string name="shopinfo_links_edit_title">링크 수정</string>
+    <string name="shopinfo_links_done">완료</string>
+    <string name="shopinfo_links_used">%1$d / %2$d 사용 중</string>
+    <string name="shopinfo_links_type_title">링크 종류</string>
+    <string name="shopinfo_links_url_title">링크 주소</string>
+    <string name="shopinfo_links_label_title">링크 이름</string>
+    <string name="shopinfo_links_remove">링크 삭제</string>
+    <string name="shopinfo_links_err_invalid">링크가 올바르지 않습니다. 예: %1$s</string>
+    <string name="shopinfo_links_err_platform">올바른 %1$s 링크가 아닙니다. 예: %2$s</string>
+    <string name="shopinfo_links_err_label_required">링크 이름을 입력하세요</string>
+    <string name="shopinfo_links_err_label_too_long">최대 %1$d자</string>
+    <string name="shopinfo_links_type_website">웹사이트</string>
+    <string name="shopinfo_links_type_other">기타</string>
 </resources>

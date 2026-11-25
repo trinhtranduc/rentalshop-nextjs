@@ -3112,3 +3112,20 @@
 "bill.return.collateral" = "押金";
 "bill.return.excessDeposit" = "多付订金";
 "bill.return.giveBack" = "退还客户";
+/* #1643: links of a branch (Thông tin cửa hàng) */
+"shopinfo.links.title" = "链接（显示在店铺页面）";
+"shopinfo.links.add" = "添加链接";
+"shopinfo.links.used" = "已使用 %d / 6。顾客打开该分店的店铺页面时会看到这些链接。";
+"shopinfo.links.typeTitle" = "类型";
+"shopinfo.links.urlTitle" = "链接地址";
+"shopinfo.links.labelTitle" = "名称";
+"shopinfo.links.labelPlaceholder" = "例如 Shopee";
+"shopinfo.links.remove" = "删除链接";
+"shopinfo.links.hint" = "缺少 https:// 时会自动添加。";
+"shopinfo.links.tooMany" = "最多可添加 6 个链接。";
+"shopinfo.links.err.invalid" = "请输入链接，例如 tenshop.vn 或 https://tenshop.vn";
+"shopinfo.links.err.platform" = "该链接不属于所选平台。";
+"shopinfo.links.err.labelRequired" = "请为此链接输入名称。";
+"shopinfo.links.err.labelTooLong" = "名称最多 30 个字符。";
+"shopinfo.links.type.website" = "网站";
+"shopinfo.links.type.other" = "其他";

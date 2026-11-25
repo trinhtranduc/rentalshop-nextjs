@@ -2540,4 +2540,20 @@
     <string name="bill_return_title">歸還時</string>
     <string name="bill_return_excess_deposit">多付訂金</string>
     <string name="bill_return_give_back">退還客人</string>
+    <string name="shopinfo_links_title">連結 (顯示在店鋪頁面)</string>
+    <string name="shopinfo_links_hint">顯示在此分店的公開店鋪頁面上。</string>
+    <string name="shopinfo_links_add">新增連結</string>
+    <string name="shopinfo_links_edit_title">編輯連結</string>
+    <string name="shopinfo_links_done">完成</string>
+    <string name="shopinfo_links_used">已使用 %1$d / %2$d</string>
+    <string name="shopinfo_links_type_title">連結類型</string>
+    <string name="shopinfo_links_url_title">連結位址</string>
+    <string name="shopinfo_links_label_title">連結名稱</string>
+    <string name="shopinfo_links_remove">刪除連結</string>
+    <string name="shopinfo_links_err_invalid">連結似乎不正確，例如 %1$s</string>
+    <string name="shopinfo_links_err_platform">不是有效的%1$s連結，例如 %2$s</string>
+    <string name="shopinfo_links_err_label_required">請輸入連結名稱</string>
+    <string name="shopinfo_links_err_label_too_long">最多 %1$d 個字元</string>
+    <string name="shopinfo_links_type_website">網站</string>
+    <string name="shopinfo_links_type_other">其他</string>
 </resources>

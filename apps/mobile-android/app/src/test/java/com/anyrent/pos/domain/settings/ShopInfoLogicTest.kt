@@ -1,5 +1,6 @@
 package com.anyrent.pos.domain.settings
 
+import org.json.JSONObject
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -103,6 +104,25 @@ class ShopInfoLogicTest {
         assertEquals("Thủ Đức", payload["name"])
         assertEquals("0900 000 102", payload["phone"])
         assertEquals("45 Đường Số 9", payload["address"])
+    }
+
+    /** #1643: the body of a branch save: links only when the branch's links are known; an old payload keeps them */
+    private fun branchBody(links: List<OutletLinkEntry>?): JSONObject {
+        val payload = ShopInfoLogic.branchPayload(BranchFormValues(name = "A", phone = "1", address = "B"))
+        return OutletLinkLogic.putLinks(JSONObject().apply { payload.forEach { (key, value) -> put(key, value) } }, links)
+    }
+
+    @Test
+    fun branchBodyWithoutKnownLinksIsTheOldPayload() {
+        assertEquals(setOf("name", "phone", "address"), branchBody(null).keys().asSequence().toSet())
+    }
+
+    @Test
+    fun branchBodyWithLinksAddsThemAndClearingSendsAnEmptyList() {
+        val one = branchBody(listOf(OutletLinkEntry(OutletLinkType.TIKTOK, "https://tiktok.com/@a")))
+        assertEquals(setOf("name", "phone", "address", "links"), one.keys().asSequence().toSet())
+        assertEquals(1, one.getJSONArray("links").length())
+        assertEquals(0, branchBody(emptyList()).getJSONArray("links").length())
     }
 
     @Test

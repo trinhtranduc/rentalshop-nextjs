@@ -3109,3 +3109,20 @@
 "bill.return.collateral" = "保証金";
 "bill.return.excessDeposit" = "内金の超過分";
 "bill.return.giveBack" = "お客様へ返金";
+/* #1643: links of a branch (Thông tin cửa hàng) */
+"shopinfo.links.title" = "リンク（ショップページに表示）";
+"shopinfo.links.add" = "リンクを追加";
+"shopinfo.links.used" = "%d / 6 件使用中。お客様はこの店舗のショップページを開くとこれらのリンクを見られます。";
+"shopinfo.links.typeTitle" = "種類";
+"shopinfo.links.urlTitle" = "リンクのアドレス";
+"shopinfo.links.labelTitle" = "名前";
+"shopinfo.links.labelPlaceholder" = "例：Shopee";
+"shopinfo.links.remove" = "リンクを削除";
+"shopinfo.links.hint" = "https:// がない場合は自動で追加されます。";
+"shopinfo.links.tooMany" = "リンクは最大6件まで追加できます。";
+"shopinfo.links.err.invalid" = "tenshop.vn や https://tenshop.vn のようにリンクを入力してください";
+"shopinfo.links.err.platform" = "このリンクは選択したサービスのものではありません。";
+"shopinfo.links.err.labelRequired" = "このリンクの名前を入力してください。";
+"shopinfo.links.err.labelTooLong" = "名前は30文字以内です。";
+"shopinfo.links.type.website" = "ウェブサイト";
+"shopinfo.links.type.other" = "その他";
