@@ -3325,5 +3325,5 @@
 /* #1633 bill: fees at return */
 "bill.return.title" = "At return";
 "bill.return.collateral" = "Security deposit";
-"bill.return.excessDeposit" = "Deposit above the rent";
+"bill.return.excessDeposit" = "Booking deposit above the rent";
 "bill.return.giveBack" = "Give back";

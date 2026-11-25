@@ -1125,7 +1125,7 @@
         "title": "At return",
         "cancelTitle": "Cancelled",
         "collateral": "Security deposit",
-        "excessDeposit": "Deposit above the rent",
+        "excessDeposit": "Booking deposit above the rent",
         "lateFee": "Late fee",
         "surcharge": "Surcharge",
         "kept": "Surcharge",
