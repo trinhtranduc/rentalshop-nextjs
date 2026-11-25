@@ -154,6 +154,7 @@ export default async function PublicProductsPage({
         onlineBooking={merchant.onlineBooking === true}
         imageSearchAvailable={merchant.imageSearchAvailable === true}
         showPublicPrice={merchant.showPublicPrice !== false}
+        showPublicStock={merchant.showPublicStock === true}
         outlets={outlets}
       />
       <PublicShopFooter />

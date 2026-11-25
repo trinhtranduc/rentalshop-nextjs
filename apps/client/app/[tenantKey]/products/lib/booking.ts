@@ -9,6 +9,8 @@ export type DayStatus = 'free' | 'full';
 export interface PublicDay {
   date: string;
   status: DayStatus;
+  /** #1646: units left; present only when the shop shows stock on its calendar */
+  available?: number;
 }
 export type CalendarState = 'free' | 'full' | 'past' | 'unknown';
 export interface CalendarDay {
@@ -72,6 +74,42 @@ export function pickRange(range: DateRange, key: string): DateRange {
   return { pickup: range.pickup, return: key };
 }
 
+/** #1646: units left by day, from the availability answer; a day without `available` is unknown */
+export function stockByDate(days: PublicDay[]): Map<string, number> {
+  const out = new Map<string, number>();
+  for (const d of days) {
+    if (typeof d?.available === 'number' && Number.isFinite(d.available) && d.available >= 0) out.set(d.date, Math.floor(d.available));
+  }
+  return out;
+}
+
+/** #1646: `full` = none left, `low` = exactly one, `ok` = two or more */
+export type StockLevel = 'ok' | 'low' | 'full';
+export function stockLevel(available: number): StockLevel {
+  return available <= 0 ? 'full' : available === 1 ? 'low' : 'ok';
+}
+
+/**
+ * #1646: what to tell the guest about the chosen days: the days with nothing left, and the first day with fewer units
+ * than `quantity`. Days without a known count are skipped. The guest can still send the request (#1174).
+ */
+export function rangeStockNotes(
+  counts: Map<string, number>,
+  pickup: string,
+  ret: string,
+  quantity: number
+): { fullDays: string[]; short: { date: string; available: number } | null } {
+  const fullDays: string[] = [];
+  let short: { date: string; available: number } | null = null;
+  for (let key = pickup; key <= ret; key = addDays(key, 1)) {
+    const left = counts.get(key);
+    if (left === undefined) continue;
+    if (left === 0) fullDays.push(key);
+    else if (left < quantity && !short) short = { date: key, available: left };
+  }
+  return { fullDays, short };
+}
+
 /** Every day from pickup to return (inclusive) is known and free */
 export function rangeIsFree(days: PublicDay[], pickup: string, ret: string): boolean {
   const byDate = new Map(days.map((d) => [d.date, d.status]));
@@ -93,6 +131,13 @@ export function formatDayKey(key: string, locale: string = 'vi'): string {
   return new Intl.DateTimeFormat(intlLocale(locale), { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'UTC' }).format(
     keyToUtc(key)
   );
+}
+
+/** A day key without the year, for short notes: `12/12` in Vietnamese, else the page language's day and month */
+export function formatShortDay(key: string, locale: string = 'vi'): string {
+  const [, m, d] = key.split('-');
+  if (locale === 'vi') return `${d}/${m}`;
+  return new Intl.DateTimeFormat(intlLocale(locale), { day: '2-digit', month: '2-digit', timeZone: 'UTC' }).format(keyToUtc(key));
 }
 
 const WEEKDAYS_VI = ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'];

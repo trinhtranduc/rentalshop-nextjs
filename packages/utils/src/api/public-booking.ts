@@ -14,6 +14,8 @@ export interface PublicBookingResult<T = unknown> {
 export interface PublicBookingDay {
   date: string;
   status: 'free' | 'full';
+  /** #1646: units left that day; only when the shop turned on "Hiện còn / hết trên lịch đặt thuê" */
+  available?: number;
 }
 
 export interface PublicBookingCreateInput {

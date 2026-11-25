@@ -81,6 +81,8 @@ export const GET = withAnyAuth(async (request: NextRequest, { user, userScope })
         onlineBookingEnabled: (userProfile.merchant as { onlineBookingEnabled?: boolean }).onlineBookingEnabled === true,
         // #1174 "Hiện giá trên trang shop" (additive; true when missing so old shops keep showing prices)
         showPublicPrice: (userProfile.merchant as { showPublicPrice?: boolean }).showPublicPrice !== false,
+        // #1646 "Hiện còn / hết trên lịch đặt thuê" (additive; false when off or missing)
+        showPublicStock: (userProfile.merchant as { showPublicStock?: boolean }).showPublicStock === true,
         // #1189 "Với app cũ" for day-block prices (additive; 'recompute' when unset)
         blockPricing: { oldApps: readOldAppsMode((userProfile.merchant as { settings?: unknown }).settings) },
         // #1344 "Hiện ghi chú đơn trên ảnh chia sẻ" (additive; false when unset, readable by every role)

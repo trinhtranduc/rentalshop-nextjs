@@ -779,6 +779,9 @@
     "publicPage": {
       "showPrice": "在店铺页面显示价格",
       "showPriceHint": "关闭后，访客会看到“联系商家”，而不是金额。",
+      "showStock": "在预订日历中显示剩余数量",
+      "showStockHint": "开启后，店铺页面的预订日历会显示每天还剩几件，或已订完。关闭后日历不显示任何信息。",
+      "showStockNeedsBooking": "请先开启“在线预订”：只有顾客可以预订时才会显示日历。",
       "ownerOnly": "只有店主可以开启或关闭此功能。"
     },
     "groups": {

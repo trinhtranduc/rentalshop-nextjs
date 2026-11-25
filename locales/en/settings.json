@@ -779,6 +779,9 @@
     "publicPage": {
       "showPrice": "Show prices on the shop page",
       "showPriceHint": "When off, visitors see “Contact us” instead of amounts.",
+      "showStock": "Show availability on the booking calendar",
+      "showStockHint": "On: the booking calendar on your shop page shows how many are left each day, or sold out. Off: the calendar shows nothing.",
+      "showStockNeedsBooking": "Turn on “Online booking” first: the calendar only appears when guests can book.",
       "ownerOnly": "Only the shop owner can turn this on or off."
     },
     "groups": {

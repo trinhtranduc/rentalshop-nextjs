@@ -3,6 +3,7 @@ import { db } from '@rentalshop/database';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { buildCorsHeaders } from '@rentalshop/utils/server';
 import { toPublicProduct } from '../../../../../lib/public-product';
+import { loadShowPublicStock } from '../../../../../lib/booking-requests';
 
 /**
  * OPTIONS /api/public/[tenantKey]/products
@@ -207,6 +208,10 @@ export async function GET(
       showPublicPrice = true;
     }
 
+    // #1646 "Hiện còn / hết trên lịch đặt thuê": only when the shop also takes online booking (the calendar lives there).
+    // Own query, fail-closed: an unmigrated column must not turn booking off.
+    const showPublicStock = onlineBooking ? await loadShowPublicStock(db.prisma, merchant.id) : false;
+
     // #1128 "Tìm bằng ảnh" on the shop page: shown when at least one active product has an embedding. Fail-closed.
     let imageSearchAvailable = false;
     try {
@@ -240,6 +245,7 @@ export async function GET(
         isActive: merchant.isActive,
         onlineBooking,
         showPublicPrice,
+        showPublicStock,
         imageSearchAvailable
       },
       products: transformedProducts,

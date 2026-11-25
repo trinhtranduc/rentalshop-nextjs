@@ -111,12 +111,40 @@ export function planDayKey(date: Date): string {
   return toAvailabilityCivilDateKey(date);
 }
 
-/** Owner 2026-10-20: the public calendar only says free or full (no "few left", no counts). Past days are full. */
+/**
+ * Owner 2026-10-20: the public calendar only says free or full (no "few left", no counts). Past days are full.
+ * #1646: a shop that turned on "Hiện còn / hết trên lịch đặt thuê" (`withCounts`) also gets `available` per day (past days 0).
+ */
 export function publicDayStatuses(
   days: Array<{ date: string; available: number }>,
-  todayKey: string
-): Array<{ date: string; status: 'free' | 'full' }> {
-  return days.map((d) => ({ date: d.date, status: d.date >= todayKey && d.available > 0 ? 'free' : 'full' }));
+  todayKey: string,
+  options: { withCounts?: boolean } = {}
+): Array<{ date: string; status: 'free' | 'full'; available?: number }> {
+  return days.map((d) => {
+    const left = d.date >= todayKey ? Math.max(0, Math.floor(d.available)) : 0;
+    const status: 'free' | 'full' = left > 0 ? 'free' : 'full';
+    return options.withCounts ? { date: d.date, status, available: left } : { date: d.date, status };
+  });
+}
+
+/**
+ * #1646 "Hiện còn / hết trên lịch đặt thuê" of a shop. Own query (not in `loadBookingShop`): a column that is not
+ * migrated yet must not take online booking down. Unreadable = off.
+ */
+export async function loadShowPublicStock(
+  prisma: { merchant: { findUnique: (args: any) => Promise<unknown> } },
+  merchantId: number
+): Promise<boolean> {
+  try {
+    const row = (await prisma.merchant.findUnique({
+      where: { id: merchantId },
+      select: { showPublicStock: true },
+    })) as { showPublicStock?: boolean } | null;
+    return row?.showPublicStock === true;
+  } catch (error) {
+    console.error('⚠️ showPublicStock unavailable:', error);
+    return false;
+  }
 }
 
 /** First day without `quantity` units free, else null */

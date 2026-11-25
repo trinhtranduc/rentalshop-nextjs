@@ -779,6 +779,9 @@
     "publicPage": {
       "showPrice": "Hiện giá trên trang shop",
       "showPriceHint": "Tắt thì khách thấy “Liên hệ”, không thấy số tiền.",
+      "showStock": "Hiện còn / hết trên lịch đặt thuê",
+      "showStockHint": "Bật thì lịch đặt thuê trên trang shop báo mỗi ngày còn mấy cái, hoặc hết. Tắt thì lịch không báo gì.",
+      "showStockNeedsBooking": "Cần bật “Nhận đặt online” trước, vì lịch chỉ hiện khi khách đặt được.",
       "ownerOnly": "Chỉ chủ shop bật / tắt được."
     },
     "groups": {

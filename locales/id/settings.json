@@ -779,6 +779,9 @@
     "publicPage": {
       "showPrice": "Tampilkan harga di halaman toko",
       "showPriceHint": "Jika dinonaktifkan, pengunjung melihat “Hubungi kami” alih-alih jumlah.",
+      "showStock": "Tampilkan ketersediaan di kalender pemesanan",
+      "showStockHint": "Aktif: kalender pemesanan di halaman toko menampilkan sisa tiap hari, atau habis. Nonaktif: kalender tidak menampilkan apa pun.",
+      "showStockNeedsBooking": "Aktifkan dulu “Pemesanan online”: kalender hanya muncul saat pelanggan bisa memesan.",
       "ownerOnly": "Hanya pemilik toko yang dapat mengaktifkan / menonaktifkan."
     },
     "groups": {

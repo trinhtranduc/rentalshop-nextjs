@@ -779,6 +779,9 @@
     "publicPage": {
       "showPrice": "가게 페이지에 가격 표시",
       "showPriceHint": "끄면 방문객에게 금액 대신 “문의”가 보입니다.",
+      "showStock": "예약 달력에 남은 수량 표시",
+      "showStockHint": "켜면 쇼핑 페이지의 예약 달력에 날짜별 남은 수량 또는 품절이 표시됩니다. 끄면 달력에 아무것도 표시되지 않습니다.",
+      "showStockNeedsBooking": "먼저 “온라인 예약”을 켜세요. 고객이 예약할 수 있을 때만 달력이 표시됩니다.",
       "ownerOnly": "가게 주인만 켜거나 끌 수 있습니다."
     },
     "groups": {
