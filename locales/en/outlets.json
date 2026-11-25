@@ -134,7 +134,27 @@
       "create": "Add branch",
       "save": "Save",
       "saving": "Saving…",
-      "close": "Close"
+      "close": "Close",
+      "links": {
+        "title": "Links",
+        "hint": "Shown on this branch's public shop page.",
+        "add": "Add link",
+        "remove": "Remove link",
+        "typeLabel": "Link type",
+        "urlLabel": "Link address",
+        "labelPlaceholder": "Link name",
+        "used": "Using {count} / {max}",
+        "err": {
+          "invalid": "This link looks wrong, for example {example}",
+          "platform": "This is not a valid {type} link, for example {example}",
+          "labelRequired": "Enter a name for the link",
+          "labelTooLong": "At most {max} characters"
+        },
+        "type": {
+          "website": "Website",
+          "other": "Other"
+        }
+      }
     },
     "detail": {
       "title": "Branch details",

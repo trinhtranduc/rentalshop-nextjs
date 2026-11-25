@@ -882,6 +882,13 @@
       "errorNetwork": "沒有網路連線。請檢查網路後再試。",
       "errorGeneric": "目前無法搜尋，請再試一次。"
     },
-    "priceHidden": "聯絡店家"
+    "priceHidden": "聯絡店家",
+    "outlets": "分店",
+    "mainOutlet": "總店",
+    "links": "店鋪連結",
+    "linkTypes": {
+      "website": "網站",
+      "other": "其他"
+    }
   }
 }

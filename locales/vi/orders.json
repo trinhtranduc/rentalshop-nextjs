@@ -575,7 +575,10 @@
       "row": "Chọn đơn #{number}",
       "page": "Chọn cả trang",
       "export": "Xuất Excel ({count} đơn)",
-      "clear": "Bỏ chọn"
+      "clear": "Bỏ chọn",
+      "count": "Đã chọn {count} đơn",
+      "all": "Chọn cả {count} đơn theo bộ lọc",
+      "allChosen": "Đã chọn cả {count} đơn theo bộ lọc"
     },
     "create": "Tạo đơn",
     "editor": {
@@ -1275,6 +1278,11 @@
       "lateDays": "Trễ {days} ngày",
       "stageShort": "giai đoạn {n}",
       "walkIn": "Khách lẻ"
+    },
+    "view": {
+      "label": "Dạng xem",
+      "table": "Bảng",
+      "calendar": "Lịch"
     }
   }
 }

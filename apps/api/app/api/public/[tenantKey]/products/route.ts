@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@rentalshop/database';
-import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
+import { handleApiError, ResponseBuilder, parseStoredOutletLinks } from '@rentalshop/utils';
 import { buildCorsHeaders } from '@rentalshop/utils/server';
 import { toPublicProduct } from '../../../../../lib/public-product';
 import { loadShowPublicStock } from '../../../../../lib/booking-requests';
@@ -259,6 +259,9 @@ export async function GET(
         state: outlet.state || '',
         zipCode: outlet.zipCode || '',
         country: outlet.country || '',
+        // #1643 links of the branch (re-checked: only http(s) addresses go out) and which branch is the shop's main one
+        links: parseStoredOutletLinks(outlet.links),
+        isDefault: outlet.isDefault === true,
         acceptsOnlineBooking: onlineBooking && bookingOutletIds.has(outlet.id)
       })),
       pagination: {

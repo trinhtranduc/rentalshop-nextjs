@@ -575,7 +575,10 @@
       "row": "選取訂單 #{number}",
       "page": "選取本頁全部",
       "export": "匯出 Excel（{count} 筆）",
-      "clear": "取消選取"
+      "clear": "取消選取",
+      "count": "已選 {count} 筆訂單",
+      "all": "選取符合篩選的全部 {count} 筆訂單",
+      "allChosen": "已選取符合篩選的全部 {count} 筆訂單"
     },
     "create": "建立訂單",
     "editor": {
@@ -1275,6 +1278,11 @@
       "lateDays": "逾期 {days} 天",
       "stageShort": "第 {n} 期",
       "walkIn": "散客"
+    },
+    "view": {
+      "label": "檢視",
+      "table": "表格",
+      "calendar": "日曆"
     }
   }
 }

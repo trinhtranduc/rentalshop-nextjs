@@ -882,6 +882,13 @@
       "errorNetwork": "无法连接。请检查网络后重试。",
       "errorGeneric": "暂时无法搜索。请重试。"
     },
-    "priceHidden": "联系商家"
+    "priceHidden": "联系商家",
+    "outlets": "分店",
+    "mainOutlet": "总店",
+    "links": "店铺链接",
+    "linkTypes": {
+      "website": "网站",
+      "other": "其他"
+    }
   }
 }

@@ -882,6 +882,13 @@
       "errorNetwork": "Keine Verbindung. Prüfen Sie Ihr Netzwerk und versuchen Sie es erneut.",
       "errorGeneric": "Die Suche hat gerade nicht funktioniert. Bitte erneut versuchen."
     },
-    "priceHidden": "Kontakt"
+    "priceHidden": "Kontakt",
+    "outlets": "Filialen",
+    "mainOutlet": "Hauptfiliale",
+    "links": "Links des Shops",
+    "linkTypes": {
+      "website": "Webseite",
+      "other": "Sonstiges"
+    }
   }
 }
