@@ -575,7 +575,10 @@
       "row": "Sélectionner la commande n° {number}",
       "page": "Sélectionner toute la page",
       "export": "Exporter vers Excel ({count} commandes)",
-      "clear": "Désélectionner"
+      "clear": "Désélectionner",
+      "count": "{count} commandes sélectionnées",
+      "all": "Sélectionner les {count} commandes du filtre",
+      "allChosen": "Les {count} commandes du filtre sont sélectionnées"
     },
     "create": "Créer une commande",
     "editor": {
@@ -1275,6 +1278,11 @@
       "lateDays": "{days} jours de retard",
       "stageShort": "étape {n}",
       "walkIn": "Client de passage"
+    },
+    "view": {
+      "label": "Affichage",
+      "table": "Tableau",
+      "calendar": "Calendrier"
     }
   }
 }

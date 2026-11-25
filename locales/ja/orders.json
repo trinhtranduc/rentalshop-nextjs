@@ -575,7 +575,10 @@
       "row": "注文 #{number} を選択",
       "page": "このページをすべて選択",
       "export": "Excelに書き出す({count} 件)",
-      "clear": "選択を解除"
+      "clear": "選択を解除",
+      "count": "{count} 件を選択中",
+      "all": "絞り込み結果の {count} 件をすべて選択",
+      "allChosen": "絞り込み結果の {count} 件をすべて選択済み"
     },
     "create": "注文を作成",
     "editor": {
@@ -1275,6 +1278,11 @@
       "lateDays": "{days} 日遅れ",
       "stageShort": "第 {n} 段階",
       "walkIn": "一般のお客様"
+    },
+    "view": {
+      "label": "表示",
+      "table": "表",
+      "calendar": "カレンダー"
     }
   }
 }
