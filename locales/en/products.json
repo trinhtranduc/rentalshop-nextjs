@@ -804,6 +804,11 @@
       "pickHint": "Choose the pickup day, then the return day.",
       "legendFull": "fully booked",
       "legendSelected": "selected",
+      "stockLegend": "Units left",
+      "stockLow": "1 left",
+      "stockFull": "Full",
+      "stockFullWarn": "Some days are fully booked ({days}). You can still send your request; the shop will contact you to confirm.",
+      "stockShortWarn": "Only {count} left on {date}, you chose {quantity}. You can still send your request; the shop will contact you to confirm.",
       "loadingDays": "Loading the calendar…",
       "daysError": "Could not load the calendar. Try again.",
       "rangeFull": "Some days in this range are fully booked. Choose other days.",
@@ -877,6 +882,13 @@
       "errorNetwork": "No connection. Check your network and try again.",
       "errorGeneric": "The search did not work right now. Please try again."
     },
-    "priceHidden": "Contact us"
+    "priceHidden": "Contact us",
+    "outlets": "Branches",
+    "mainOutlet": "main",
+    "links": "Shop links",
+    "linkTypes": {
+      "website": "Website",
+      "other": "Other"
+    }
   }
 }

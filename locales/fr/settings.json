@@ -777,6 +777,9 @@
     "publicPage": {
       "showPrice": "Afficher les prix sur la page de la boutique",
       "showPriceHint": "Si désactivé, le client voit « Contactez-nous » à la place du montant.",
+      "showStock": "Afficher la disponibilité dans le calendrier de réservation",
+      "showStockHint": "Activé : le calendrier de réservation de votre page boutique indique chaque jour combien il en reste, ou complet. Désactivé : le calendrier n’affiche rien.",
+      "showStockNeedsBooking": "Activez d’abord « Réservation en ligne » : le calendrier n’apparaît que si les clients peuvent réserver.",
       "ownerOnly": "Seul le propriétaire de la boutique peut activer ou désactiver cette option."
     },
     "groups": {

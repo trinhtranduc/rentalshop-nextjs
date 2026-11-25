@@ -2538,4 +2538,20 @@
     <string name="bill_return_title">返却時</string>
     <string name="bill_return_excess_deposit">内金の超過分</string>
     <string name="bill_return_give_back">お客様へ返金</string>
+    <string name="shopinfo_links_title">リンク (ショップページに表示)</string>
+    <string name="shopinfo_links_hint">この店舗の公開ショップページに表示されます。</string>
+    <string name="shopinfo_links_add">リンクを追加</string>
+    <string name="shopinfo_links_edit_title">リンクを編集</string>
+    <string name="shopinfo_links_done">完了</string>
+    <string name="shopinfo_links_used">%1$d / %2$d 件使用中</string>
+    <string name="shopinfo_links_type_title">リンクの種類</string>
+    <string name="shopinfo_links_url_title">リンクのアドレス</string>
+    <string name="shopinfo_links_label_title">リンク名</string>
+    <string name="shopinfo_links_remove">リンクを削除</string>
+    <string name="shopinfo_links_err_invalid">リンクが正しくないようです。例: %1$s</string>
+    <string name="shopinfo_links_err_platform">有効な%1$sのリンクではありません。例: %2$s</string>
+    <string name="shopinfo_links_err_label_required">リンク名を入力してください</string>
+    <string name="shopinfo_links_err_label_too_long">%1$d文字までです</string>
+    <string name="shopinfo_links_type_website">ウェブサイト</string>
+    <string name="shopinfo_links_type_other">その他</string>
 </resources>

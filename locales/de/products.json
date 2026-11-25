@@ -804,6 +804,11 @@
       "pickHint": "Wählen Sie den Abholtag, dann den Rückgabetag.",
       "legendFull": "ausgebucht",
       "legendSelected": "gewählt",
+      "stockLegend": "Noch frei",
+      "stockLow": "Noch 1",
+      "stockFull": "Belegt",
+      "stockFullWarn": "Einige Tage sind ausgebucht ({days}). Sie können die Anfrage trotzdem senden; der Shop meldet sich zur Bestätigung.",
+      "stockShortWarn": "Am {date} ist nur noch {count} frei, Sie haben {quantity} gewählt. Sie können die Anfrage trotzdem senden; der Shop meldet sich zur Bestätigung.",
       "loadingDays": "Kalender wird geladen…",
       "daysError": "Kalender konnte nicht geladen werden. Bitte erneut versuchen.",
       "rangeFull": "Einige Tage in diesem Zeitraum sind ausgebucht. Wählen Sie andere Tage.",
@@ -877,6 +882,13 @@
       "errorNetwork": "Keine Verbindung. Prüfen Sie Ihr Netzwerk und versuchen Sie es erneut.",
       "errorGeneric": "Die Suche hat gerade nicht funktioniert. Bitte erneut versuchen."
     },
-    "priceHidden": "Kontakt"
+    "priceHidden": "Kontakt",
+    "outlets": "Filialen",
+    "mainOutlet": "Hauptfiliale",
+    "links": "Links des Shops",
+    "linkTypes": {
+      "website": "Webseite",
+      "other": "Sonstiges"
+    }
   }
 }

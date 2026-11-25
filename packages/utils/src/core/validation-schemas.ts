@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import type { PlanLimits } from '@rentalshop/constants';
+import { normalizeOutletLinks, OUTLET_LINK_TYPES } from './outlet-links';
 import { 
   ORDER_STATUS,
   ORDER_TYPE,
@@ -558,6 +559,25 @@ const outletPrintNoteSchema = z
   .transform((value) => (value.trim() === '' ? null : value))
   .optional();
 
+// #1643: links of a branch. Present = replaces the whole list (normalised, repeats dropped, at most 6); `[]` clears;
+// absent = unchanged, which is what installed apps send.
+const outletLinksSchema = z
+  .array(z.object({ type: z.enum(OUTLET_LINK_TYPES), url: z.string(), label: z.string().optional() }))
+  .optional()
+  .transform((list, ctx) => {
+    if (list === undefined) return undefined;
+    const result = normalizeOutletLinks(list);
+    if (!result.ok) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: result.error === 'tooMany' ? 'OUTLET_LINKS_TOO_MANY' : `OUTLET_LINK_${(result.reason ?? 'invalid').toUpperCase()}`,
+        path: result.index === undefined ? [] : [result.index, 'url'],
+      });
+      return z.NEVER;
+    }
+    return result.links;
+  });
+
 export const outletCreateSchema = z.object({
   name: z.string().min(1, 'Outlet name is required'),
   address: z.string().optional(),
@@ -568,6 +588,7 @@ export const outletCreateSchema = z.object({
   phone: z.string().optional(),
   description: z.string().optional(),
   printNote: outletPrintNoteSchema,
+  links: outletLinksSchema,
   // Print the default bank account + VietQR on this outlet's bills (#628). Omitted = unchanged.
   printBankQr: z.boolean().optional(),
   status: z.enum(['ACTIVE', 'INACTIVE', 'CLOSED', 'SUSPENDED']).default('ACTIVE'),
@@ -586,6 +607,7 @@ export const outletUpdateSchema = z.object({
   country: z.string().optional(),
   description: z.string().optional(),
   printNote: outletPrintNoteSchema,
+  links: outletLinksSchema,
   // Print the default bank account + VietQR on this outlet's bills (#628). Omitted = unchanged.
   printBankQr: z.boolean().optional(),
   // #1124 this outlet takes online booking requests (when the shop turned booking on). Omitted = unchanged.

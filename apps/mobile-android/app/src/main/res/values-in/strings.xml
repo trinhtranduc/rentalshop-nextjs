@@ -2538,4 +2538,20 @@
     <string name="bill_return_title">Saat pengembalian</string>
     <string name="bill_return_excess_deposit">Kelebihan uang muka</string>
     <string name="bill_return_give_back">Kembalikan ke pelanggan</string>
+    <string name="shopinfo_links_title">Tautan (tampil di halaman toko)</string>
+    <string name="shopinfo_links_hint">Ditampilkan di halaman toko publik cabang ini.</string>
+    <string name="shopinfo_links_add">Tambah tautan</string>
+    <string name="shopinfo_links_edit_title">Ubah tautan</string>
+    <string name="shopinfo_links_done">Selesai</string>
+    <string name="shopinfo_links_used">%1$d / %2$d terpakai</string>
+    <string name="shopinfo_links_type_title">Jenis tautan</string>
+    <string name="shopinfo_links_url_title">Alamat tautan</string>
+    <string name="shopinfo_links_label_title">Nama tautan</string>
+    <string name="shopinfo_links_remove">Hapus tautan</string>
+    <string name="shopinfo_links_err_invalid">Tautan tampaknya salah, contoh %1$s</string>
+    <string name="shopinfo_links_err_platform">Bukan tautan %1$s yang valid, contoh %2$s</string>
+    <string name="shopinfo_links_err_label_required">Isi nama untuk tautan</string>
+    <string name="shopinfo_links_err_label_too_long">Maksimal %1$d karakter</string>
+    <string name="shopinfo_links_type_website">Situs web</string>
+    <string name="shopinfo_links_type_other">Lainnya</string>
 </resources>

@@ -3322,3 +3322,20 @@
 "bill.return.collateral" = "Thế chân";
 "bill.return.excessDeposit" = "Cọc dư";
 "bill.return.giveBack" = "Trả khách";
+/* #1643: links of a branch (Thông tin cửa hàng) */
+"shopinfo.links.title" = "Liên kết (hiện ở trang shop)";
+"shopinfo.links.add" = "Thêm liên kết";
+"shopinfo.links.used" = "Đã dùng %d / 6. Khách thấy các link này khi mở trang shop của chi nhánh.";
+"shopinfo.links.typeTitle" = "Loại";
+"shopinfo.links.urlTitle" = "Địa chỉ link";
+"shopinfo.links.labelTitle" = "Tên";
+"shopinfo.links.labelPlaceholder" = "Ví dụ: Shopee";
+"shopinfo.links.remove" = "Xóa liên kết";
+"shopinfo.links.hint" = "Tự thêm https:// nếu thiếu.";
+"shopinfo.links.tooMany" = "Tối đa 6 liên kết.";
+"shopinfo.links.err.invalid" = "Nhập link, ví dụ tenshop.vn hoặc https://tenshop.vn";
+"shopinfo.links.err.platform" = "Link này không thuộc mạng đã chọn.";
+"shopinfo.links.err.labelRequired" = "Nhập tên cho liên kết này.";
+"shopinfo.links.err.labelTooLong" = "Tên tối đa 30 ký tự.";
+"shopinfo.links.type.website" = "Trang web";
+"shopinfo.links.type.other" = "Khác";

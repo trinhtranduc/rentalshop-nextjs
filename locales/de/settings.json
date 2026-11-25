@@ -777,6 +777,9 @@
     "publicPage": {
       "showPrice": "Preise auf der Geschäftsseite anzeigen",
       "showPriceHint": "Wenn ausgeschaltet, sehen Besucher „Kontakt“ statt Beträgen.",
+      "showStock": "Verfügbarkeit im Buchungskalender anzeigen",
+      "showStockHint": "An: Der Buchungskalender auf Ihrer Shop-Seite zeigt je Tag, wie viele noch frei sind oder ob alles vergeben ist. Aus: Der Kalender zeigt nichts an.",
+      "showStockNeedsBooking": "Schalten Sie zuerst „Online-Buchung“ ein: Der Kalender erscheint nur, wenn Gäste buchen können.",
       "ownerOnly": "Nur der Geschäftsinhaber kann dies ein- oder ausschalten."
     },
     "groups": {

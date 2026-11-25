@@ -105,6 +105,15 @@ export const bookingRequestsApi = {
     return parseApiResponse<{ showPublicPrice?: boolean }>(response);
   },
 
+  /** Settings › Trang shop công khai › "Hiện còn / hết trên lịch đặt thuê" (owner only, #1646) */
+  async setShowPublicStock(enabled: boolean) {
+    const response = await authenticatedFetch(apiUrls.settings.merchant, {
+      method: 'PUT',
+      body: JSON.stringify({ showPublicStock: enabled }),
+    });
+    return parseApiResponse<{ showPublicStock?: boolean }>(response);
+  },
+
   /** Settings › In & phiếu › "Hiện ghi chú đơn trên ảnh chia sẻ" (owner only, #1344); the same field the phone switch saves */
   async setShareOrderNote(enabled: boolean) {
     const response = await authenticatedFetch(apiUrls.settings.merchant, {

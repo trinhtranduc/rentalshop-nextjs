@@ -2641,6 +2641,22 @@
     </plurals>
     <!-- #1633 bill: fees at return -->
     <string name="bill_return_title">At return</string>
-    <string name="bill_return_excess_deposit">Deposit above the rent</string>
+    <string name="bill_return_excess_deposit">Booking deposit above the rent</string>
     <string name="bill_return_give_back">Give back</string>
+    <string name="shopinfo_links_title">Links (shown on the shop page)</string>
+    <string name="shopinfo_links_hint">Shown on this branch\'s public shop page.</string>
+    <string name="shopinfo_links_add">Add link</string>
+    <string name="shopinfo_links_edit_title">Edit link</string>
+    <string name="shopinfo_links_done">Done</string>
+    <string name="shopinfo_links_used">Using %1$d / %2$d</string>
+    <string name="shopinfo_links_type_title">Link type</string>
+    <string name="shopinfo_links_url_title">Link address</string>
+    <string name="shopinfo_links_label_title">Link name</string>
+    <string name="shopinfo_links_remove">Remove link</string>
+    <string name="shopinfo_links_err_invalid">This link looks wrong, for example %1$s</string>
+    <string name="shopinfo_links_err_platform">This is not a valid %1$s link, for example %2$s</string>
+    <string name="shopinfo_links_err_label_required">Enter a name for the link</string>
+    <string name="shopinfo_links_err_label_too_long">At most %1$d characters</string>
+    <string name="shopinfo_links_type_website">Website</string>
+    <string name="shopinfo_links_type_other">Other</string>
 </resources>

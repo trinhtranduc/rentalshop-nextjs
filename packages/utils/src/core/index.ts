@@ -9,6 +9,7 @@ export * from './tenant-key';
 export * from './client-capabilities';
 export * from './deposit-plan';
 export * from './google-credential';
+export * from './outlet-links';
 
 // Export common utilities without conflicts
 export { 

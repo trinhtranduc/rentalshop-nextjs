@@ -804,6 +804,11 @@
       "pickHint": "先选取件日，再选归还日。",
       "legendFull": "已订满",
       "legendSelected": "已选",
+      "stockLegend": "剩余数量",
+      "stockLow": "剩 1 件",
+      "stockFull": "已满",
+      "stockFullWarn": "部分日期已订满（{days}）。您仍可提交申请，店铺会联系您确认。",
+      "stockShortWarn": "{date} 仅剩 {count} 件，您选择了 {quantity} 件。您仍可提交申请，店铺会联系您确认。",
       "loadingDays": "正在加载日历…",
       "daysError": "日历加载失败，请重试。",
       "rangeFull": "所选期间有几天已订满，请换其他日期。",
@@ -877,6 +882,13 @@
       "errorNetwork": "无法连接。请检查网络后重试。",
       "errorGeneric": "暂时无法搜索。请重试。"
     },
-    "priceHidden": "联系商家"
+    "priceHidden": "联系商家",
+    "outlets": "分店",
+    "mainOutlet": "总店",
+    "links": "店铺链接",
+    "linkTypes": {
+      "website": "网站",
+      "other": "其他"
+    }
   }
 }

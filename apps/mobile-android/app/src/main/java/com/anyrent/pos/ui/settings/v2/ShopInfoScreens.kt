@@ -177,12 +177,30 @@ private fun BranchForm(
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    var form by remember(outlet) { mutableStateOf(StoreForm(name = outlet.name, phone = outlet.phone.orEmpty(), address = outlet.address.orEmpty())) }
+    var form by remember(outlet) {
+        mutableStateOf(StoreForm(name = outlet.name, phone = outlet.phone.orEmpty(), address = outlet.address.orEmpty(), links = outlet.links))
+    }
+    // #1643: the link being added (-1) or edited; null = the form itself
+    var editingLink by remember(outlet) { mutableStateOf<Int?>(null) }
     var saving by remember { mutableStateOf(false) }
     var submitted by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
     val values = BranchFormValues(form.name, form.phone, form.address)
     val problem = ShopInfoLogic.problem(values)
+    val editing = editingLink
+    val links = form.links
+    if (editing != null && links != null) {
+        BackHandler { editingLink = null }
+        BranchLinkEditor(
+            links = links, index = editing,
+            onBack = { editingLink = null },
+            onDone = { next ->
+                form = form.copy(links = next)
+                editingLink = null
+            },
+        )
+        return
+    }
     StoreInfoV2Page(
         kind = StoreFormKind.BRANCH,
         title = title,
@@ -197,6 +215,7 @@ private fun BranchForm(
         message = null,
         error = error,
         onBack = onBack,
+        onOpenLink = { editingLink = it },
         onSave = {
             submitted = true
             if (problem == ShopInfoLogic.Problem.ADDRESS_REQUIRED) {
@@ -205,7 +224,7 @@ private fun BranchForm(
                 saving = true
                 error = null
                 scope.launch {
-                    val result = withContext(Dispatchers.IO) { ApiParity.updateBranch(outlet.id, ShopInfoLogic.branchPayload(values)) }
+                    val result = withContext(Dispatchers.IO) { ApiParity.updateBranch(outlet.id, ShopInfoLogic.branchPayload(values), form.links) }
                     saving = false
                     result.onSuccess {
                         if (outlet.id == SessionStore.outletId) {

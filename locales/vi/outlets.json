@@ -134,7 +134,27 @@
       "create": "Thêm chi nhánh",
       "save": "Lưu",
       "saving": "Đang lưu…",
-      "close": "Đóng"
+      "close": "Đóng",
+      "links": {
+        "title": "Liên kết",
+        "hint": "Hiện ở trang shop công khai của chi nhánh này.",
+        "add": "Thêm liên kết",
+        "remove": "Xóa liên kết",
+        "typeLabel": "Loại liên kết",
+        "urlLabel": "Địa chỉ liên kết",
+        "labelPlaceholder": "Tên liên kết",
+        "used": "Đã dùng {count} / {max}",
+        "err": {
+          "invalid": "Link chưa đúng, ví dụ {example}",
+          "platform": "Link {type} chưa đúng, ví dụ {example}",
+          "labelRequired": "Nhập tên cho liên kết",
+          "labelTooLong": "Tối đa {max} ký tự"
+        },
+        "type": {
+          "website": "Trang web",
+          "other": "Khác"
+        }
+      }
     },
     "detail": {
       "title": "Chi tiết chi nhánh",

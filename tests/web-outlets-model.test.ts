@@ -1,10 +1,17 @@
 /**
  * #545 shop web Chi nhánh: pure model. Run under TZ=UTC and TZ=Asia/Ho_Chi_Minh.
  */
-import { describe, expect, it } from '@jest/globals';
+import { describe, expect, it, jest } from '@jest/globals';
+
+// outlets-model takes the link rules (#1643) from @rentalshop/utils; its barrel pulls in React files
+jest.mock('@rentalshop/utils', () => ({
+  ...(jest.requireActual('../packages/utils/src/core/outlet-links') as object),
+}));
 import { ROLE_PERMISSIONS } from '../packages/auth/src/permissions';
 import {
   EMPTY_OUTLET_FORM,
+  MAX_OUTLET_LINKS,
+  emptyLinkRow,
   formatOutletDate,
   groupAccountNumber,
   nextSort,
@@ -12,9 +19,11 @@ import {
   outletAddress,
   outletCreatePayload,
   outletFormFrom,
+  outletLinksPayload,
   outletUpdatePayload,
   parseOutletId,
   parseOutletParams,
+  validateLinkRows,
   validateOutlet,
 } from '../apps/client/app/outlets/outlets-model';
 
@@ -89,6 +98,7 @@ describe('forms and payloads', () => {
       country: 'Việt Nam',
       description: '',
       printNote: '*** Mang CCCD',
+      links: [],
     });
   });
 
@@ -124,6 +134,7 @@ describe('forms and payloads', () => {
       phone: '0909',
       description: '',
       printNote: '*** Mang CCCD',
+      links: [],
     });
   });
 });
@@ -179,5 +190,47 @@ describe('outletActions without outlet.manage (#736)', () => {
     expect(edits('OUTLET_INVENTORY')).toBe(false);
     expect(outletActions({ isDefault: true, isActive: true }, edits('OUTLET_STAFF'))).not.toContain('edit');
     expect(outletActions({ isDefault: true, isActive: true }, edits('MERCHANT'))).toContain('edit');
+  });
+});
+
+describe('links of a branch (#1643)', () => {
+  const row = (type: any, url: string, label = '') => ({ type, url, label });
+
+  it('a form starts with no links; an outlet from the API fills its rows (label blank unless "other")', () => {
+    expect(EMPTY_OUTLET_FORM.links).toEqual([]);
+    const form = outletFormFrom({ id: 1, name: 'A', links: [{ type: 'instagram', url: 'https://instagram.com/a' }, { type: 'other', url: 'https://x.vn', label: 'Đặt lịch' }] });
+    expect(form.links).toEqual([row('instagram', 'https://instagram.com/a'), row('other', 'https://x.vn', 'Đặt lịch')]);
+  });
+
+  it('an outlet from an older API (no `links`) opens with no rows', () => {
+    expect(outletFormFrom({ id: 1, name: 'A' }).links).toEqual([]);
+    expect(outletFormFrom({ id: 1, name: 'A', links: null }).links).toEqual([]);
+  });
+
+  it('blank rows are skipped, not errors; a wrong address names its row', () => {
+    const rows = [row('website', ''), row('facebook', 'facebook'), row('tiktok', 'tiktok.com/@a'), row('instagram', 'tiktok.com/@a')];
+    expect(validateLinkRows(rows)).toEqual({ 1: 'invalid', 3: 'platform' });
+  });
+
+  it('payload: normalised, blank dropped, repeats removed, at most 6', () => {
+    const rows = [row('website', 'tenshop.vn'), row('website', ' https://tenshop.vn '), row('zalo', ''), row('zalo', 'zalo.me/0901234567')];
+    expect(outletLinksPayload(rows)).toEqual([
+      { type: 'website', url: 'https://tenshop.vn' },
+      { type: 'zalo', url: 'https://zalo.me/0901234567' },
+    ]);
+    const many = Array.from({ length: 9 }, (_, i) => row('website', `https://s${i}.vn`));
+    expect(outletLinksPayload(many)).toHaveLength(MAX_OUTLET_LINKS);
+  });
+
+  it('edit payload always carries `links` (so emptying the group clears them); create only when there are some', () => {
+    const base = { ...EMPTY_OUTLET_FORM, name: 'A' };
+    expect(outletUpdatePayload(3, base).links).toEqual([]);
+    expect(outletUpdatePayload(3, { ...base, links: [row('website', 'a.vn')] }).links).toEqual([{ type: 'website', url: 'https://a.vn' }]);
+    expect('links' in outletCreatePayload(base, 7)).toBe(false);
+    expect(outletCreatePayload({ ...base, links: [row('website', 'a.vn')] }, 7).links).toEqual([{ type: 'website', url: 'https://a.vn' }]);
+  });
+
+  it('a new row defaults to website with no address', () => {
+    expect(emptyLinkRow()).toEqual({ type: 'website', url: '', label: '' });
   });
 });

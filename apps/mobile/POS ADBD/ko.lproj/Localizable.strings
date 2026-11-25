@@ -3106,3 +3106,20 @@
 "bill.return.collateral" = "보증금";
 "bill.return.excessDeposit" = "예약금 초과분";
 "bill.return.giveBack" = "고객에게 돌려주기";
+/* #1643: links of a branch (Thông tin cửa hàng) */
+"shopinfo.links.title" = "링크 (샵 페이지에 표시)";
+"shopinfo.links.add" = "링크 추가";
+"shopinfo.links.used" = "%d / 6 사용 중. 고객이 이 지점의 샵 페이지를 열면 이 링크가 보입니다.";
+"shopinfo.links.typeTitle" = "유형";
+"shopinfo.links.urlTitle" = "링크 주소";
+"shopinfo.links.labelTitle" = "이름";
+"shopinfo.links.labelPlaceholder" = "예: Shopee";
+"shopinfo.links.remove" = "링크 삭제";
+"shopinfo.links.hint" = "https://가 없으면 자동으로 추가됩니다.";
+"shopinfo.links.tooMany" = "링크는 최대 6개까지 추가할 수 있습니다.";
+"shopinfo.links.err.invalid" = "tenshop.vn 또는 https://tenshop.vn 같은 링크를 입력하세요";
+"shopinfo.links.err.platform" = "이 링크는 선택한 서비스의 링크가 아닙니다.";
+"shopinfo.links.err.labelRequired" = "이 링크의 이름을 입력하세요.";
+"shopinfo.links.err.labelTooLong" = "이름은 최대 30자입니다.";
+"shopinfo.links.type.website" = "웹사이트";
+"shopinfo.links.type.other" = "기타";

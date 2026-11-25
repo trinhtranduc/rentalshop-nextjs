@@ -777,6 +777,9 @@
     "publicPage": {
       "showPrice": "Mostrar precios en la página de la tienda",
       "showPriceHint": "Si está desactivado, el cliente verá \"Consultar\" en lugar del importe.",
+      "showStock": "Mostrar disponibilidad en el calendario de reservas",
+      "showStockHint": "Activado: el calendario de reservas de tu página muestra cuántos quedan cada día, o agotado. Desactivado: el calendario no muestra nada.",
+      "showStockNeedsBooking": "Activa primero «Reservas en línea»: el calendario solo aparece cuando los clientes pueden reservar.",
       "ownerOnly": "Solo el titular de la tienda puede activar o desactivar esta opción."
     },
     "groups": {

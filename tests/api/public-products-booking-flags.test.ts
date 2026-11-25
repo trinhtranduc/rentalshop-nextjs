@@ -25,6 +25,7 @@ const mockDb: any = {
 };
 jest.mock('@rentalshop/database', () => ({ db: mockDb }));
 jest.mock('@rentalshop/utils', () => ({
+  ...jest.requireActual('../../packages/utils/src/core/outlet-links'),
   ResponseBuilder: { success: (code: string, data: any) => ({ success: true, code, data }), error: (code: string) => ({ success: false, code }) },
   handleApiError: (error: any) => ({ response: { success: false, message: String(error) }, statusCode: 500 }),
   parseProductImages: (images: any) => images,

@@ -804,6 +804,11 @@
       "pickHint": "Chọn ngày lấy, rồi chọn ngày trả.",
       "legendFull": "hết đồ",
       "legendSelected": "đã chọn",
+      "stockLegend": "Số cái còn",
+      "stockLow": "Còn 1",
+      "stockFull": "Hết",
+      "stockFullWarn": "Có ngày hết hàng ({days}). Bạn vẫn gửi yêu cầu được, shop sẽ liên hệ xác nhận.",
+      "stockShortWarn": "Ngày {date} chỉ còn {count}, bạn đang chọn {quantity}. Bạn vẫn gửi yêu cầu được, shop sẽ liên hệ xác nhận.",
       "loadingDays": "Đang tải lịch…",
       "daysError": "Không tải được lịch. Thử lại.",
       "rangeFull": "Có ngày đã hết trong khoảng này. Chọn ngày khác.",
@@ -877,6 +882,13 @@
       "errorNetwork": "Không kết nối được. Kiểm tra mạng rồi thử lại.",
       "errorGeneric": "Không tìm được lúc này. Vui lòng thử lại."
     },
-    "priceHidden": "Liên hệ"
+    "priceHidden": "Liên hệ",
+    "outlets": "Chi nhánh",
+    "mainOutlet": "chính",
+    "links": "Liên kết của shop",
+    "linkTypes": {
+      "website": "Trang web",
+      "other": "Khác"
+    }
   }
 }

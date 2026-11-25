@@ -26,6 +26,8 @@ struct BranchFormValues: Equatable {
     var name = ""
     var phone = ""
     var address = ""
+    /// #1643: nil = the links were not loaded from the API, so they are not sent (the branch keeps its links)
+    var links: [OutletLink]? = nil
 }
 
 /// A branch in the owner's list
@@ -138,9 +140,11 @@ enum ShopInfoLogic {
         ]
     }
 
-    /// Body of PUT /api/outlets?outletId=
+    /// Body of PUT /api/outlets?outletId=. `links` only when they were loaded (an empty list clears them)
     static func branchPayload(_ form: BranchFormValues) -> [String: Any] {
-        ["name": trimmed(form.name), "phone": trimmed(form.phone), "address": trimmed(form.address)]
+        var payload: [String: Any] = ["name": trimmed(form.name), "phone": trimmed(form.phone), "address": trimmed(form.address)]
+        if let links = form.links { payload["links"] = OutletLinkLogic.payload(links) }
+        return payload
     }
 
     /// Open branches only, the main one first, the API order kept otherwise
@@ -150,4 +154,157 @@ enum ShopInfoLogic {
     }
 
     private static func trimmed(_ text: String) -> String { text.trimmingCharacters(in: .whitespacesAndNewlines) }
+}
+
+// MARK: - Links of a branch (#1643)
+
+/// What `GET /api/outlets` sends for a link. `type` stays a String so a network added later does not fail the whole decode.
+struct OutletLinkEntry: Codable, Equatable {
+    let type: String
+    let url: String
+    let label: String?
+}
+
+enum OutletLinkType: String, CaseIterable {
+    case website, facebook, instagram, tiktok, youtube, zalo, other
+}
+
+/// A link that passed the rules; `label` only for `other`
+struct OutletLink: Equatable {
+    var type: OutletLinkType
+    var url: String
+    var label: String? = nil
+}
+
+/// `invalid` = not a usable http(s) address; `platform` = a valid address but not of the chosen network
+enum OutletLinkError: Error, Equatable { case invalid, platform, labelRequired, labelTooLong }
+
+enum OutletLinksResult: Equatable {
+    case ok([OutletLink])
+    case tooMany
+    case invalid(index: Int, reason: OutletLinkError)
+}
+
+/// The rules of the web (`packages/utils/src/core/outlet-links.ts`) and the API; same cases in `tests/outlet-links.test.ts`.
+/// Android: `OutletLinkLogic` in `ShopInfoLogic.kt`.
+enum OutletLinkLogic {
+    static let maxLinks = 6
+    static let maxUrl = 300
+    static let maxLabel = 30
+
+    /// Hosts each network may use (a subdomain such as `www.` or `m.` also counts); website / other take any host
+    private static func hosts(_ type: OutletLinkType) -> [String]? {
+        switch type {
+        case .website, .other: return nil
+        case .facebook: return ["facebook.com", "fb.com", "fb.me"]
+        case .instagram: return ["instagram.com"]
+        case .tiktok: return ["tiktok.com"]
+        case .youtube: return ["youtube.com", "youtu.be"]
+        case .zalo: return ["zalo.me", "zalo.com"]
+        }
+    }
+
+    /// Names of the networks, the same in every language; nil for website / other (the screens translate those)
+    static func brandName(_ type: OutletLinkType) -> String? {
+        switch type {
+        case .facebook: return "Facebook"
+        case .instagram: return "Instagram"
+        case .tiktok: return "TikTok"
+        case .youtube: return "YouTube"
+        case .zalo: return "Zalo"
+        case .website, .other: return nil
+        }
+    }
+
+    /// Typed example shown as the URL placeholder
+    static func example(_ type: OutletLinkType) -> String {
+        switch type {
+        case .website: return "tenshop.vn"
+        case .facebook: return "facebook.com/tenshop"
+        case .instagram: return "instagram.com/tenshop"
+        case .tiktok: return "tiktok.com/@tenshop"
+        case .youtube: return "youtube.com/@tenshop"
+        case .zalo: return "zalo.me/0901234567"
+        case .other: return "shopee.vn/tenshop"
+        }
+    }
+
+    private static func matches(_ text: String, _ pattern: String) -> Bool {
+        text.range(of: pattern, options: [.regularExpression, .caseInsensitive]) != nil
+    }
+
+    /// `https://` added when the owner typed no scheme; anything else with a scheme (`javascript:`, `mailto:`) is refused.
+    private static func address(_ raw: String) -> String? {
+        let text = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        if text.isEmpty || text.count > maxUrl { return nil }
+        let hasHttp = matches(text, "^https?://")
+        if !hasHttp && matches(text, "^[a-z][a-z0-9+.-]*:") && !matches(text, "^[^/\\s:]+\\.[^/\\s:]+:\\d+") { return nil }
+        guard let parts = URLComponents(string: hasHttp ? text : "https://\(text)") else { return nil }
+        guard let scheme = parts.scheme?.lowercased(), scheme == "http" || scheme == "https" else { return nil }
+        if parts.user != nil || parts.password != nil { return nil }
+        guard let host = parts.host?.lowercased(), host.contains("."), !host.hasPrefix("."), !host.hasSuffix(".") else { return nil }
+        var out = "\(scheme)://\(host)"
+        if let port = parts.port { out += ":\(port)" }
+        let path = parts.percentEncodedPath
+        let query = parts.percentEncodedQuery.map { "?\($0)" } ?? ""
+        let fragment = parts.percentEncodedFragment.map { "#\($0)" } ?? ""
+        // a bare host has no trailing slash; a slash is kept when a query or fragment follows
+        if path.isEmpty || path == "/" {
+            if !query.isEmpty || !fragment.isEmpty { out += "/" }
+        } else {
+            out += path
+        }
+        return out + query + fragment
+    }
+
+    private static func hostMatches(_ url: String, _ allowed: [String]) -> Bool {
+        guard let host = URLComponents(string: url)?.host?.lowercased() else { return false }
+        return allowed.contains { host == $0 || host.hasSuffix(".\($0)") }
+    }
+
+    static func normalize(type: OutletLinkType, url: String, label: String? = nil) -> Result<OutletLink, OutletLinkError> {
+        guard let stored = address(url) else { return .failure(.invalid) }
+        if let allowed = hosts(type), !hostMatches(stored, allowed) { return .failure(.platform) }
+        var link = OutletLink(type: type, url: stored)
+        if type == .other {
+            let name = (label ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+            if name.isEmpty { return .failure(.labelRequired) }
+            if name.count > maxLabel { return .failure(.labelTooLong) }
+            link.label = name
+        }
+        return .success(link)
+    }
+
+    /// A whole list (the form's Lưu): each one normalised, exact repeats dropped, at most 6
+    static func normalizeList(_ list: [OutletLinkEntry]) -> OutletLinksResult {
+        var links: [OutletLink] = []
+        for (index, raw) in list.enumerated() {
+            guard let type = OutletLinkType(rawValue: raw.type) else { return .invalid(index: index, reason: .invalid) }
+            switch normalize(type: type, url: raw.url, label: raw.label) {
+            case .failure(let reason): return .invalid(index: index, reason: reason)
+            case .success(let link): if !links.contains(link) { links.append(link) }
+            }
+        }
+        return links.count > maxLinks ? .tooMany : .ok(links)
+    }
+
+    /// Reads what the API sent (never fails): keeps links that still pass the rules, at most 6
+    static func parseStored(_ entries: [OutletLinkEntry]?) -> [OutletLink] {
+        var out: [OutletLink] = []
+        for raw in entries ?? [] {
+            if out.count >= maxLinks { break }
+            guard let type = OutletLinkType(rawValue: raw.type), case .success(let link) = normalize(type: type, url: raw.url, label: raw.label) else { continue }
+            out.append(link)
+        }
+        return out
+    }
+
+    /// The `links` of the PUT body
+    static func payload(_ links: [OutletLink]) -> [[String: Any]] {
+        links.map { link in
+            var item: [String: Any] = ["type": link.type.rawValue, "url": link.url]
+            if link.type == .other, let label = link.label { item["label"] = label }
+            return item
+        }
+    }
 }

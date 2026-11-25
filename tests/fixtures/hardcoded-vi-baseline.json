@@ -26,7 +26,7 @@
   "apps/mobile-android/app/src/main/java/com/anyrent/pos/domain/orders/OrderRowDates.kt": 10,
   "apps/mobile-android/app/src/main/java/com/anyrent/pos/domain/overview/OverviewRelated.kt": 7,
   "apps/mobile-android/app/src/main/java/com/anyrent/pos/domain/products/ProductRules.kt": 1,
-  "apps/mobile-android/app/src/main/java/com/anyrent/pos/domain/settings/EmailLanguageSetting.kt": 1,
+  "apps/mobile-android/app/src/main/java/com/anyrent/pos/domain/settings/ShopLanguage.kt": 1,
   "apps/mobile-android/app/src/main/java/com/anyrent/pos/print/PrintText.kt": 14,
   "apps/mobile-android/app/src/main/java/com/anyrent/pos/print/ThermalPrinter.kt": 1,
   "apps/mobile-android/app/src/main/java/com/anyrent/pos/ui/home/CartCheckoutScreen.kt": 1,

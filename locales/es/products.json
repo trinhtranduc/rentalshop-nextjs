@@ -804,6 +804,11 @@
       "pickHint": "Elija la fecha de entrega y luego la de devolución.",
       "legendFull": "agotado",
       "legendSelected": "seleccionado",
+      "stockLegend": "Unidades libres",
+      "stockLow": "Queda 1",
+      "stockFull": "Agotado",
+      "stockFullWarn": "Algunos días están agotados ({days}). Puedes enviar la solicitud igualmente; la tienda te contactará para confirmar.",
+      "stockShortWarn": "El {date} solo quedan {count}, has elegido {quantity}. Puedes enviar la solicitud igualmente; la tienda te contactará para confirmar.",
       "loadingDays": "Cargando calendario…",
       "daysError": "No se pudo cargar el calendario. Vuelva a intentarlo.",
       "rangeFull": "Hay días agotados en este periodo. Elija otras fechas.",
@@ -877,6 +882,13 @@
       "errorNetwork": "No hay conexión. Revise la red y vuelva a intentarlo.",
       "errorGeneric": "No se pudo buscar en este momento. Vuelva a intentarlo."
     },
-    "priceHidden": "Consultar"
+    "priceHidden": "Consultar",
+    "outlets": "Sucursales",
+    "mainOutlet": "principal",
+    "links": "Enlaces de la tienda",
+    "linkTypes": {
+      "website": "Sitio web",
+      "other": "Otro"
+    }
   }
 }

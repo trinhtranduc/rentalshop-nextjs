@@ -2538,4 +2538,20 @@
     <string name="bill_return_title">เมื่อรับคืน</string>
     <string name="bill_return_excess_deposit">มัดจำส่วนเกิน</string>
     <string name="bill_return_give_back">คืนให้ลูกค้า</string>
+    <string name="shopinfo_links_title">ลิงก์ (แสดงในหน้าร้าน)</string>
+    <string name="shopinfo_links_hint">แสดงในหน้าร้านสาธารณะของสาขานี้</string>
+    <string name="shopinfo_links_add">เพิ่มลิงก์</string>
+    <string name="shopinfo_links_edit_title">แก้ไขลิงก์</string>
+    <string name="shopinfo_links_done">เสร็จ</string>
+    <string name="shopinfo_links_used">ใช้แล้ว %1$d / %2$d</string>
+    <string name="shopinfo_links_type_title">ประเภทลิงก์</string>
+    <string name="shopinfo_links_url_title">ที่อยู่ลิงก์</string>
+    <string name="shopinfo_links_label_title">ชื่อลิงก์</string>
+    <string name="shopinfo_links_remove">ลบลิงก์</string>
+    <string name="shopinfo_links_err_invalid">ลิงก์ดูไม่ถูกต้อง เช่น %1$s</string>
+    <string name="shopinfo_links_err_platform">ไม่ใช่ลิงก์ %1$s ที่ถูกต้อง เช่น %2$s</string>
+    <string name="shopinfo_links_err_label_required">กรอกชื่อลิงก์</string>
+    <string name="shopinfo_links_err_label_too_long">ไม่เกิน %1$d ตัวอักษร</string>
+    <string name="shopinfo_links_type_website">เว็บไซต์</string>
+    <string name="shopinfo_links_type_other">อื่น ๆ</string>
 </resources>

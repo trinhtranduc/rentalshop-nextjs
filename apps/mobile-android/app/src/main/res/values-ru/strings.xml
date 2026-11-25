@@ -2541,4 +2541,20 @@
     <string name="bill_return_title">При возврате</string>
     <string name="bill_return_excess_deposit">Излишек предоплаты</string>
     <string name="bill_return_give_back">Вернуть клиенту</string>
+    <string name="shopinfo_links_title">Ссылки (показываются на странице магазина)</string>
+    <string name="shopinfo_links_hint">Показываются на публичной странице магазина этого филиала.</string>
+    <string name="shopinfo_links_add">Добавить ссылку</string>
+    <string name="shopinfo_links_edit_title">Изменить ссылку</string>
+    <string name="shopinfo_links_done">Готово</string>
+    <string name="shopinfo_links_used">Использовано %1$d из %2$d</string>
+    <string name="shopinfo_links_type_title">Тип ссылки</string>
+    <string name="shopinfo_links_url_title">Адрес ссылки</string>
+    <string name="shopinfo_links_label_title">Название ссылки</string>
+    <string name="shopinfo_links_remove">Удалить ссылку</string>
+    <string name="shopinfo_links_err_invalid">Ссылка выглядит неверной, например %1$s</string>
+    <string name="shopinfo_links_err_platform">Это не допустимая ссылка %1$s, например %2$s</string>
+    <string name="shopinfo_links_err_label_required">Введите название ссылки</string>
+    <string name="shopinfo_links_err_label_too_long">Не более %1$d символов</string>
+    <string name="shopinfo_links_type_website">Сайт</string>
+    <string name="shopinfo_links_type_other">Другое</string>
 </resources>

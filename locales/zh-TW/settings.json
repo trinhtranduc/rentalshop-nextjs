@@ -777,6 +777,9 @@
     "publicPage": {
       "showPrice": "在店家頁面顯示價格",
       "showPriceHint": "關閉時，訪客會看到「聯絡店家」，不會看到金額。",
+      "showStock": "在預訂日曆顯示剩餘數量",
+      "showStockHint": "開啟後，店鋪頁面的預訂日曆會顯示每天還剩幾件，或已訂完。關閉後日曆不顯示任何資訊。",
+      "showStockNeedsBooking": "請先開啟「線上預訂」：只有顧客可以預訂時才會顯示日曆。",
       "ownerOnly": "只有店主可以開啟或關閉。"
     },
     "groups": {

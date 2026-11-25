@@ -134,7 +134,27 @@
       "create": "店舗を追加",
       "save": "保存",
       "saving": "保存中…",
-      "close": "閉じる"
+      "close": "閉じる",
+      "links": {
+        "title": "リンク",
+        "hint": "この店舗の公開ショップページに表示されます。",
+        "add": "リンクを追加",
+        "remove": "リンクを削除",
+        "typeLabel": "リンクの種類",
+        "urlLabel": "リンクのアドレス",
+        "labelPlaceholder": "リンク名",
+        "used": "{count} / {max} 件使用中",
+        "err": {
+          "invalid": "リンクが正しくないようです。例: {example}",
+          "platform": "有効な{type}のリンクではありません。例: {example}",
+          "labelRequired": "リンク名を入力してください",
+          "labelTooLong": "{max}文字までです"
+        },
+        "type": {
+          "website": "ウェブサイト",
+          "other": "その他"
+        }
+      }
     },
     "detail": {
       "title": "店舗の詳細",

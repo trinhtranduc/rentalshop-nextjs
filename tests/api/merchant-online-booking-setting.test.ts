@@ -156,6 +156,20 @@ describe('profile carries merchant.showPublicPrice (#1174)', () => {
   });
 });
 
+describe('profile carries merchant.showPublicStock (#1646)', () => {
+  it('false when the column is missing or false, true when on', async () => {
+    for (const [value, expected] of [[undefined, false], [false, false], [true, true]] as const) {
+      ctx = as('MERCHANT');
+      mockDb.users.findById.mockResolvedValue({
+        id: 10, email: 'u@x', role: 'MERCHANT', merchantId: 2,
+        merchant: { ...MERCHANT_ROW, ...(value === undefined ? {} : { showPublicStock: value }) },
+      });
+      const res: any = await getProfile(req());
+      expect(res.body.data.merchant.showPublicStock).toBe(expected);
+    }
+  });
+});
+
 describe('schemas (#1124)', () => {
   const order = { orderType: 'RENT', outletId: 3, orderItems: [{ productId: 1, quantity: 1, unitPrice: 1, totalPrice: 1 }], totalAmount: 1 };
   it('the order create schema takes bookingRequestId; the update schema does not', () => {
@@ -166,3 +180,36 @@ describe('schemas (#1124)', () => {
     expect(outletUpdateSchema.parse({ acceptsOnlineBooking: false })).toEqual({ acceptsOnlineBooking: false });
   });
 });
+
+describe('PUT /api/settings/merchant showPublicStock (#1646)', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockDb.users.findById.mockResolvedValue({ id: 10, merchant: { id: 2 } });
+    mockDb.merchants.update.mockImplementation(async (_id: number, data: any) => ({ ...MERCHANT_ROW, showPublicStock: false, ...data }));
+  });
+
+  it('the owner turns it on with a body carrying only the setting; the answer carries it', async () => {
+    ctx = as('MERCHANT');
+    const res: any = await putMerchantSettings(req({ showPublicStock: true }));
+    expect(res.status).toBe(200);
+    expect(mockDb.merchants.update).toHaveBeenCalledWith(2, { showPublicStock: true });
+    expect(res.body.data.showPublicStock).toBe(true);
+  });
+
+  it('403 for an outlet admin, 400 for a non-boolean, nothing written', async () => {
+    ctx = as('OUTLET_ADMIN', { outletId: 3 });
+    expect(((await putMerchantSettings(req({ showPublicStock: true }))) as any).status).toBe(403);
+    ctx = as('MERCHANT');
+    expect(((await putMerchantSettings(req({ showPublicStock: 'yes' }))) as any).status).toBe(400);
+    expect(mockDb.merchants.update).not.toHaveBeenCalled();
+  });
+
+  it('the business-info form old clients send, and the other switches, leave it unchanged', async () => {
+    ctx = as('MERCHANT');
+    await putMerchantSettings(req({ name: 'Shop', phone: '090' }));
+    expect(mockDb.merchants.update.mock.calls[0][1]).not.toHaveProperty('showPublicStock');
+    await putMerchantSettings(req({ showPublicPrice: false }));
+    expect(mockDb.merchants.update.mock.calls[1][1]).not.toHaveProperty('showPublicStock');
+  });
+});
+

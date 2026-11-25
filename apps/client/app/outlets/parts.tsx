@@ -8,13 +8,28 @@ import Link from 'next/link';
 import { ICONS, ShellIcon } from '../components/shell/Icon';
 import { outlineBtn, primaryBtn, type T } from '../orders/list/parts';
 import { Modal, fieldClass } from '../orders/create/parts';
-import { PRINT_NOTE_MAX, validateOutlet, type OutletFieldError, type OutletForm } from './outlets-model';
+import { OUTLET_LINK_BRAND_NAMES, OUTLET_LINK_LABEL_MAX, type OutletLinkError, type OutletLinkType } from '@rentalshop/utils';
+import {
+  MAX_OUTLET_LINKS,
+  OUTLET_LINK_EXAMPLES,
+  OUTLET_LINK_TYPE_ORDER,
+  PRINT_NOTE_MAX,
+  emptyLinkRow,
+  validateLinkRows,
+  validateOutlet,
+  type OutletFieldError,
+  type OutletForm,
+  type OutletLinkRow,
+} from './outlets-model';
 
 export const smallBtn =
   'inline-flex h-9 items-center justify-center whitespace-nowrap rounded-[10px] border border-ar-line-strong bg-ar-surface px-3 text-sm font-semibold text-ar-ink no-underline hover:bg-ar-subtle disabled:opacity-50';
 const labelClass = 'flex min-w-0 flex-col gap-1.5 text-sm font-semibold text-ar-ink-2';
 const inputClass = `${fieldClass} font-normal`;
 const errorField = 'border-ar-danger focus:border-ar-danger';
+
+/** Brand names are the same in every language; website / other come from the locale */
+export const linkTypeText = (t: T, type: OutletLinkType): string => OUTLET_LINK_BRAND_NAMES[type] ?? t(`form.links.type.${type}`);
 
 export type MenuItem = { key: string; text: string; danger?: boolean; onPick?: () => void; href?: string };
 
@@ -96,6 +111,7 @@ export function OutletFormDialog({
 }) {
   const [form, setForm] = useState<OutletForm>(initial);
   const [errors, setErrors] = useState<{ name?: OutletFieldError; printNote?: OutletFieldError }>({});
+  const [linkErrors, setLinkErrors] = useState<Record<number, OutletLinkError>>({});
   const [saving, setSaving] = useState(false);
   const formId = `outlet-form-${mode}`;
 
@@ -103,29 +119,47 @@ export function OutletFormDialog({
     if (open) {
       setForm(initial);
       setErrors({});
+      setLinkErrors({});
       setSaving(false);
     }
     // `initial` is rebuilt on every parent render; reset only when the dialog opens.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
-  const set = (key: keyof OutletForm) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const set = (key: Exclude<keyof OutletForm, 'links'>) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const value = e.target.value;
     setForm((f) => ({ ...f, [key]: value }));
     if (key === 'name' || key === 'printNote') setErrors((er) => ({ ...er, [key]: undefined }));
   };
 
+  // #1643 "Liên kết": a row is a type + address (+ a name for the `other` type)
+  const setRow = (index: number, patch: Partial<OutletLinkRow>) => {
+    setForm((f) => ({ ...f, links: f.links.map((row, i) => (i === index ? { ...row, ...patch } : row)) }));
+    setLinkErrors((er) => Object.fromEntries(Object.entries(er).filter(([key]) => Number(key) !== index)) as Record<number, OutletLinkError>);
+  };
+  const addRow = () => setForm((f) => (f.links.length >= MAX_OUTLET_LINKS ? f : { ...f, links: [...f.links, emptyLinkRow()] }));
+  const removeRow = (index: number) => {
+    setForm((f) => ({ ...f, links: f.links.filter((_, i) => i !== index) }));
+    setLinkErrors({});
+  };
+  const checkRow = (index: number) => {
+    const found = validateLinkRows([form.links[index]])[0];
+    setLinkErrors((er) => (found ? { ...er, [index]: found } : er));
+  };
+
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     const found = validateOutlet(form);
+    const badLinks = validateLinkRows(form.links);
     setErrors(found);
-    if (found.name || found.printNote) return;
+    setLinkErrors(badLinks);
+    if (found.name || found.printNote || Object.keys(badLinks).length > 0) return;
     setSaving(true);
     const ok = await onSubmit(form);
     if (!ok) setSaving(false);
   };
 
-  const field = (key: keyof OutletForm, label: string, extra: { placeholder?: string; type?: string; className?: string } = {}) => (
+  const field = (key: Exclude<keyof OutletForm, 'links'>, label: string, extra: { placeholder?: string; type?: string; className?: string } = {}) => (
     <label className={`${labelClass} ${extra.className || ''}`}>
       {label}
       <input type={extra.type || 'text'} value={form[key]} onChange={set(key)} placeholder={extra.placeholder} className={inputClass} />
@@ -138,6 +172,7 @@ export function OutletFormDialog({
       title={mode === 'add' ? t('form.addTitle') : t('form.editTitle')}
       onClose={() => (saving ? undefined : onClose())}
       closeLabel={t('form.close')}
+      roomy
       footer={
         <>
           <button type="button" onClick={onClose} disabled={saving} className={outlineBtn}>
@@ -173,6 +208,81 @@ export function OutletFormDialog({
             {field('state', t('form.state'))}
             {field('zipCode', t('form.zipCode'), { placeholder: t('form.optional') })}
             {field('country', t('form.country'))}
+          </div>
+        </fieldset>
+
+        <fieldset className="m-0 flex min-w-0 flex-col gap-2 rounded-xl border border-ar-line p-3" data-outlet-links>
+          <legend className="px-1 text-sm font-semibold text-ar-ink-2">{t('form.links.title')}</legend>
+          {form.links.map((row, index) => {
+            const error = linkErrors[index];
+            const typeText = linkTypeText(t, row.type);
+            return (
+              <div key={index} className="flex flex-col gap-1" data-outlet-link-row>
+                <div className="grid grid-cols-[minmax(0,1fr)_40px] gap-2 sm:grid-cols-[150px_minmax(0,1fr)_40px]">
+                  <select
+                    aria-label={t('form.links.typeLabel')}
+                    value={row.type}
+                    onChange={(e) => setRow(index, { type: e.target.value as OutletLinkRow['type'] })}
+                    className={`${inputClass} col-span-2 sm:col-span-1`}
+                  >
+                    {OUTLET_LINK_TYPE_ORDER.map((type) => (
+                      <option key={type} value={type}>
+                        {linkTypeText(t, type)}
+                      </option>
+                    ))}
+                  </select>
+                  <input
+                    type="url"
+                    inputMode="url"
+                    autoComplete="off"
+                    aria-label={`${typeText}: ${t('form.links.urlLabel')}`}
+                    value={row.url}
+                    onChange={(e) => setRow(index, { url: e.target.value })}
+                    onBlur={() => checkRow(index)}
+                    placeholder={OUTLET_LINK_EXAMPLES[row.type]}
+                    aria-invalid={!!error || undefined}
+                    className={`${inputClass} ${error ? errorField : ''}`}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => removeRow(index)}
+                    aria-label={`${t('form.links.remove')}: ${typeText}`}
+                    className="flex h-10 w-10 items-center justify-center rounded-[10px] border border-ar-line-strong bg-ar-surface text-lg leading-none text-ar-muted hover:bg-ar-subtle"
+                  >
+                    ×
+                  </button>
+                </div>
+                {row.type === 'other' && (
+                  <input
+                    value={row.label}
+                    maxLength={OUTLET_LINK_LABEL_MAX + 10}
+                    onChange={(e) => setRow(index, { label: e.target.value })}
+                    placeholder={t('form.links.labelPlaceholder')}
+                    aria-label={t('form.links.labelPlaceholder')}
+                    className={inputClass}
+                  />
+                )}
+                {error && (
+                  <span role="alert" className="text-sm font-normal text-ar-danger">
+                    {error === 'platform'
+                      ? t('form.links.err.platform', { type: typeText, example: OUTLET_LINK_EXAMPLES[row.type] })
+                      : error === 'labelRequired' || error === 'labelTooLong'
+                        ? t(`form.links.err.${error}`, { max: OUTLET_LINK_LABEL_MAX })
+                        : t('form.links.err.invalid', { example: OUTLET_LINK_EXAMPLES[row.type] })}
+                  </span>
+                )}
+              </div>
+            );
+          })}
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+            {form.links.length < MAX_OUTLET_LINKS && (
+              <button type="button" onClick={addRow} className={`${smallBtn} border-dashed text-ar-primary-ink`}>
+                + {t('form.links.add')}
+              </button>
+            )}
+            <span className="text-xs font-normal text-ar-muted">
+              {t('form.links.used', { count: form.links.length, max: MAX_OUTLET_LINKS })} · {t('form.links.hint')}
+            </span>
           </div>
         </fieldset>
 

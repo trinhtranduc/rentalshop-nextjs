@@ -575,7 +575,10 @@
       "row": "Pilih pesanan #{number}",
       "page": "Pilih seluruh halaman",
       "export": "Ekspor Excel ({count} pesanan)",
-      "clear": "Batal pilih"
+      "clear": "Batal pilih",
+      "count": "{count} pesanan dipilih",
+      "all": "Pilih semua {count} pesanan sesuai filter",
+      "allChosen": "Semua {count} pesanan sesuai filter dipilih"
     },
     "create": "Buat pesanan",
     "editor": {
@@ -1275,6 +1278,11 @@
       "lateDays": "Terlambat {days} hari",
       "stageShort": "tahap {n}",
       "walkIn": "Pelanggan umum"
+    },
+    "view": {
+      "label": "Tampilan",
+      "table": "Tabel",
+      "calendar": "Kalender"
     }
   }
 }

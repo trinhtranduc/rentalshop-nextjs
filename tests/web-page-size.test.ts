@@ -2,7 +2,12 @@
  * #1362 shop web: rows per page you can type (1 to 3000), next to the quick 10 / 20 / 50 / 100.
  * Pure model, no app imports, so it runs under TZ=UTC and TZ=Asia/Ho_Chi_Minh.
  */
-import { describe, expect, it } from '@jest/globals';
+import { describe, expect, it, jest } from '@jest/globals';
+// outlets-model takes the link rules (#1643) from @rentalshop/utils; its barrel pulls in React files
+jest.mock('@rentalshop/utils', () => ({
+  ...(jest.requireActual('../packages/utils/src/core/outlet-links') as object),
+}));
+
 import {
   DEFAULT_PAGE_SIZE,
   MAX_PAGE_SIZE,

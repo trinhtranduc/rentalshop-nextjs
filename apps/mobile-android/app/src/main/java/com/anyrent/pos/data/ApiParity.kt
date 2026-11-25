@@ -11,6 +11,8 @@ import com.anyrent.pos.domain.error.AppError
 import com.anyrent.pos.domain.orders.ExtensionUpdate
 import com.anyrent.pos.domain.orders.NotesStep
 import com.anyrent.pos.domain.orders.OrderDetailLogic
+import com.anyrent.pos.domain.settings.OutletLinkEntry
+import com.anyrent.pos.domain.settings.OutletLinkLogic
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.MultipartBody
 import okhttp3.Request
@@ -142,7 +144,19 @@ object ApiParity {
         /** #1313 */
         val isActive: Boolean? = null,
         val isDefault: Boolean? = null,
+        /** #1643: links of the branch; null when the API does not send `links` (not known, so a save leaves them out) */
+        val links: List<OutletLinkEntry>? = null,
     )
+
+    /** #1643: `links` of an outlet as the API sends it; null when the key is absent, junk entries dropped */
+    private fun parseLinks(match: JSONObject): List<OutletLinkEntry>? {
+        val array = match.optJSONArray("links") ?: return null
+        val raw = (0 until array.length()).map { index ->
+            val item = array.optJSONObject(index)
+            Triple(item?.optText("type"), item?.optText("url"), item?.optText("label"))
+        }
+        return OutletLinkLogic.parseStored(raw)
+    }
 
     fun getOutlet(outletId: Int): Result<OutletInfo> = runCatching {
         val json = ApiClient.get().authedGet("/api/outlets?page=1&limit=50")
@@ -162,6 +176,9 @@ object ApiParity {
             country = match.optText("country"),
             zipCode = match.optText("zipCode"),
             description = match.optText("description"),
+            isActive = if (match.has("isActive") && !match.isNull("isActive")) match.optBoolean("isActive") else null,
+            isDefault = if (match.has("isDefault") && !match.isNull("isDefault")) match.optBoolean("isDefault") else null,
+            links = parseLinks(match),
         )
     }
 
@@ -208,9 +225,13 @@ object ApiParity {
         (0 until array.length()).map { array.getJSONObject(it) }.map { outletInfo(it) }
     }
 
-    /** #1313: `PUT /api/outlets?outletId=` with name, address, phone (outlet.manage; staff get 403) */
-    fun updateBranch(outletId: Int, values: Map<String, String>): Result<Unit> = runCatching {
-        val body = JSONObject().apply { values.forEach { (key, value) -> put(key, value) } }.toString().toRequestBody(jsonMedia)
+    /**
+     * #1313: `PUT /api/outlets?outletId=` with name, address, phone (outlet.manage; staff get 403).
+     * #1643: `links` only when the branch's links are known; `[]` clears them, null leaves the key out so the API keeps them.
+     */
+    fun updateBranch(outletId: Int, values: Map<String, String>, links: List<OutletLinkEntry>? = null): Result<Unit> = runCatching {
+        val body = OutletLinkLogic.putLinks(JSONObject().apply { values.forEach { (key, value) -> put(key, value) } }, links)
+            .toString().toRequestBody(jsonMedia)
         ApiClient.get().authedPut("/api/outlets?outletId=$outletId", body)
         Unit
     }
@@ -227,6 +248,7 @@ object ApiParity {
         description = match.optText("description"),
         isActive = if (match.has("isActive") && !match.isNull("isActive")) match.optBoolean("isActive") else null,
         isDefault = if (match.has("isDefault") && !match.isNull("isDefault")) match.optBoolean("isDefault") else null,
+        links = parseLinks(match),
     )
 
     /** #1308: what the outlet prints on bills (`Outlet.printNote`, `Outlet.printBankQr`) */

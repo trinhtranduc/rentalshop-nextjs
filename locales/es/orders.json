@@ -575,7 +575,10 @@
       "row": "Seleccionar pedido #{number}",
       "page": "Seleccionar toda la página",
       "export": "Exportar a Excel ({count} pedidos)",
-      "clear": "Quitar selección"
+      "clear": "Quitar selección",
+      "count": "{count} pedidos seleccionados",
+      "all": "Seleccionar los {count} pedidos del filtro",
+      "allChosen": "Los {count} pedidos del filtro están seleccionados"
     },
     "create": "Nuevo pedido",
     "editor": {
@@ -1275,6 +1278,11 @@
       "lateDays": "{days} días de retraso",
       "stageShort": "etapa {n}",
       "walkIn": "Cliente ocasional"
+    },
+    "view": {
+      "label": "Vista",
+      "table": "Tabla",
+      "calendar": "Calendario"
     }
   }
 }
