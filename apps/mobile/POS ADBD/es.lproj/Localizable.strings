@@ -3077,12 +3077,9 @@ Abra el Calendario y lo verá.";
 "order.reorder.limit" = "Hay 10 carritos abiertos. Cierre uno y repita el pedido.";
 "order.reorder.failed" = "No se pudo leer el pedido para repetirlo";
 "authv2.country" = "País";
-"authv2.countryHint" = "Moneda %@ · Correos en vietnamita · se puede cambiar en Configuración.";
+"authv2.countryHint" = "Moneda %@ · se puede cambiar en Configuración.";
 "authv2.country.search" = "Buscar país";
 "authv2.country.empty" = "No hay países que coincidan";
-"shopinfo.emailLanguage" = "Idioma de los correos";
-"shopinfo.emailLanguage.hint" = "Los correos de verificación, de restablecimiento de contraseña y de avisos del plan se envían en este idioma.";
-"shopinfo.emailLanguage.failed" = "No se pudo guardar el idioma de los correos. Intente nuevamente.";
 
 /* #1612 AI weekly summary on Tổng quan (floating button and sheet) */
 "weeklySummary.title" = "Resumen semanal";

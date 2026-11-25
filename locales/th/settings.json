@@ -556,9 +556,7 @@
       "currencyHint": "วิธีแสดงราคาบนเว็บและหน้าร้าน ตัวเลขจะไม่ถูกแปลงค่าอัตโนมัติ",
       "currencyConfirmTitle": "เปลี่ยนสกุลเงินเป็น {code} ใช่ไหม?",
       "currencyConfirmBody": "ราคาทั้งหมดบนเว็บและหน้าร้านจะแสดงเป็น {code} ตัวเลขยังคงเดิม ไม่มีการแปลงค่า ({example})",
-      "currencyConfirmOk": "เปลี่ยนเป็น {code}",
-      "emailLanguage": "ภาษาของอีเมล",
-      "emailLanguageHint": "อีเมลยืนยันตัวตน รีเซ็ตรหัสผ่าน และการแจ้งเตือนแพ็กเกจจะถูกส่งเป็นภาษานี้"
+      "currencyConfirmOk": "เปลี่ยนเป็น {code}"
     },
     "outlets": {
       "title": "สาขา",

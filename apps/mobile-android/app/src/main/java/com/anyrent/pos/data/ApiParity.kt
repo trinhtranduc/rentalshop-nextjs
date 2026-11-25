@@ -11,8 +11,6 @@ import com.anyrent.pos.domain.error.AppError
 import com.anyrent.pos.domain.orders.ExtensionUpdate
 import com.anyrent.pos.domain.orders.NotesStep
 import com.anyrent.pos.domain.orders.OrderDetailLogic
-import com.anyrent.pos.domain.settings.EmailLanguageSetting
-import com.anyrent.pos.domain.settings.ShopLanguage
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.MultipartBody
 import okhttp3.Request
@@ -178,8 +176,6 @@ object ApiParity {
         val country: String?,
         val zipCode: String?,
         val description: String?,
-        /** #1539 (app) "Ngôn ngữ email"; null when the API does not send `merchant.language` (row hidden) */
-        val language: ShopLanguage? = null,
     )
 
     fun getMerchantInfo(): Result<MerchantInfo> = runCatching {
@@ -195,14 +191,7 @@ object ApiParity {
             country = merchant.optText("country"),
             zipCode = merchant.optText("zipCode"),
             description = merchant.optText("description"),
-            language = EmailLanguageSetting.fromMerchant(merchant),
         )
-    }
-
-    /** #1539 (app) `PUT /api/settings/merchant { language }` (MERCHANT; 403 otherwise); the language the API stored */
-    fun setEmailLanguage(language: ShopLanguage): Result<ShopLanguage> = runCatching {
-        val body = EmailLanguageSetting.body(language).toString().toRequestBody(jsonMedia)
-        EmailLanguageSetting.fromResponse(ApiClient.get().authedPut("/api/settings/merchant", body)) ?: language
     }
 
     /** #1313: `PUT /api/settings/merchant` with the shop form (MERCHANT; 403 for other roles). An empty text clears a field. */

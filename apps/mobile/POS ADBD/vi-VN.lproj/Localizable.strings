@@ -3290,12 +3290,9 @@
 "order.reorder.failed" = "Không đọc được đơn để đặt lại";
 /* #1539 (app): sign-up country, email language in Store Information. #1545: only the country; the hint names the currency (%@ = VND / USD) */
 "authv2.country" = "Quốc gia";
-"authv2.countryHint" = "Tiền tệ %@ · Email tiếng Việt · đổi được trong Cài đặt.";
+"authv2.countryHint" = "Tiền tệ %@ · đổi được trong Cài đặt.";
 "authv2.country.search" = "Tìm quốc gia";
 "authv2.country.empty" = "Không có quốc gia phù hợp";
-"shopinfo.emailLanguage" = "Ngôn ngữ email";
-"shopinfo.emailLanguage.hint" = "Email xác thực, đặt lại mật khẩu và thông báo gói gửi bằng ngôn ngữ này.";
-"shopinfo.emailLanguage.failed" = "Không lưu được ngôn ngữ email. Vui lòng thử lại.";
 
 /* #1612 AI weekly summary on Tổng quan (floating button and sheet) */
 "weeklySummary.title" = "Tóm tắt tuần";

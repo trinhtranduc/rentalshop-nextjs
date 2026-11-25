@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@rentalshop/database';
 import { withPermissions } from '@rentalshop/auth/server';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
-import { API, USER_ROLE, isShopLanguage, shopLanguage } from '@rentalshop/constants';
+import { API, USER_ROLE, isShopLanguage, emailLanguageFor } from '@rentalshop/constants';
 import { z } from 'zod';
 import { readOldAppsMode } from '../../../../lib/block-pricing-settings';
 import { readShareOrderNote } from '../../../../lib/share-order-note-settings';
@@ -33,6 +33,9 @@ const timezoneSchema = z.string().min(1).max(64).refine(isValidTimeZone, 'Unknow
  * - `timezone` (#567, IANA id): role MERCHANT only (ADMIN changes it via PUT /api/merchants/[id]; others
  *   403 INSUFFICIENT_PERMISSIONS). Unknown zone → 400 INVALID_TIMEZONE. A body with only the shop settings
  *   updates just those (no name required). A change is written to the audit log (entity Merchant).
+ * - #1648: the emails now follow the shop COUNTRY (Việt Nam vi, Nhật Bản ja, other en; no country: this value). The
+ *   web and the apps no longer show "Ngôn ngữ email"; installed apps that still send `language` keep working. The answer and
+ *   GET /api/users/profile carry the language in use.
  * - `language` (#1539, 'vi' | 'en' "Ngôn ngữ email"): role MERCHANT only (403 INSUFFICIENT_PERMISSIONS otherwise,
  *   ADMIN included); any other value → 400 INVALID_INPUT. A body with only that field updates just it. The answer and
  *   GET /api/users/profile carry `language` (additive; 'vi' when unset).
@@ -336,7 +339,7 @@ export const PUT = withPermissions(['merchant.manage'])(async (request: NextRequ
         // #1344 additive; false when unset
         shareOrderNote: readShareOrderNote((updatedMerchant as { settings?: unknown }).settings),
         // #1539 additive; 'vi' when unset
-        language: shopLanguage((updatedMerchant as { language?: unknown }).language),
+        language: emailLanguageFor(updatedMerchant as { country?: unknown; language?: unknown }), // #1648 follows the country
         ...merchantTimeZoneField(updatedMerchant),
         ...merchantDepositField(updatedMerchant),
         isActive: updatedMerchant.isActive,

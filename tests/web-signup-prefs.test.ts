@@ -136,7 +136,7 @@ describe('sign-up form asks only the country (#1545)', () => {
   it('the hint text the owner approved', () => {
     const vi = JSON.parse(readFileSync(join(root, 'locales/vi/auth.json'), 'utf8'));
     const en = JSON.parse(readFileSync(join(root, 'locales/en/auth.json'), 'utf8'));
-    expect(vi.register.countryHint).toBe('Tiền tệ {currency} · Email tiếng Việt · đổi được trong Cài đặt.');
-    expect(en.register.countryHint).toBe('Currency {currency} · Emails in English · change in Settings.');
+    expect(vi.register.countryHint).toBe('Tiền tệ {currency} · đổi được trong Cài đặt.');
+    expect(en.register.countryHint).toBe('Currency {currency} · change in Settings.');
   });
 });

@@ -7,7 +7,7 @@ import {
 } from '@rentalshop/database';
 import { registerSchema, sendVerificationEmail, generateUniqueTenantKey } from '@rentalshop/utils';
 import { hashPassword } from '@rentalshop/auth/server';
-import { SUBSCRIPTION_STATUS, USER_ROLE } from '@rentalshop/constants';
+import { SUBSCRIPTION_STATUS, USER_ROLE, emailLanguageFor } from '@rentalshop/constants';
 import { registerTimeZone } from '../../../../lib/shop-timezone';
 import { signupPrefs } from '../../../../lib/signup-prefs';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
@@ -302,7 +302,8 @@ export async function POST(request: NextRequest) {
         result.user.email,
         result.user.firstName,
         result.user.lastName,
-        prefs.language
+        // #1648 the first email follows the country picked on the form (no country: the form language as before)
+        emailLanguageFor({ country: validatedData.country, language: prefs.language })
       );
       
       return NextResponse.json(

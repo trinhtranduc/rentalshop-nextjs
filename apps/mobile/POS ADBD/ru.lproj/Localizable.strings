@@ -3074,12 +3074,9 @@
 "order.reorder.limit" = "Открыто 10 корзин. Закройте одну, прежде чем повторять заказ.";
 "order.reorder.failed" = "Не удалось прочитать заказ для повтора";
 "authv2.country" = "Страна";
-"authv2.countryHint" = "Валюта %@ · письма на английском · можно изменить в настройках.";
+"authv2.countryHint" = "Валюта %@ · можно изменить в настройках.";
 "authv2.country.search" = "Поиск страны";
 "authv2.country.empty" = "Подходящая страна не найдена";
-"shopinfo.emailLanguage" = "Язык писем";
-"shopinfo.emailLanguage.hint" = "Письма для подтверждения, сброса пароля и уведомления о тарифе отправляются на этом языке.";
-"shopinfo.emailLanguage.failed" = "Не удалось сохранить язык писем. Попробуйте ещё раз.";
 
 /* #1612 AI weekly summary on Tổng quan (floating button and sheet) */
 "weeklySummary.title" = "Сводка за неделю";

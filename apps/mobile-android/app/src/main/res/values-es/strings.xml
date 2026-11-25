@@ -2433,10 +2433,8 @@
     <string name="signup_country">País</string>
     <string name="signup_country_search">Buscar país</string>
     <string name="signup_country_empty">No hay ningún país coincidente</string>
-    <string name="signup_country_hint">Moneda %1$s · Correos en vietnamita · se puede cambiar en Ajustes.</string>
+    <string name="signup_country_hint">Moneda %1$s · se puede cambiar en Ajustes.</string>
     <string name="signup_app_language">vi</string>
-    <string name="settings_email_language">Idioma de los correos</string>
-    <string name="settings_email_language_hint">Los correos de verificación, restablecimiento de contraseña y de planes se envían en este idioma.</string>
     <string-array name="history_kinds">
         <item>ORDER_CREATED|Crear pedido</item>
         <item>ORDER_EDITED|Editar pedido</item>

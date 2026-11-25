@@ -2512,10 +2512,8 @@
     <string name="signup_country">国</string>
     <string name="signup_country_search">国を検索</string>
     <string name="signup_country_empty">該当する国がありません</string>
-    <string name="signup_country_hint">通貨 %1$s · メールはベトナム語 · 設定で変更できます。</string>
+    <string name="signup_country_hint">通貨 %1$s · 設定で変更できます。</string>
     <string name="signup_app_language">vi</string>
-    <string name="settings_email_language">メールの言語</string>
-    <string name="settings_email_language_hint">認証メール、パスワード再設定、プラン通知はこの言語で送信されます。</string>
     <!-- #1612 AI weekly summary on Tổng quan (button, sheet) -->
     <string name="weekly_summary_title">週間サマリー</string>
     <string name="weekly_summary_whole_shop">ショップ全体</string>

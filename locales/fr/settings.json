@@ -556,9 +556,7 @@
       "currencyHint": "Mode d'affichage des prix sur le web et la page de la boutique. Les montants ne sont pas convertis automatiquement.",
       "currencyConfirmTitle": "Passer la devise en {code} ?",
       "currencyConfirmBody": "Tous les prix du web et de la page de la boutique seront affichés en {code}. Les montants restent inchangés, sans conversion ({example}).",
-      "currencyConfirmOk": "Passer en {code}",
-      "emailLanguage": "Langue des e-mails",
-      "emailLanguageHint": "Les e-mails de vérification, de réinitialisation du mot de passe et les notifications de forfait sont envoyés dans cette langue."
+      "currencyConfirmOk": "Passer en {code}"
     },
     "outlets": {
       "title": "Points de location",

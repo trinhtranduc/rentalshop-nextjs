@@ -20,11 +20,11 @@ jest.mock('@rentalshop/utils', () => ({
 import { simplifiedUsers } from '../../../packages/database/src/user';
 
 describe('db.users.findByEmail selects merchant.language (#1539)', () => {
-  it('merchant select is id, name and language', async () => {
+  it('merchant select is id, name, language and country (#1648: the email language follows the country)', async () => {
     await simplifiedUsers.findByEmail('owner@shop.com');
     const args = mockFindUnique.mock.calls[0][0];
     expect(args.where).toEqual({ email: 'owner@shop.com' });
-    expect(args.select.merchant).toEqual({ select: { id: true, name: true, language: true } });
+    expect(args.select.merchant).toEqual({ select: { id: true, name: true, language: true, country: true } });
     expect(args.select.outlet).toEqual({ select: { id: true, name: true, isActive: true } });
     expect(args.select.password).toBe(true);
   });
@@ -36,6 +36,7 @@ describe('db.users.findById selects merchant.language (#1539, GET /api/users/pro
     await simplifiedUsers.findById(10);
     const args = mockFindUnique.mock.calls[0][0];
     expect(args.include.merchant.select.language).toBe(true);
+    expect(args.include.merchant.select.country).toBe(true); // #1648
     expect(args.include.merchant.select.timezone).toBe(true);
   });
 });

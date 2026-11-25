@@ -2433,10 +2433,8 @@
     <string name="signup_country">国家/地区</string>
     <string name="signup_country_search">搜索国家/地区</string>
     <string name="signup_country_empty">没有匹配的国家/地区</string>
-    <string name="signup_country_hint">货币 %1$s · 邮件语言为越南语 · 可在设置中更改。</string>
+    <string name="signup_country_hint">货币 %1$s · 可在设置中更改。</string>
     <string name="signup_app_language">vi</string>
-    <string name="settings_email_language">邮件语言</string>
-    <string name="settings_email_language_hint">验证邮件、重置密码和套餐通知将使用此语言发送。</string>
     <string-array name="history_kinds">
         <item>ORDER_CREATED|创建订单</item>
         <item>ORDER_EDITED|修改订单</item>
