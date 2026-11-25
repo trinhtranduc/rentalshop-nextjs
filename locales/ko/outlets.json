@@ -134,7 +134,27 @@
       "create": "지점 추가",
       "save": "저장",
       "saving": "저장 중…",
-      "close": "닫기"
+      "close": "닫기",
+      "links": {
+        "title": "링크",
+        "hint": "이 지점의 공개 쇼핑 페이지에 표시됩니다.",
+        "add": "링크 추가",
+        "remove": "링크 삭제",
+        "typeLabel": "링크 종류",
+        "urlLabel": "링크 주소",
+        "labelPlaceholder": "링크 이름",
+        "used": "{count} / {max} 사용 중",
+        "err": {
+          "invalid": "링크가 올바르지 않습니다. 예: {example}",
+          "platform": "올바른 {type} 링크가 아닙니다. 예: {example}",
+          "labelRequired": "링크 이름을 입력하세요",
+          "labelTooLong": "최대 {max}자"
+        },
+        "type": {
+          "website": "웹사이트",
+          "other": "기타"
+        }
+      }
     },
     "detail": {
       "title": "지점 상세",

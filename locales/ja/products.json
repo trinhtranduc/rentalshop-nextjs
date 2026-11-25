@@ -877,6 +877,13 @@
       "errorNetwork": "接続できません。ネットワークを確認してもう一度お試しください。",
       "errorGeneric": "現在検索できません。もう一度お試しください。"
     },
-    "priceHidden": "お問い合わせ"
+    "priceHidden": "お問い合わせ",
+    "outlets": "店舗",
+    "mainOutlet": "メイン",
+    "links": "ショップのリンク",
+    "linkTypes": {
+      "website": "ウェブサイト",
+      "other": "その他"
+    }
   }
 }

@@ -134,7 +134,27 @@
       "create": "Agregar sucursal",
       "save": "Guardar",
       "saving": "Guardando…",
-      "close": "Cerrar"
+      "close": "Cerrar",
+      "links": {
+        "title": "Enlaces",
+        "hint": "Se muestra en la página pública de la tienda de esta sucursal.",
+        "add": "Añadir enlace",
+        "remove": "Quitar enlace",
+        "typeLabel": "Tipo de enlace",
+        "urlLabel": "Dirección del enlace",
+        "labelPlaceholder": "Nombre del enlace",
+        "used": "{count} / {max} en uso",
+        "err": {
+          "invalid": "El enlace parece incorrecto, por ejemplo {example}",
+          "platform": "No es un enlace válido de {type}, por ejemplo {example}",
+          "labelRequired": "Escribe un nombre para el enlace",
+          "labelTooLong": "Máximo {max} caracteres"
+        },
+        "type": {
+          "website": "Sitio web",
+          "other": "Otro"
+        }
+      }
     },
     "detail": {
       "title": "Detalles de la sucursal",

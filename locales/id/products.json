@@ -877,6 +877,13 @@
       "errorNetwork": "Tidak dapat terhubung. Periksa jaringan, lalu coba lagi.",
       "errorGeneric": "Belum bisa mencari saat ini. Silakan coba lagi."
     },
-    "priceHidden": "Hubungi kami"
+    "priceHidden": "Hubungi kami",
+    "outlets": "Cabang",
+    "mainOutlet": "utama",
+    "links": "Tautan toko",
+    "linkTypes": {
+      "website": "Situs web",
+      "other": "Lainnya"
+    }
   }
 }

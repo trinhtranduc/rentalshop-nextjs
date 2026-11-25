@@ -4,7 +4,12 @@
  * - disable / re-enable only for the owner (OUTLET_ADMIN keeps "Sửa" for its own outlet);
  * - "Sửa" in the detail dialog follows the same permission as the row "Sửa" button.
  */
-import { describe, expect, it } from '@jest/globals';
+import { describe, expect, it, jest } from '@jest/globals';
+// outlets-model takes the link rules (#1643) from @rentalshop/utils; its barrel pulls in React files
+jest.mock('@rentalshop/utils', () => ({
+  ...(jest.requireActual('../packages/utils/src/core/outlet-links') as object),
+}));
+
 import * as fs from 'fs';
 import * as path from 'path';
 import { isOutletOwnerRole, outletActions } from '../apps/client/app/outlets/outlets-model';

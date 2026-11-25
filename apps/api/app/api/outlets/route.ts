@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withPermissions } from '@rentalshop/auth/server';
 import { db } from '@rentalshop/database';
-import { outletsQuerySchema, outletCreateSchema, outletUpdateSchema, handleApiError, ResponseBuilder } from '@rentalshop/utils';
+import { outletsQuerySchema, outletCreateSchema, outletUpdateSchema, handleApiError, ResponseBuilder, parseStoredOutletLinks } from '@rentalshop/utils';
 import { checkPlanLimitIfNeeded } from '@rentalshop/utils/server';
 import { API, USER_ROLE, isOutletRole } from '@rentalshop/constants';
 import {
@@ -80,6 +80,7 @@ export const GET = withPermissions(['outlet.view'])(async (request, { user, user
     // Normalize date fields in outlet list to UTC ISO strings using toISOString()
     const normalizedOutlets = (result.data || []).map(outlet => ({
       ...outlet,
+      links: parseStoredOutletLinks((outlet as { links?: unknown }).links), // #1643 always an array
       createdAt: outlet.createdAt?.toISOString() || null,
       updatedAt: outlet.updatedAt?.toISOString() || null,
     }));
@@ -185,7 +186,8 @@ export const POST = withPermissions(['outlet.manage'])(async (request, { user, u
       phone: parsed.data.phone,
       description: parsed.data.description,
       printNote: parsed.data.printNote,
-      printBankQr: parsed.data.printBankQr
+      printBankQr: parsed.data.printBankQr,
+      links: parsed.data.links // #1643 absent = none yet (column stays null)
       // Note: status field is validated but not stored (database uses isActive instead)
     };
 
@@ -198,6 +200,7 @@ export const POST = withPermissions(['outlet.manage'])(async (request, { user, u
     // Normalize date fields to UTC ISO strings using toISOString()
     const normalizedOutlet = {
       ...outlet,
+      links: parseStoredOutletLinks((outlet as { links?: unknown }).links),
       createdAt: outlet.createdAt?.toISOString() || null,
       updatedAt: outlet.updatedAt?.toISOString() || null,
     };
@@ -344,6 +347,7 @@ export const PUT = withPermissions(['outlet.manage'])(async (request, { user, us
     // Normalize date fields to UTC ISO strings using toISOString()
     const normalizedOutlet = {
       ...updatedOutlet,
+      links: parseStoredOutletLinks((updatedOutlet as { links?: unknown }).links),
       createdAt: updatedOutlet.createdAt?.toISOString() || null,
       updatedAt: updatedOutlet.updatedAt?.toISOString() || null,
     };

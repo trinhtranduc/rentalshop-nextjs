@@ -134,7 +134,27 @@
       "create": "Tambah cabang",
       "save": "Simpan",
       "saving": "Menyimpan…",
-      "close": "Tutup"
+      "close": "Tutup",
+      "links": {
+        "title": "Tautan",
+        "hint": "Ditampilkan di halaman toko publik cabang ini.",
+        "add": "Tambah tautan",
+        "remove": "Hapus tautan",
+        "typeLabel": "Jenis tautan",
+        "urlLabel": "Alamat tautan",
+        "labelPlaceholder": "Nama tautan",
+        "used": "{count} / {max} terpakai",
+        "err": {
+          "invalid": "Tautan tampaknya salah, contoh {example}",
+          "platform": "Bukan tautan {type} yang valid, contoh {example}",
+          "labelRequired": "Isi nama untuk tautan",
+          "labelTooLong": "Maksimal {max} karakter"
+        },
+        "type": {
+          "website": "Situs web",
+          "other": "Lainnya"
+        }
+      }
     },
     "detail": {
       "title": "Detail cabang",

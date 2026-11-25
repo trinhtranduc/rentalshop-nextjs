@@ -877,6 +877,13 @@
       "errorNetwork": "No hay conexión. Revise la red y vuelva a intentarlo.",
       "errorGeneric": "No se pudo buscar en este momento. Vuelva a intentarlo."
     },
-    "priceHidden": "Consultar"
+    "priceHidden": "Consultar",
+    "outlets": "Sucursales",
+    "mainOutlet": "principal",
+    "links": "Enlaces de la tienda",
+    "linkTypes": {
+      "website": "Sitio web",
+      "other": "Otro"
+    }
   }
 }

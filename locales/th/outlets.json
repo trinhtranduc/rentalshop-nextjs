@@ -134,7 +134,27 @@
       "create": "เพิ่มสาขา",
       "save": "บันทึก",
       "saving": "กำลังบันทึก…",
-      "close": "ปิด"
+      "close": "ปิด",
+      "links": {
+        "title": "ลิงก์",
+        "hint": "แสดงในหน้าร้านสาธารณะของสาขานี้",
+        "add": "เพิ่มลิงก์",
+        "remove": "ลบลิงก์",
+        "typeLabel": "ประเภทลิงก์",
+        "urlLabel": "ที่อยู่ลิงก์",
+        "labelPlaceholder": "ชื่อลิงก์",
+        "used": "ใช้แล้ว {count} / {max}",
+        "err": {
+          "invalid": "ลิงก์ดูไม่ถูกต้อง เช่น {example}",
+          "platform": "ไม่ใช่ลิงก์ {type} ที่ถูกต้อง เช่น {example}",
+          "labelRequired": "กรอกชื่อลิงก์",
+          "labelTooLong": "ไม่เกิน {max} ตัวอักษร"
+        },
+        "type": {
+          "website": "เว็บไซต์",
+          "other": "อื่น ๆ"
+        }
+      }
     },
     "detail": {
       "title": "รายละเอียดสาขา",
