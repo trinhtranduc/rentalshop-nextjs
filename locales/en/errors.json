@@ -596,5 +596,11 @@
   "DEPOSIT_PLAN_UPDATED": "Booking deposit plan updated",
   "CANCEL_AMOUNTS_MISMATCH": "The amount kept is more than what was collected, or is not a valid amount.",
   "CANCELLED_ORDER_KEEPS_AMOUNT": "A cancelled order that kept money stays in the history and cannot be deleted.",
-  "ADMIN_REVENUE_SUCCESS": "Revenue retrieved successfully"
+  "ADMIN_REVENUE_SUCCESS": "Revenue retrieved successfully",
+  "POLAR_NOT_CONFIGURED": "Card payment is not set up yet. Please contact support.",
+  "POLAR_MANAGE_IN_PORTAL": "Your plan renews by card. Change the plan or period under Manage / cancel plan.",
+  "SUBSCRIPTION_RENEWS_IN_STORE": "Your plan renews through the App Store or Google Play. Turn off auto-renew there before paying on the web.",
+  "PLAN_NOT_PURCHASABLE": "This plan can't be bought right now.",
+  "POLAR_CUSTOMER_NOT_FOUND": "There is no card subscription to manage yet.",
+  "POLAR_REQUEST_FAILED": "Could not open the payment page. Please try again."
 }

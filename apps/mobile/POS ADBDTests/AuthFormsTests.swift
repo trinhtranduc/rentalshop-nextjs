@@ -381,10 +381,10 @@ final class AuthFormsTests: XCTestCase {
         }
         let vi = try XCTUnwrap(strings("vi-VN")["authv2.countryHint"])
         let en = try XCTUnwrap(strings("en")["authv2.countryHint"])
-        XCTAssertEqual(String(format: vi, "VND"), "Tiền tệ VND · Email tiếng Việt · đổi được trong Cài đặt.")
-        XCTAssertEqual(String(format: vi, "USD"), "Tiền tệ USD · Email tiếng Việt · đổi được trong Cài đặt.")
-        XCTAssertEqual(String(format: en, "USD"), "Currency USD · Emails in English · change in Settings.")
-        XCTAssertEqual(String(format: en, "VND"), "Currency VND · Emails in English · change in Settings.")
+        XCTAssertEqual(String(format: vi, "VND"), "Tiền tệ VND · đổi được trong Cài đặt.")
+        XCTAssertEqual(String(format: vi, "USD"), "Tiền tệ USD · đổi được trong Cài đặt.")
+        XCTAssertEqual(String(format: en, "USD"), "Currency USD · change in Settings.")
+        XCTAssertEqual(String(format: en, "VND"), "Currency VND · change in Settings.")
     }
 
     func testCountryPickerListsVietnamFirstAndFilters() throws {

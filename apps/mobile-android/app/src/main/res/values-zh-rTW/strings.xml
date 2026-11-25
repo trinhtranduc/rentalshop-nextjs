@@ -2433,10 +2433,8 @@
     <string name="signup_country">國家／地區</string>
     <string name="signup_country_search">搜尋國家／地區</string>
     <string name="signup_country_empty">找不到符合的國家／地區</string>
-    <string name="signup_country_hint">貨幣 %1$s · 越南文電子郵件 · 可在設定中變更。</string>
+    <string name="signup_country_hint">貨幣 %1$s · 可在設定中變更。</string>
     <string name="signup_app_language">vi</string>
-    <string name="settings_email_language">電子郵件語言</string>
-    <string name="settings_email_language_hint">驗證、重設密碼與方案通知的電子郵件將以此語言寄出。</string>
     <string-array name="history_kinds">
         <item>ORDER_CREATED|建立訂單</item>
         <item>ORDER_EDITED|修改訂單</item>
@@ -2536,4 +2534,24 @@
     <plurals name="weekly_summary_times">
         <item quantity="other">%1$d 次</item>
     </plurals>
+    <!-- #1633 bill: fees at return -->
+    <string name="bill_return_title">歸還時</string>
+    <string name="bill_return_excess_deposit">多付訂金</string>
+    <string name="bill_return_give_back">退還客人</string>
+    <string name="shopinfo_links_title">連結 (顯示在店鋪頁面)</string>
+    <string name="shopinfo_links_hint">顯示在此分店的公開店鋪頁面上。</string>
+    <string name="shopinfo_links_add">新增連結</string>
+    <string name="shopinfo_links_edit_title">編輯連結</string>
+    <string name="shopinfo_links_done">完成</string>
+    <string name="shopinfo_links_used">已使用 %1$d / %2$d</string>
+    <string name="shopinfo_links_type_title">連結類型</string>
+    <string name="shopinfo_links_url_title">連結位址</string>
+    <string name="shopinfo_links_label_title">連結名稱</string>
+    <string name="shopinfo_links_remove">刪除連結</string>
+    <string name="shopinfo_links_err_invalid">連結似乎不正確，例如 %1$s</string>
+    <string name="shopinfo_links_err_platform">不是有效的%1$s連結，例如 %2$s</string>
+    <string name="shopinfo_links_err_label_required">請輸入連結名稱</string>
+    <string name="shopinfo_links_err_label_too_long">最多 %1$d 個字元</string>
+    <string name="shopinfo_links_type_website">網站</string>
+    <string name="shopinfo_links_type_other">其他</string>
 </resources>

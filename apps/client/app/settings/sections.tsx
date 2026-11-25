@@ -9,10 +9,8 @@ import React, { useEffect, useId, useMemo, useState, useTransition } from 'react
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
-import { COUNTRIES, SHOP_LANGUAGES, webLanguages, type ShopLanguage } from '@rentalshop/constants';
+import { COUNTRIES, webLanguages } from '@rentalshop/constants';
 
-/** #1553 the name of each shop language, in that language */
-const SHOP_LANGUAGE_LABEL: Record<ShopLanguage, string> = { vi: 'Tiếng Việt', en: 'English', ja: '日本語' };
 import { useToast } from '@rentalshop/ui';
 import { authApi, bookingRequestsApi, outletsApi, usersApi } from '@rentalshop/utils';
 import { cardClass, outlineBtn, primaryBtn, Skeleton, type T } from '../orders/list/parts';
@@ -93,8 +91,6 @@ export interface ShopForm {
   pricingType?: string;
   /** #1145 shop currency (owner only; amounts are never converted) */
   currency?: ShopCurrency;
-  /** #1539 shop language for emails (owner only) */
-  language?: ShopLanguage;
 }
 
 export function ShopInfoSection({
@@ -206,31 +202,6 @@ export function ShopInfoSection({
                   ))}
                 </div>
                 <p className="m-0 text-sm text-ar-muted">{t('form.currencyHint')}</p>
-              </div>
-            )}
-            {showCurrency && initial.language && (
-              <div className="flex flex-col gap-1.5">
-                <span id={`${listId}-lang`} className={labelClass}>
-                  {t('form.emailLanguage')}
-                </span>
-                <div role="radiogroup" aria-labelledby={`${listId}-lang`} className="inline-flex w-fit rounded-xl border border-ar-line bg-ar-surface-muted p-1">
-                  {SHOP_LANGUAGES.map((l) => (
-                    <button
-                      key={l}
-                      type="button"
-                      role="radio"
-                      aria-checked={form.language === l}
-                      data-email-language={l}
-                      onClick={() => setForm((f) => ({ ...f, language: l }))}
-                      className={`h-10 min-w-[112px] rounded-[10px] px-4 text-[15px] font-semibold ${
-                        form.language === l ? 'bg-ar-surface text-ar-primary-ink shadow-sm ring-1 ring-ar-primary' : 'text-ar-ink-2 hover:bg-ar-subtle'
-                      }`}
-                    >
-                      {SHOP_LANGUAGE_LABEL[l]}
-                    </button>
-                  ))}
-                </div>
-                <p className="m-0 text-sm text-ar-muted">{t('form.emailLanguageHint')}</p>
               </div>
             )}
             {/* #1140: rarely used fields, closed by default. Mã URL moved to Trang shop công khai (still sent unchanged). */}
@@ -571,6 +542,9 @@ export function PublicPageSection({
   showPublicPrice = true,
   canEditPrice = false,
   onPriceChanged,
+  showPublicStock = false,
+  bookingOn = false,
+  onStockChanged,
 }: {
   tenantKey: string;
   publicProductLink?: string | null;
@@ -581,6 +555,10 @@ export function PublicPageSection({
   showPublicPrice?: boolean;
   canEditPrice?: boolean;
   onPriceChanged?: () => void;
+  /** #1646 Hiện còn / hết trên lịch đặt thuê; only works while "Nhận đặt online" is on */
+  showPublicStock?: boolean;
+  bookingOn?: boolean;
+  onStockChanged?: () => void;
 }) {
   const origin = useOrigin();
   const ts = useTranslations('settings');
@@ -592,8 +570,13 @@ export function PublicPageSection({
   const [priceSaving, setPriceSaving] = useState(false);
   const priceTitleId = useId();
   const priceHintId = useId();
+  const [stockOn, setStockOn] = useState(showPublicStock);
+  const [stockSaving, setStockSaving] = useState(false);
+  const stockTitleId = useId();
+  const stockHintId = useId();
   useEffect(() => setValue(tenantKey), [tenantKey]);
   useEffect(() => setPriceOn(showPublicPrice), [showPublicPrice]);
+  useEffect(() => setStockOn(showPublicStock), [showPublicStock]);
   const togglePrice = async (next: boolean) => {
     if (!canEditPrice) return;
     setPriceOn(next);
@@ -608,6 +591,23 @@ export function PublicPageSection({
       toastError(ts('messages.errorTitle'), error instanceof Error && error.message ? error.message : t('publicPage.showPrice'));
     } finally {
       setPriceSaving(false);
+    }
+  };
+  const stockEnabled = canEditPrice && bookingOn;
+  const toggleStock = async (next: boolean) => {
+    if (!stockEnabled) return;
+    setStockOn(next);
+    setStockSaving(true);
+    try {
+      const res = await bookingRequestsApi.setShowPublicStock(next);
+      if (!res.success) throw new Error(res.error || '');
+      toastSuccess(ts('messages.successTitle'), t('publicPage.showStock'));
+      onStockChanged?.();
+    } catch (error) {
+      setStockOn(!next);
+      toastError(ts('messages.errorTitle'), error instanceof Error && error.message ? error.message : t('publicPage.showStock'));
+    } finally {
+      setStockSaving(false);
     }
   };
   const dirty = value !== tenantKey;
@@ -673,6 +673,21 @@ export function PublicPageSection({
             </span>
           </span>
           <Switch checked={priceOn} onChange={togglePrice} disabled={!canEditPrice || priceSaving} labelledBy={priceTitleId} describedBy={priceHintId} />
+        </div>
+      </section>
+      <section className={`${cardClass} flex flex-col gap-4 px-5 py-4 ${bookingOn ? '' : 'opacity-60'}`} data-show-public-stock-setting>
+        <div className="flex min-h-[44px] items-start justify-between gap-3">
+          <span className="flex flex-col gap-1">
+            <h2 id={stockTitleId} className="m-0 text-lg font-bold">
+              {t('publicPage.showStock')}
+            </h2>
+            <span id={stockHintId} className="text-sm text-ar-muted">
+              {t('publicPage.showStockHint')}
+              {!bookingOn && ` ${t('publicPage.showStockNeedsBooking')}`}
+              {!canEditPrice && ` ${t('publicPage.ownerOnly')}`}
+            </span>
+          </span>
+          <Switch checked={stockOn && bookingOn} onChange={toggleStock} disabled={!stockEnabled || stockSaving} labelledBy={stockTitleId} describedBy={stockHintId} />
         </div>
       </section>
     </>

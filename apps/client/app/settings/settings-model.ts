@@ -140,6 +140,15 @@ export function showPublicPriceFlag(merchant: { showPublicPrice?: unknown } | nu
 }
 
 /**
+ * #1646 "Hiện còn / hết trên lịch đặt thuê": login has no `showPublicStock`, only GET /api/users/profile does.
+ * A missing key is unknown (load the profile); after load a missing key still means OFF (the default).
+ */
+export function showPublicStockFlag(merchant: { showPublicStock?: unknown } | null | undefined): boolean | null {
+  const v = merchant?.showPublicStock;
+  return typeof v === 'boolean' ? v : null;
+}
+
+/**
  * #1189 "Với app cũ" (day-block prices): login has no `blockPricing`, only GET /api/users/profile does (#1138).
  * A missing key is unknown (load the profile), never a choice; any value but 'block' is 'recompute'.
  */

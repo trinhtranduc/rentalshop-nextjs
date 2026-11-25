@@ -6,7 +6,6 @@
 export type ShellNavKey =
   | 'overview'
   | 'orders'
-  | 'calendar'
   | 'availability'
   | 'products'
   | 'customers'
@@ -46,7 +45,6 @@ export interface ShellNavItem {
 const NAV: Record<ShellNavKey, ShellNavItem> = {
   overview: { key: 'overview', href: '/dashboard', icon: 'M5 20V11M12 20V5M19 20v-6' },
   orders: { key: 'orders', href: '/orders', icon: 'M6 3h12v18l-3-2-3 2-3-2-3 2zM9 8h6M9 12h6' },
-  calendar: { key: 'calendar', href: '/calendar', icon: 'M5 5h14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2zM3 10h18M8 3v4M16 3v4' },
   availability: { key: 'availability', href: '/availability', icon: 'M5 4h14v16H5zM9 12l2 2 4-4' },
   products: { key: 'products', href: '/products', icon: 'M8 3l4 3 4-3 4 4-3 3v11H7V10L4 7z' },
   categories: { key: 'categories', href: '/categories', icon: 'M3 12l9-9h7a2 2 0 0 1 2 2v7l-9 9zM16 8h.01' },
@@ -84,7 +82,7 @@ export interface ShellNavGroup {
 /** Menu grouped by daily work (#960, owner option A). */
 export const SHELL_NAV_GROUPS: ShellNavGroup[] = [
   { key: null, items: [NAV.overview] },
-  { key: 'sales', items: [NAV.orders, NAV.calendar, NAV.availability] },
+  { key: 'sales', items: [NAV.orders, NAV.availability] },
   { key: 'goods', items: [NAV.products, NAV.categories] },
   { key: 'customers', items: [NAV.customers, NAV.loyalty] },
   { key: 'people', items: [NAV.staff, NAV.attendance] },

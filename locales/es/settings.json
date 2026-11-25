@@ -556,9 +556,7 @@
       "currencyHint": "Cómo se muestran los precios en la web y en la página de la tienda. Los importes no se convierten automáticamente.",
       "currencyConfirmTitle": "¿Cambiar la moneda a {code}?",
       "currencyConfirmBody": "Todos los precios de la web y de la página de la tienda se mostrarán en {code}. Los importes no cambian ni se convierten ({example}).",
-      "currencyConfirmOk": "Cambiar a {code}",
-      "emailLanguage": "Idioma de los emails",
-      "emailLanguageHint": "Los emails de verificación, de restablecimiento de contraseña y de avisos del plan se enviarán en este idioma."
+      "currencyConfirmOk": "Cambiar a {code}"
     },
     "outlets": {
       "title": "Sucursales",
@@ -679,7 +677,8 @@
         "CHECK": "Cheque",
         "PAYPAL": "PayPal",
         "IAP_APPLE": "App Store",
-        "IAP_GOOGLE": "Google Play"
+        "IAP_GOOGLE": "Google Play",
+        "POLAR": "Tarjeta (Polar)"
       },
       "history": {
         "title": "Historial del plan",
@@ -716,7 +715,8 @@
           "REFUNDED": "Reembolsado",
           "CANCELLED": "Cancelado"
         }
-      }
+      },
+      "manage": "Gestionar / cancelar plan"
     },
     "bank": {
       "title": "Cuentas bancarias"
@@ -777,6 +777,9 @@
     "publicPage": {
       "showPrice": "Mostrar precios en la página de la tienda",
       "showPriceHint": "Si está desactivado, el cliente verá \"Consultar\" en lugar del importe.",
+      "showStock": "Mostrar disponibilidad en el calendario de reservas",
+      "showStockHint": "Activado: el calendario de reservas de tu página muestra cuántos quedan cada día, o agotado. Desactivado: el calendario no muestra nada.",
+      "showStockNeedsBooking": "Activa primero «Reservas en línea»: el calendario solo aparece cuando los clientes pueden reservar.",
       "ownerOnly": "Solo el titular de la tienda puede activar o desactivar esta opción."
     },
     "groups": {

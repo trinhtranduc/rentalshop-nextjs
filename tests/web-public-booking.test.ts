@@ -15,8 +15,12 @@ import {
   pickRange,
   rangeIsFree,
   removeFromRequest,
+  rangeStockNotes,
   requestKey,
   saveRequest,
+  stockByDate,
+  stockLevel,
+  formatShortDay,
   trackingView,
   validateBookingForm,
 } from '../apps/client/app/[tenantKey]/products/lib/booking';
@@ -223,3 +227,46 @@ describe('tracking page is public (#1124)', () => {
     expect(isPublicRoute('/orders/123')).toBe(false);
   });
 });
+
+describe('#1646 units left on the public calendar', () => {
+  const days = [
+    { date: '2026-12-10', status: 'free' as const, available: 3 },
+    { date: '2026-12-11', status: 'free' as const, available: 1 },
+    { date: '2026-12-12', status: 'full' as const, available: 0 },
+    { date: '2026-12-13', status: 'full' as const, available: 0 },
+    { date: '2026-12-14', status: 'free' as const, available: 1 },
+    { date: '2026-12-15', status: 'free' as const },
+  ];
+
+  it('reads counts by day and skips days without one (the shop turned the switch off, or junk)', () => {
+    const counts = stockByDate([...days, { date: '2026-12-16', status: 'free' as const, available: -2 }, { date: '2026-12-17', status: 'free' as const, available: Number.NaN }]);
+    expect(counts.get('2026-12-10')).toBe(3);
+    expect(counts.get('2026-12-12')).toBe(0);
+    expect(counts.has('2026-12-15')).toBe(false);
+    expect(counts.has('2026-12-16')).toBe(false);
+    expect(counts.has('2026-12-17')).toBe(false);
+    expect(stockByDate([{ date: '2026-12-10', status: 'free' as const }]).size).toBe(0);
+  });
+
+  it('level: none = full, one = low, two or more = ok', () => {
+    expect([stockLevel(0), stockLevel(1), stockLevel(2), stockLevel(9)]).toEqual(['full', 'low', 'ok', 'ok']);
+  });
+
+  it('range notes: lists the full days and the first day with fewer than the quantity; unknown days skipped', () => {
+    const counts = stockByDate(days);
+    expect(rangeStockNotes(counts, '2026-12-10', '2026-12-11', 1)).toEqual({ fullDays: [], short: null });
+    expect(rangeStockNotes(counts, '2026-12-11', '2026-12-14', 2)).toEqual({
+      fullDays: ['2026-12-12', '2026-12-13'],
+      short: { date: '2026-12-11', available: 1 },
+    });
+    expect(rangeStockNotes(counts, '2026-12-14', '2026-12-15', 2)).toEqual({ fullDays: [], short: { date: '2026-12-14', available: 1 } });
+    expect(rangeStockNotes(new Map(), '2026-12-10', '2026-12-14', 3)).toEqual({ fullDays: [], short: null });
+  });
+
+  it('short day text: 12/12 in Vietnamese, the page language otherwise, never the machine day', () => {
+    expect(formatShortDay('2026-12-12', 'vi')).toBe('12/12');
+    expect(formatShortDay('2026-12-02', 'vi')).toBe('02/12');
+    expect(formatShortDay('2026-12-02', 'de')).toBe('02.12.');
+  });
+});
+

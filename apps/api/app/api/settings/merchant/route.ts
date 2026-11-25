@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@rentalshop/database';
 import { withPermissions } from '@rentalshop/auth/server';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
-import { API, USER_ROLE, isShopLanguage, shopLanguage } from '@rentalshop/constants';
+import { API, USER_ROLE, isShopLanguage, emailLanguageFor } from '@rentalshop/constants';
 import { z } from 'zod';
 import { readOldAppsMode } from '../../../../lib/block-pricing-settings';
 import { readShareOrderNote } from '../../../../lib/share-order-note-settings';
@@ -22,6 +22,7 @@ const timezoneSchema = z.string().min(1).max(64).refine(isValidTimeZone, 'Unknow
  *   otherwise). A body with only that field updates just the setting (no name required).
  * - `onlineBookingEnabled` (#1124, boolean "Nhận đặt online"): role MERCHANT or ADMIN only, like allowOverlappingOrders.
  * - `showPublicPrice` (#1174, boolean "Hiện giá trên trang shop"): role MERCHANT or ADMIN only, like onlineBookingEnabled.
+ * - `showPublicStock` (#1646, boolean "Hiện còn / hết trên lịch đặt thuê"): role MERCHANT or ADMIN only, like showPublicPrice.
  * - `blockPricing` (#1189, `{ oldApps: 'recompute' | 'block' }` "Với app cũ"): role MERCHANT only (403
  *   INSUFFICIENT_PERMISSIONS otherwise, ADMIN included). Stored in `Merchant.settings.blockPricing.oldApps`, merged into
  *   the other keys of `settings`; any other value is 400 INVALID_INPUT. A body with only that field updates just it.
@@ -33,6 +34,9 @@ const timezoneSchema = z.string().min(1).max(64).refine(isValidTimeZone, 'Unknow
  * - `timezone` (#567, IANA id): role MERCHANT only (ADMIN changes it via PUT /api/merchants/[id]; others
  *   403 INSUFFICIENT_PERMISSIONS). Unknown zone → 400 INVALID_TIMEZONE. A body with only the shop settings
  *   updates just those (no name required). A change is written to the audit log (entity Merchant).
+ * - #1648: the emails now follow the shop COUNTRY (Việt Nam vi, Nhật Bản ja, other en; no country: this value). The
+ *   web and the apps no longer show "Ngôn ngữ email"; installed apps that still send `language` keep working. The answer and
+ *   GET /api/users/profile carry the language in use.
  * - `language` (#1539, 'vi' | 'en' "Ngôn ngữ email"): role MERCHANT only (403 INSUFFICIENT_PERMISSIONS otherwise,
  *   ADMIN included); any other value → 400 INVALID_INPUT. A body with only that field updates just it. The answer and
  *   GET /api/users/profile carry `language` (additive; 'vi' when unset).
@@ -70,6 +74,7 @@ export const PUT = withPermissions(['merchant.manage'])(async (request: NextRequ
       allowOverlappingOrders,
       onlineBookingEnabled,
       showPublicPrice,
+      showPublicStock,
       timezone,
       blockPricing,
       shareOrderNote,
@@ -96,6 +101,22 @@ export const PUT = withPermissions(['merchant.manage'])(async (request: NextRequ
     // #1124 "Nhận đặt online": boolean, shop owner (or platform ADMIN) only
     if (onlineBookingEnabled !== undefined) {
       if (typeof onlineBookingEnabled !== 'boolean') {
+        return NextResponse.json(
+          ResponseBuilder.error('INVALID_INPUT'),
+          { status: API.STATUS.BAD_REQUEST }
+        );
+      }
+      if (user.role !== USER_ROLE.MERCHANT && user.role !== USER_ROLE.ADMIN) {
+        return NextResponse.json(
+          ResponseBuilder.error('INSUFFICIENT_PERMISSIONS'),
+          { status: API.STATUS.FORBIDDEN }
+        );
+      }
+    }
+
+    // #1646 "Hiện còn / hết trên lịch đặt thuê": boolean, shop owner (or platform ADMIN) only
+    if (showPublicStock !== undefined) {
+      if (typeof showPublicStock !== 'boolean') {
         return NextResponse.json(
           ResponseBuilder.error('INVALID_INPUT'),
           { status: API.STATUS.BAD_REQUEST }
@@ -194,7 +215,7 @@ export const PUT = withPermissions(['merchant.manage'])(async (request: NextRequ
     // every other body is the business-info form as before and still needs a name.
     const BUSINESS_FIELDS = ['name', 'phone', 'address', 'city', 'state', 'zipCode', 'country', 'businessType', 'taxId', 'website', 'description', 'tenantKey'];
     const settingOnly =
-      (allowOverlappingOrders !== undefined || onlineBookingEnabled !== undefined || showPublicPrice !== undefined || timezone !== undefined || blockPricing !== undefined || shareOrderNote !== undefined || language !== undefined) &&
+      (allowOverlappingOrders !== undefined || onlineBookingEnabled !== undefined || showPublicPrice !== undefined || showPublicStock !== undefined || timezone !== undefined || blockPricing !== undefined || shareOrderNote !== undefined || language !== undefined) &&
       BUSINESS_FIELDS.every((field) => body[field] === undefined);
 
     // Validate required fields
@@ -275,6 +296,9 @@ export const PUT = withPermissions(['merchant.manage'])(async (request: NextRequ
     if (showPublicPrice !== undefined) {
       updateData.showPublicPrice = showPublicPrice;
     }
+    if (showPublicStock !== undefined) {
+      updateData.showPublicStock = showPublicStock;
+    }
     if (timezone !== undefined) {
       updateData.timezone = timezone;
     }
@@ -331,12 +355,14 @@ export const PUT = withPermissions(['merchant.manage'])(async (request: NextRequ
         // #1124 additive; false when off or missing
         onlineBookingEnabled: (updatedMerchant as { onlineBookingEnabled?: boolean }).onlineBookingEnabled === true,
         showPublicPrice: (updatedMerchant as { showPublicPrice?: boolean }).showPublicPrice !== false,
+        // #1646 additive; false when off or missing
+        showPublicStock: (updatedMerchant as { showPublicStock?: boolean }).showPublicStock === true,
         // #1189 additive; 'recompute' when unset
         blockPricing: { oldApps: readOldAppsMode((updatedMerchant as { settings?: unknown }).settings) },
         // #1344 additive; false when unset
         shareOrderNote: readShareOrderNote((updatedMerchant as { settings?: unknown }).settings),
         // #1539 additive; 'vi' when unset
-        language: shopLanguage((updatedMerchant as { language?: unknown }).language),
+        language: emailLanguageFor(updatedMerchant as { country?: unknown; language?: unknown }), // #1648 follows the country
         ...merchantTimeZoneField(updatedMerchant),
         ...merchantDepositField(updatedMerchant),
         isActive: updatedMerchant.isActive,

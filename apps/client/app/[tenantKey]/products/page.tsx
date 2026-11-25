@@ -1,8 +1,8 @@
 import React from 'react';
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
-import { MerchantHeader } from './components/MerchantHeader';
-import { PublicProductGrid } from './components/PublicProductGrid';
+import { PublicShop } from './components/PublicShop';
+import { parseOutletParam } from './lib/outlet-picker';
 import { PublicShopFooter } from './components/PublicShopFooter';
 import { parseApiResponse } from '@rentalshop/utils';
 import type { Product, Category } from '@rentalshop/types';
@@ -15,6 +15,7 @@ interface PublicProductsPageProps {
     categoryId?: string;
     search?: string;
     page?: string;
+    outlet?: string;
   }>;
 }
 
@@ -138,23 +139,23 @@ export default async function PublicProductsPage({
 
   const { merchant, products = [], categories = [], outlets = [], pagination } = data;
 
-  // Show merchant info even if no products (for better UX)
-  const phone = outlets[0]?.phone || merchant.phone || null;
-
   return (
     <div className="flex min-h-screen flex-col bg-slate-50">
-      <MerchantHeader merchant={merchant} outlets={outlets} />
-      <PublicProductGrid
-        products={products as Product[]}
-        categories={categories as Category[]}
-        currency={merchant.currency}
-        phone={phone}
-        pagination={pagination}
-        tenantKey={tenantKey}
-        onlineBooking={merchant.onlineBooking === true}
-        imageSearchAvailable={merchant.imageSearchAvailable === true}
-        showPublicPrice={merchant.showPublicPrice !== false}
+      <PublicShop
+        merchant={merchant}
         outlets={outlets}
+        initialOutletId={parseOutletParam(resolvedSearchParams.outlet)}
+        grid={{
+          products: products as Product[],
+          categories: categories as Category[],
+          currency: merchant.currency,
+          pagination,
+          tenantKey,
+          onlineBooking: merchant.onlineBooking === true,
+          imageSearchAvailable: merchant.imageSearchAvailable === true,
+          showPublicPrice: merchant.showPublicPrice !== false,
+          showPublicStock: merchant.showPublicStock === true,
+        }}
       />
       <PublicShopFooter />
     </div>

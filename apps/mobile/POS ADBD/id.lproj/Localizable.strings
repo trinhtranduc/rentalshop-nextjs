@@ -3074,12 +3074,9 @@
 "order.reorder.limit" = "Sedang membuka 10 keranjang. Tutup salah satu lalu pesan ulang.";
 "order.reorder.failed" = "Tidak dapat membaca pesanan untuk dipesan ulang";
 "authv2.country" = "Negara";
-"authv2.countryHint" = "Mata uang %@ · Email dalam bahasa Indonesia · dapat diubah di Pengaturan.";
+"authv2.countryHint" = "Mata uang %@ · dapat diubah di Pengaturan.";
 "authv2.country.search" = "Cari negara";
 "authv2.country.empty" = "Tidak ada negara yang cocok";
-"shopinfo.emailLanguage" = "Bahasa email";
-"shopinfo.emailLanguage.hint" = "Email verifikasi, atur ulang kata sandi, dan pemberitahuan paket dikirim dalam bahasa ini.";
-"shopinfo.emailLanguage.failed" = "Bahasa email tidak tersimpan. Silakan coba lagi.";
 
 /* #1612 AI weekly summary on Tổng quan (floating button and sheet) */
 "weeklySummary.title" = "Ringkasan mingguan";
@@ -3103,3 +3100,26 @@
 "weeklySummary.footer.written" = "Ditulis %1$@ · berikutnya %2$@";
 "weeklySummary.noOrders" = "Minggu lalu tidak ada pesanan, jadi belum ada yang bisa diringkas.";
 "weeklySummary.error" = "Ringkasan belum bisa dibuat.";
+
+/* #1633 bill: fees at return */
+"bill.return.title" = "Saat pengembalian";
+"bill.return.collateral" = "Uang jaminan";
+"bill.return.excessDeposit" = "Kelebihan uang muka";
+"bill.return.giveBack" = "Kembalikan ke pelanggan";
+/* #1643: links of a branch (Thông tin cửa hàng) */
+"shopinfo.links.title" = "Tautan (tampil di halaman toko)";
+"shopinfo.links.add" = "Tambah tautan";
+"shopinfo.links.used" = "Terpakai %d / 6. Pelanggan melihat tautan ini saat membuka halaman toko cabang ini.";
+"shopinfo.links.typeTitle" = "Jenis";
+"shopinfo.links.urlTitle" = "Alamat tautan";
+"shopinfo.links.labelTitle" = "Nama";
+"shopinfo.links.labelPlaceholder" = "mis. Shopee";
+"shopinfo.links.remove" = "Hapus tautan";
+"shopinfo.links.hint" = "https:// ditambahkan jika belum ada.";
+"shopinfo.links.tooMany" = "Anda dapat menambah hingga 6 tautan.";
+"shopinfo.links.err.invalid" = "Masukkan tautan, misalnya tenshop.vn atau https://tenshop.vn";
+"shopinfo.links.err.platform" = "Tautan ini bukan dari jaringan yang dipilih.";
+"shopinfo.links.err.labelRequired" = "Masukkan nama untuk tautan ini.";
+"shopinfo.links.err.labelTooLong" = "Nama maksimal 30 karakter.";
+"shopinfo.links.type.website" = "Situs web";
+"shopinfo.links.type.other" = "Lainnya";

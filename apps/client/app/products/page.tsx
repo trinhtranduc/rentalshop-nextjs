@@ -42,6 +42,7 @@ import {
   type SortKey,
 } from './list/list-model';
 import { sharedFieldsLockedFor, roleMayCreateProducts } from './form/form-model';
+import { rememberProductsListQuery } from './list/useProductsListHref';
 
 /** Board icon paths that the shell icon set does not have. */
 const UPLOAD_ICON = 'M12 20V9M7 14l5-5 5 5M5 4h14';
@@ -158,6 +159,8 @@ export default function ProductsPage() {
 
   const query = useMemo(() => parseListQuery((k) => searchParams.get(k)), [searchParams]);
   const fkey = filterKey(query);
+  // #1627 the product pages come back to these filters and this page
+  useEffect(() => rememberProductsListQuery(searchParams.toString()), [searchParams]);
 
   const update = useCallback(
     (patch: Record<string, string | number | null | undefined>) => {

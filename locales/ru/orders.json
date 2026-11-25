@@ -575,7 +575,10 @@
       "row": "Выбрать заказ №{number}",
       "page": "Выбрать всю страницу",
       "export": "Экспорт в Excel ({count, plural, one {# заказ} few {# заказа} many {# заказов} other {# заказа}})",
-      "clear": "Снять выбор"
+      "clear": "Снять выбор",
+      "count": "Выбрано заказов: {count}",
+      "all": "Выбрать все заказы по фильтру ({count})",
+      "allChosen": "Выбраны все заказы по фильтру ({count})"
     },
     "create": "Новый заказ",
     "editor": {
@@ -1120,7 +1123,19 @@
       "bankTitle": "Банковский перевод",
       "bankName": "Банк",
       "bankAccount": "Номер счёта",
-      "bankHolder": "Владелец счёта"
+      "bankHolder": "Владелец счёта",
+      "return": {
+        "title": "При возврате",
+        "cancelTitle": "Отменён",
+        "collateral": "Залог",
+        "excessDeposit": "Излишек предоплаты",
+        "lateFee": "Плата за просрочку",
+        "surcharge": "Доплата",
+        "kept": "Доплата",
+        "giveBack": "Вернуть клиенту",
+        "collect": "Доплатить",
+        "refund": "Возврат клиенту"
+      }
     },
     "online": {
       "button": "Онлайн-брони",
@@ -1263,6 +1278,11 @@
       "lateDays": "Просрочено на {days, plural, one {# день} few {# дня} many {# дней} other {# дня}}",
       "stageShort": "этап {n}",
       "walkIn": "Разовый клиент"
+    },
+    "view": {
+      "label": "Вид",
+      "table": "Таблица",
+      "calendar": "Календарь"
     }
   }
 }

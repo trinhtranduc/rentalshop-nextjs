@@ -3290,12 +3290,9 @@
 "order.reorder.failed" = "Không đọc được đơn để đặt lại";
 /* #1539 (app): sign-up country, email language in Store Information. #1545: only the country; the hint names the currency (%@ = VND / USD) */
 "authv2.country" = "Quốc gia";
-"authv2.countryHint" = "Tiền tệ %@ · Email tiếng Việt · đổi được trong Cài đặt.";
+"authv2.countryHint" = "Tiền tệ %@ · đổi được trong Cài đặt.";
 "authv2.country.search" = "Tìm quốc gia";
 "authv2.country.empty" = "Không có quốc gia phù hợp";
-"shopinfo.emailLanguage" = "Ngôn ngữ email";
-"shopinfo.emailLanguage.hint" = "Email xác thực, đặt lại mật khẩu và thông báo gói gửi bằng ngôn ngữ này.";
-"shopinfo.emailLanguage.failed" = "Không lưu được ngôn ngữ email. Vui lòng thử lại.";
 
 /* #1612 AI weekly summary on Tổng quan (floating button and sheet) */
 "weeklySummary.title" = "Tóm tắt tuần";
@@ -3319,3 +3316,26 @@
 "weeklySummary.footer.written" = "Viết lúc %1$@ · bản mới vào %2$@";
 "weeklySummary.noOrders" = "Tuần trước chưa có đơn nào, nên chưa có gì để tóm tắt.";
 "weeklySummary.error" = "Chưa tạo được tóm tắt.";
+
+/* #1633 bill: fees at return */
+"bill.return.title" = "Khi nhận trả";
+"bill.return.collateral" = "Thế chân";
+"bill.return.excessDeposit" = "Cọc dư";
+"bill.return.giveBack" = "Trả khách";
+/* #1643: links of a branch (Thông tin cửa hàng) */
+"shopinfo.links.title" = "Liên kết (hiện ở trang shop)";
+"shopinfo.links.add" = "Thêm liên kết";
+"shopinfo.links.used" = "Đã dùng %d / 6. Khách thấy các link này khi mở trang shop của chi nhánh.";
+"shopinfo.links.typeTitle" = "Loại";
+"shopinfo.links.urlTitle" = "Địa chỉ link";
+"shopinfo.links.labelTitle" = "Tên";
+"shopinfo.links.labelPlaceholder" = "Ví dụ: Shopee";
+"shopinfo.links.remove" = "Xóa liên kết";
+"shopinfo.links.hint" = "Tự thêm https:// nếu thiếu.";
+"shopinfo.links.tooMany" = "Tối đa 6 liên kết.";
+"shopinfo.links.err.invalid" = "Nhập link, ví dụ tenshop.vn hoặc https://tenshop.vn";
+"shopinfo.links.err.platform" = "Link này không thuộc mạng đã chọn.";
+"shopinfo.links.err.labelRequired" = "Nhập tên cho liên kết này.";
+"shopinfo.links.err.labelTooLong" = "Tên tối đa 30 ký tự.";
+"shopinfo.links.type.website" = "Trang web";
+"shopinfo.links.type.other" = "Khác";

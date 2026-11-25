@@ -575,7 +575,10 @@
       "row": "Seleccionar pedido #{number}",
       "page": "Seleccionar toda la página",
       "export": "Exportar a Excel ({count} pedidos)",
-      "clear": "Quitar selección"
+      "clear": "Quitar selección",
+      "count": "{count} pedidos seleccionados",
+      "all": "Seleccionar los {count} pedidos del filtro",
+      "allChosen": "Los {count} pedidos del filtro están seleccionados"
     },
     "create": "Nuevo pedido",
     "editor": {
@@ -1120,7 +1123,19 @@
       "bankTitle": "Transferencia bancaria",
       "bankName": "Banco",
       "bankAccount": "N.º de cuenta",
-      "bankHolder": "Titular"
+      "bankHolder": "Titular",
+      "return": {
+        "title": "Al devolver",
+        "cancelTitle": "Cancelado",
+        "collateral": "Depósito de garantía",
+        "excessDeposit": "Anticipo sobre el alquiler",
+        "lateFee": "Cargo por retraso",
+        "surcharge": "Recargo",
+        "kept": "Recargo",
+        "giveBack": "Devolver al cliente",
+        "collect": "Cobrar adicional",
+        "refund": "Reembolso al cliente"
+      }
     },
     "online": {
       "button": "Reservas en línea",
@@ -1263,6 +1278,11 @@
       "lateDays": "{days} días de retraso",
       "stageShort": "etapa {n}",
       "walkIn": "Cliente ocasional"
+    },
+    "view": {
+      "label": "Vista",
+      "table": "Tabla",
+      "calendar": "Calendario"
     }
   }
 }

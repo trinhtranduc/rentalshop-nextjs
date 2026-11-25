@@ -2614,11 +2614,9 @@
     <string name="signup_country">Country</string>
     <string name="signup_country_search">Search country</string>
     <string name="signup_country_empty">No matching country</string>
-    <string name="signup_country_hint">Currency %1$s · Emails in English · change in Settings.</string>
+    <string name="signup_country_hint">Currency %1$s · change in Settings.</string>
     <!-- #1545 the language of the strings on screen ("en" here, "vi" in values-vi): the shop language sent at sign-up -->
     <string name="signup_app_language">en</string>
-    <string name="settings_email_language">Email language</string>
-    <string name="settings_email_language_hint">Verification, password reset and plan emails are sent in this language.</string>
     <!-- #1612 AI weekly summary on Tổng quan (button, sheet) -->
     <string name="weekly_summary_title">Weekly summary</string>
     <string name="weekly_summary_whole_shop">Whole shop</string>
@@ -2641,4 +2639,24 @@
         <item quantity="one">%1$d time</item>
         <item quantity="other">%1$d times</item>
     </plurals>
+    <!-- #1633 bill: fees at return -->
+    <string name="bill_return_title">At return</string>
+    <string name="bill_return_excess_deposit">Booking deposit above the rent</string>
+    <string name="bill_return_give_back">Give back</string>
+    <string name="shopinfo_links_title">Links (shown on the shop page)</string>
+    <string name="shopinfo_links_hint">Shown on this branch\'s public shop page.</string>
+    <string name="shopinfo_links_add">Add link</string>
+    <string name="shopinfo_links_edit_title">Edit link</string>
+    <string name="shopinfo_links_done">Done</string>
+    <string name="shopinfo_links_used">Using %1$d / %2$d</string>
+    <string name="shopinfo_links_type_title">Link type</string>
+    <string name="shopinfo_links_url_title">Link address</string>
+    <string name="shopinfo_links_label_title">Link name</string>
+    <string name="shopinfo_links_remove">Remove link</string>
+    <string name="shopinfo_links_err_invalid">This link looks wrong, for example %1$s</string>
+    <string name="shopinfo_links_err_platform">This is not a valid %1$s link, for example %2$s</string>
+    <string name="shopinfo_links_err_label_required">Enter a name for the link</string>
+    <string name="shopinfo_links_err_label_too_long">At most %1$d characters</string>
+    <string name="shopinfo_links_type_website">Website</string>
+    <string name="shopinfo_links_type_other">Other</string>
 </resources>

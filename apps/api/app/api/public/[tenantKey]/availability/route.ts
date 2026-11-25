@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { db } from '@rentalshop/database';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { buildCorsHeaders } from '@rentalshop/utils/server';
-import { loadBookingOutlet, loadProductDays, publicDayStatuses, todayVnKey, validateCalendarWindow } from '../../../../../lib/booking-requests';
+import { loadBookingOutlet, loadProductDays, loadShowPublicStock, publicDayStatuses, todayVnKey, validateCalendarWindow } from '../../../../../lib/booking-requests';
 import { publicJson, resolveBookingShop } from '../../../../../lib/booking-public';
 
 const querySchema = z.object({
@@ -21,6 +21,7 @@ export async function OPTIONS(request: NextRequest) {
  * GET /api/public/[tenantKey]/availability?productId&outletId&from=YYYY-MM-DD&to=YYYY-MM-DD (#1124)
  * Public booking calendar of one product at one outlet: `free` or `full` per Vietnam civil day (owner 2026-10-20:
  * no "few left", no quantities, no customer data). Days before today are `full`. At most 62 days.
+ * #1646: when the shop turned on "Hiện còn / hết trên lịch đặt thuê", each day also carries `available` (units left, ≥ 0).
  */
 export async function GET(
   request: NextRequest,
@@ -47,7 +48,8 @@ export async function GET(
     if (products.length === 0) return publicJson(request, ResponseBuilder.error('PRODUCT_NOT_FOUND'), 404);
 
     const days = await loadProductDays(db.prisma, { productId, outletId, fromYmd: from, toYmd: to });
-    const statuses = publicDayStatuses(days, todayVnKey());
+    const withCounts = await loadShowPublicStock(db.prisma, shop.id);
+    const statuses = publicDayStatuses(days, todayVnKey(), { withCounts });
     return publicJson(request, ResponseBuilder.success('BOOKING_AVAILABILITY', { productId, outletId, from, to, days: statuses }));
   } catch (error) {
     console.error('Error in GET /api/public/[tenantKey]/availability:', error);

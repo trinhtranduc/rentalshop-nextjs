@@ -573,5 +573,11 @@
   "DEPOSIT_PLAN_UPDATED": "Plan de cobro de anticipos actualizado",
   "CANCEL_AMOUNTS_MISMATCH": "El monto retenido es mayor que lo cobrado o no es válido.",
   "CANCELLED_ORDER_KEEPS_AMOUNT": "El pedido cancelado conserva el anticipo, por lo que queda guardado en el historial y no se puede eliminar.",
-  "ADMIN_REVENUE_SUCCESS": "Ingresos obtenidos correctamente"
+  "ADMIN_REVENUE_SUCCESS": "Ingresos obtenidos correctamente",
+  "POLAR_NOT_CONFIGURED": "El pago con tarjeta aún no está configurado. Contacta con soporte.",
+  "POLAR_MANAGE_IN_PORTAL": "Tu plan se renueva con tarjeta. Cambia el plan o el periodo en Gestionar / cancelar plan.",
+  "SUBSCRIPTION_RENEWS_IN_STORE": "Tu plan se renueva a través de App Store o Google Play. Desactiva la renovación automática allí antes de pagar en la web.",
+  "PLAN_NOT_PURCHASABLE": "Este plan no se puede comprar ahora.",
+  "POLAR_CUSTOMER_NOT_FOUND": "Todavía no hay una suscripción con tarjeta que gestionar.",
+  "POLAR_REQUEST_FAILED": "No se pudo abrir la página de pago. Inténtalo de nuevo."
 }

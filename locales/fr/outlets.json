@@ -134,7 +134,27 @@
       "create": "Ajouter le point de location",
       "save": "Enregistrer",
       "saving": "Enregistrement…",
-      "close": "Fermer"
+      "close": "Fermer",
+      "links": {
+        "title": "Liens",
+        "hint": "Affiché sur la page publique de la boutique de cette succursale.",
+        "add": "Ajouter un lien",
+        "remove": "Supprimer le lien",
+        "typeLabel": "Type de lien",
+        "urlLabel": "Adresse du lien",
+        "labelPlaceholder": "Nom du lien",
+        "used": "{count} / {max} utilisés",
+        "err": {
+          "invalid": "Ce lien semble incorrect, par exemple {example}",
+          "platform": "Ce n'est pas un lien {type} valide, par exemple {example}",
+          "labelRequired": "Saisissez un nom pour le lien",
+          "labelTooLong": "{max} caractères au maximum"
+        },
+        "type": {
+          "website": "Site web",
+          "other": "Autre"
+        }
+      }
     },
     "detail": {
       "title": "Détails du point de location",

@@ -338,6 +338,22 @@ internal class OrderShareRenderer(private val context: Context, private val mode
                     canvas.text(t(entry.label), paint(16f, bold, Color.parseColor("#1E3A8A")), 64f, y + 33f, maxWidth = 412f - valuePaint.measureText(entry.value) - 12f)
                     y += 54f
                 }
+                is ShareMoney.Heading -> {
+                    // #1633: "KHI NHẬN TRẢ" / "ĐÃ HUỶ", like the stages' title
+                    y += 26f
+                    canvas.text(t(entry.title).uppercase(upper), paint(13f, bold, muted, 0.08f), left, y)
+                    y += 4f
+                }
+                is ShareMoney.GiveBack -> {
+                    // #1633: "Trả khách" / "Hoàn cho khách", green like a paid total
+                    y += 12f
+                    val green = Color.parseColor("#047857")
+                    canvas?.drawRoundRect(RectF(left, y, right, y + 54f), 14f, 14f, fill(Color.parseColor("#ECFDF5")))
+                    val valuePaint = paint(24f, black, green)
+                    canvas.text(entry.value, valuePaint, 476f, y + 35f, Paint.Align.RIGHT)
+                    canvas.text(t(entry.label), paint(16f, bold, green), 64f, y + 33f, maxWidth = 412f - valuePaint.measureText(entry.value) - 12f)
+                    y += 54f
+                }
             }
         }
         model.note?.let {

@@ -573,5 +573,11 @@
   "DEPOSIT_PLAN_UPDATED": "内金の支払い計画を更新しました",
   "CANCEL_AMOUNTS_MISMATCH": "保持する金額が受領済みの金額を超えているか、金額が正しくありません。",
   "CANCELLED_ORDER_KEEPS_AMOUNT": "金額を保持してキャンセルした注文は履歴に残るため、削除できません。",
-  "ADMIN_REVENUE_SUCCESS": "売上を取得しました"
+  "ADMIN_REVENUE_SUCCESS": "売上を取得しました",
+  "POLAR_NOT_CONFIGURED": "カード決済はまだ設定されていません。サポートにお問い合わせください。",
+  "POLAR_MANAGE_IN_PORTAL": "プランはカードで自動更新されています。プランや期間の変更は「プランの管理 / 解約」から行ってください。",
+  "SUBSCRIPTION_RENEWS_IN_STORE": "プランは App Store または Google Play で自動更新されています。Web で支払う前に、そちらで自動更新をオフにしてください。",
+  "PLAN_NOT_PURCHASABLE": "このプランは現在購入できません。",
+  "POLAR_CUSTOMER_NOT_FOUND": "管理できるカードのサブスクリプションはまだありません。",
+  "POLAR_REQUEST_FAILED": "支払いページを開けませんでした。もう一度お試しください。"
 }

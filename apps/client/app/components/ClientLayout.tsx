@@ -5,6 +5,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { LoadingIndicator, CurrencyProvider } from '@rentalshop/ui';
 import { ShopShell } from './shell/ShopShell';
 import { ShopCurrencySync } from './ShopCurrencySync';
+import { AppLanguageSync } from './AppLanguageSync';
 import { ThemeProvider } from '../providers/ThemeProvider';
 import { useAuth, useCommonTranslations, useGlobalErrorHandler } from '@rentalshop/hooks';
 import type { CurrencyCode } from '@rentalshop/types';
@@ -118,6 +119,8 @@ export default function ClientLayout({ children }: ClientLayoutProps) {
     <ThemeProvider>
       <CurrencyProvider merchantCurrency={merchantCurrency} showDollar>
         {user && <ShopCurrencySync userId={user.id} role={user.role} hasMerchant={!!(user.merchant || user.merchantId)} />}
+        {/* #1627 a new tab keeps the language this tab shows */}
+        {user && !isPublicPage && !isAuthPage && <AppLanguageSync />}
         {showSidebar ? (
           <ShopShell user={user} pathname={pathname} onLogout={handleLogout}>
             <div className="w-full min-w-0">{children}</div>

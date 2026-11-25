@@ -33,11 +33,14 @@ private enum WSColor {
     static let dot = UIColor(hexString: "EF4444")
 }
 
-// MARK: - Floating button
+// MARK: - Button
 
-/// "✦ Tóm tắt tuần": blue pill bottom right, above the tab bar; red dot while last week's summary is unopened
+/// "✦ Tóm tắt tuần": small blue pill at the end of the Tổng quan title row (#1618, was floating bottom right);
+/// red dot while last week's summary is unopened
 final class WeeklySummaryButton: UIControl {
     private let dot = UIView()
+    private let sparkle = OVFont.label("✦", DS.TextSize.secondary, .bold, color: .white)
+    private static let twinkleKey = "weeklySummary.twinkle"
 
     var showsDot = false {
         didSet {
@@ -49,22 +52,22 @@ final class WeeklySummaryButton: UIControl {
     override init(frame: CGRect) {
         super.init(frame: frame)
         backgroundColor = WSColor.primary
-        layer.shadowColor = UIColor(hexString: "0F172A").cgColor
-        layer.shadowOpacity = 0.28
-        layer.shadowRadius = 8
-        layer.shadowOffset = CGSize(width: 0, height: 6)
 
-        let sparkle = OVFont.label("✦", DS.TextSize.body, .bold, color: .white)
-        let title = OVFont.label("weeklySummary.title".localized(), DS.TextSize.body, .bold, color: .white)
+        let title = OVFont.label("weeklySummary.title".localized(), DS.TextSize.secondary, .bold, color: .white)
+        // The pill keeps its whole text; the title row gives way elsewhere (#1618)
+        for label in [sparkle, title] {
+            label.setContentCompressionResistancePriority(.required, for: .horizontal)
+            label.setContentHuggingPriority(.required, for: .horizontal)
+        }
         let row = UIStackView(arrangedSubviews: [sparkle, title])
-        row.spacing = 6
+        row.spacing = 5
         row.alignment = .center
         row.isUserInteractionEnabled = false
         addSubview(row)
         row.snp.makeConstraints { make in
-            make.edges.equalToSuperview().inset(UIEdgeInsets(top: 11, left: 18, bottom: 11, right: 18))
+            make.edges.equalToSuperview().inset(UIEdgeInsets(top: 7, left: 12, bottom: 7, right: 12))
         }
-        snp.makeConstraints { make in make.height.greaterThanOrEqualTo(DS.touchTarget) }
+        snp.makeConstraints { make in make.height.greaterThanOrEqualTo(34) }
 
         dot.backgroundColor = WSColor.dot
         dot.layer.cornerRadius = 6
@@ -95,6 +98,43 @@ final class WeeklySummaryButton: UIControl {
 
     override var isHighlighted: Bool {
         didSet { alpha = isHighlighted ? 0.8 : 1 }
+    }
+
+    override func didMoveToWindow() {
+        super.didMoveToWindow()
+        updateTwinkle()
+    }
+
+    /// #1618 (owner): the ✦ twinkles while the button is on screen (`WeeklySummaryTwinkle`); none with Reduce Motion
+    private func updateTwinkle() {
+        let layer = sparkle.layer
+        guard window != nil, WeeklySummaryTwinkle.runs(reduceMotion: UIAccessibilityIsReduceMotionEnabled()) else {
+            layer.removeAnimation(forKey: Self.twinkleKey)
+            return
+        }
+        guard layer.animation(forKey: Self.twinkleKey) == nil else { return }
+        let keyTimes = WeeklySummaryTwinkle.keyTimes.map { NSNumber(value: $0) }
+        let ease = Array(repeating: CAMediaTimingFunction(name: kCAMediaTimingFunctionEaseInEaseOut),
+                         count: keyTimes.count - 1)
+        let scale = CAKeyframeAnimation(keyPath: "transform.scale")
+        scale.values = WeeklySummaryTwinkle.scales
+        scale.keyTimes = keyTimes
+        scale.timingFunctions = ease
+        let turn = CAKeyframeAnimation(keyPath: "transform.rotation.z")
+        turn.values = WeeklySummaryTwinkle.turns
+        turn.keyTimes = keyTimes
+        turn.timingFunctions = ease
+        let group = CAAnimationGroup()
+        group.animations = [scale, turn]
+        group.duration = WeeklySummaryTwinkle.duration
+        group.repeatCount = .infinity
+        group.isRemovedOnCompletion = false // keeps running after the app comes back from the background
+        layer.add(group, forKey: Self.twinkleKey)
+    }
+
+    /// The pill is 34pt tall; taps within 5pt around it still count (44pt target)
+    override func point(inside point: CGPoint, with event: UIEvent?) -> Bool {
+        bounds.insetBy(dx: -5, dy: -5).contains(point)
     }
 }
 

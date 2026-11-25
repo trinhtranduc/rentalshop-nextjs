@@ -3077,12 +3077,9 @@
 "order.reorder.limit" = "当前已打开 10 个购物车。请先关闭一个再重新下单。";
 "order.reorder.failed" = "无法读取订单以便重新下单";
 "authv2.country" = "国家/地区";
-"authv2.countryHint" = "货币 %@ · 邮件使用越南语 · 可在设置中更改。";
+"authv2.countryHint" = "货币 %@ · 可在设置中更改。";
 "authv2.country.search" = "搜索国家/地区";
 "authv2.country.empty" = "没有匹配的国家/地区";
-"shopinfo.emailLanguage" = "邮件语言";
-"shopinfo.emailLanguage.hint" = "验证、重置密码和套餐邮件将使用此语言发送。";
-"shopinfo.emailLanguage.failed" = "无法保存邮件语言，请重试。";
 
 /* #1612 AI weekly summary on Tổng quan (floating button and sheet) */
 "weeklySummary.title" = "每周摘要";
@@ -3106,3 +3103,26 @@
 "weeklySummary.footer.written" = "撰写于 %1$@ · 下一份 %2$@";
 "weeklySummary.noOrders" = "上周没有订单，因此没有可总结的内容。";
 "weeklySummary.error" = "未能生成摘要。";
+
+/* #1633 bill: fees at return */
+"bill.return.title" = "归还时";
+"bill.return.collateral" = "押金";
+"bill.return.excessDeposit" = "多付订金";
+"bill.return.giveBack" = "退还客户";
+/* #1643: links of a branch (Thông tin cửa hàng) */
+"shopinfo.links.title" = "链接（显示在店铺页面）";
+"shopinfo.links.add" = "添加链接";
+"shopinfo.links.used" = "已使用 %d / 6。顾客打开该分店的店铺页面时会看到这些链接。";
+"shopinfo.links.typeTitle" = "类型";
+"shopinfo.links.urlTitle" = "链接地址";
+"shopinfo.links.labelTitle" = "名称";
+"shopinfo.links.labelPlaceholder" = "例如 Shopee";
+"shopinfo.links.remove" = "删除链接";
+"shopinfo.links.hint" = "缺少 https:// 时会自动添加。";
+"shopinfo.links.tooMany" = "最多可添加 6 个链接。";
+"shopinfo.links.err.invalid" = "请输入链接，例如 tenshop.vn 或 https://tenshop.vn";
+"shopinfo.links.err.platform" = "该链接不属于所选平台。";
+"shopinfo.links.err.labelRequired" = "请为此链接输入名称。";
+"shopinfo.links.err.labelTooLong" = "名称最多 30 个字符。";
+"shopinfo.links.type.website" = "网站";
+"shopinfo.links.type.other" = "其他";

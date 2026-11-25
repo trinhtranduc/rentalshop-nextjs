@@ -556,9 +556,7 @@
       "currencyHint": "說明價格在網頁與店家頁面的顯示方式。金額不會自動換算。",
       "currencyConfirmTitle": "要將幣別改為 {code} 嗎？",
       "currencyConfirmBody": "網頁與店家頁面的所有價格都將以 {code} 顯示。金額維持不變，不做換算（{example}）。",
-      "currencyConfirmOk": "改為 {code}",
-      "emailLanguage": "Email 語言",
-      "emailLanguageHint": "驗證、重設密碼及方案相關的 Email 都會以此語言寄出。"
+      "currencyConfirmOk": "改為 {code}"
     },
     "outlets": {
       "title": "分店",
@@ -679,7 +677,8 @@
         "CHECK": "支票",
         "PAYPAL": "PayPal",
         "IAP_APPLE": "App Store",
-        "IAP_GOOGLE": "Google Play"
+        "IAP_GOOGLE": "Google Play",
+        "POLAR": "信用卡（Polar）"
       },
       "history": {
         "title": "方案紀錄",
@@ -716,7 +715,8 @@
           "REFUNDED": "已退款",
           "CANCELLED": "已取消"
         }
-      }
+      },
+      "manage": "管理 / 取消方案"
     },
     "bank": {
       "title": "銀行帳戶"
@@ -777,6 +777,9 @@
     "publicPage": {
       "showPrice": "在店家頁面顯示價格",
       "showPriceHint": "關閉時，訪客會看到「聯絡店家」，不會看到金額。",
+      "showStock": "在預訂日曆顯示剩餘數量",
+      "showStockHint": "開啟後，店鋪頁面的預訂日曆會顯示每天還剩幾件，或已訂完。關閉後日曆不顯示任何資訊。",
+      "showStockNeedsBooking": "請先開啟「線上預訂」：只有顧客可以預訂時才會顯示日曆。",
       "ownerOnly": "只有店主可以開啟或關閉。"
     },
     "groups": {

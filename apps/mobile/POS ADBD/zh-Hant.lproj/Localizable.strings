@@ -3092,12 +3092,9 @@ App 會事先提醒。";
 "order.reorder.limit" = "目前已開啟 10 個購物車。請先關閉一個再重新預訂。";
 "order.reorder.failed" = "無法讀取要重新預訂的訂單";
 "authv2.country" = "國家";
-"authv2.countryHint" = "貨幣 %@ · 越南文電子郵件 · 可在設定中變更。";
+"authv2.countryHint" = "貨幣 %@ · 可在設定中變更。";
 "authv2.country.search" = "搜尋國家";
 "authv2.country.empty" = "沒有符合的國家";
-"shopinfo.emailLanguage" = "電子郵件語言";
-"shopinfo.emailLanguage.hint" = "驗證、重設密碼與方案通知的電子郵件將以此語言寄送。";
-"shopinfo.emailLanguage.failed" = "無法儲存電子郵件語言，請再試一次。";
 
 /* #1612 AI weekly summary on Tổng quan (floating button and sheet) */
 "weeklySummary.title" = "每週摘要";
@@ -3121,3 +3118,26 @@ App 會事先提醒。";
 "weeklySummary.footer.written" = "撰寫於 %1$@ · 下一份 %2$@";
 "weeklySummary.noOrders" = "上週沒有訂單，因此沒有可摘要的內容。";
 "weeklySummary.error" = "無法產生摘要。";
+
+/* #1633 bill: fees at return */
+"bill.return.title" = "歸還時";
+"bill.return.collateral" = "押金";
+"bill.return.excessDeposit" = "多付訂金";
+"bill.return.giveBack" = "退還客人";
+/* #1643: links of a branch (Thông tin cửa hàng) */
+"shopinfo.links.title" = "連結（顯示在店鋪頁面）";
+"shopinfo.links.add" = "新增連結";
+"shopinfo.links.used" = "已使用 %d / 6。顧客開啟此分店的店鋪頁面時會看到這些連結。";
+"shopinfo.links.typeTitle" = "類型";
+"shopinfo.links.urlTitle" = "連結網址";
+"shopinfo.links.labelTitle" = "名稱";
+"shopinfo.links.labelPlaceholder" = "例如 Shopee";
+"shopinfo.links.remove" = "刪除連結";
+"shopinfo.links.hint" = "缺少 https:// 時會自動加入。";
+"shopinfo.links.tooMany" = "最多可新增 6 個連結。";
+"shopinfo.links.err.invalid" = "請輸入連結，例如 tenshop.vn 或 https://tenshop.vn";
+"shopinfo.links.err.platform" = "此連結不屬於所選平台。";
+"shopinfo.links.err.labelRequired" = "請為此連結輸入名稱。";
+"shopinfo.links.err.labelTooLong" = "名稱最多 30 個字元。";
+"shopinfo.links.type.website" = "網站";
+"shopinfo.links.type.other" = "其他";

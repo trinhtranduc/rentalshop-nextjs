@@ -105,6 +105,20 @@ describe('public calendar: only free / full (owner 2026-10-20)', () => {
       { date: '2026-10-22', status: 'full' },
     ]);
   });
+  it('#1646: withCounts adds units left per day (past days 0); without it no count leaves the API', () => {
+    const days = [
+      { date: '2026-10-20', available: 3, booked: 0 },
+      { date: '2026-10-21', available: 1, booked: 2 },
+      { date: '2026-10-22', available: 0, booked: 3 },
+    ];
+    expect(publicDayStatuses(days, '2026-10-21', { withCounts: true })).toEqual([
+      { date: '2026-10-20', status: 'full', available: 0 },
+      { date: '2026-10-21', status: 'free', available: 1 },
+      { date: '2026-10-22', status: 'full', available: 0 },
+    ]);
+    expect(JSON.stringify(publicDayStatuses(days, '2026-10-21'))).not.toContain('available');
+    expect(JSON.stringify(publicDayStatuses(days, '2026-10-21', { withCounts: false }))).not.toContain('available');
+  });
   it('the first day without enough units for the asked quantity', () => {
     const days = [
       { date: '2026-10-21', available: 2, booked: 0 },

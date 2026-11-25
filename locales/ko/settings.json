@@ -556,9 +556,7 @@
       "currencyHint": "웹과 상점 페이지에서 가격을 표시하는 방식입니다. 금액은 환산되지 않습니다.",
       "currencyConfirmTitle": "통화를 {code}(으)로 변경할까요?",
       "currencyConfirmBody": "웹과 상점 페이지의 모든 가격이 {code}(으)로 표시됩니다. 금액은 그대로이며 환산되지 않습니다({example}).",
-      "currencyConfirmOk": "{code}(으)로 변경",
-      "emailLanguage": "이메일 언어",
-      "emailLanguageHint": "인증, 비밀번호 재설정, 요금제 이메일이 이 언어로 발송됩니다."
+      "currencyConfirmOk": "{code}(으)로 변경"
     },
     "outlets": {
       "title": "지점",
@@ -679,7 +677,8 @@
         "CHECK": "수표",
         "PAYPAL": "PayPal",
         "IAP_APPLE": "App Store",
-        "IAP_GOOGLE": "Google Play"
+        "IAP_GOOGLE": "Google Play",
+        "POLAR": "카드 (Polar)"
       },
       "history": {
         "title": "요금제 내역",
@@ -716,7 +715,8 @@
           "REFUNDED": "환불 완료",
           "CANCELLED": "취소됨"
         }
-      }
+      },
+      "manage": "요금제 관리 / 해지"
     },
     "bank": {
       "title": "은행 계좌"
@@ -777,6 +777,9 @@
     "publicPage": {
       "showPrice": "가게 페이지에 가격 표시",
       "showPriceHint": "끄면 방문객에게 금액 대신 “문의”가 보입니다.",
+      "showStock": "예약 달력에 남은 수량 표시",
+      "showStockHint": "켜면 쇼핑 페이지의 예약 달력에 날짜별 남은 수량 또는 품절이 표시됩니다. 끄면 달력에 아무것도 표시되지 않습니다.",
+      "showStockNeedsBooking": "먼저 “온라인 예약”을 켜세요. 고객이 예약할 수 있을 때만 달력이 표시됩니다.",
       "ownerOnly": "가게 주인만 켜거나 끌 수 있습니다."
     },
     "groups": {

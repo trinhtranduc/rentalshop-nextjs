@@ -573,5 +573,11 @@
   "DEPOSIT_PLAN_UPDATED": "已更新订金收取计划",
   "CANCEL_AMOUNTS_MISMATCH": "保留的金额超过已收金额，或金额无效。",
   "CANCELLED_ORDER_KEEPS_AMOUNT": "已取消但保留了款项的订单需保留在历史记录中，无法删除。",
-  "ADMIN_REVENUE_SUCCESS": "已获取收入"
+  "ADMIN_REVENUE_SUCCESS": "已获取收入",
+  "POLAR_NOT_CONFIGURED": "尚未开通银行卡支付。请联系支持人员。",
+  "POLAR_MANAGE_IN_PORTAL": "您的套餐正在通过银行卡自动续费。请在“管理 / 取消套餐”中更改套餐或周期。",
+  "SUBSCRIPTION_RENEWS_IN_STORE": "您的套餐正在通过 App Store 或 Google Play 自动续费。请先在那里关闭自动续费，再在网页上付款。",
+  "PLAN_NOT_PURCHASABLE": "该套餐目前无法购买。",
+  "POLAR_CUSTOMER_NOT_FOUND": "暂无可管理的银行卡订阅。",
+  "POLAR_REQUEST_FAILED": "无法打开付款页面。请重试。"
 }

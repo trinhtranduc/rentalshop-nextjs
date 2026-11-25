@@ -1,15 +1,20 @@
 /**
  * #1459 Plan renewal in the apps: which store product sells which plan, and when a shop may renew or upgrade.
- * The ONE place for the "≤ 7 days left" rule; the apps only follow `canRenew` / `canUpgrade` / `purchasablePlanIds`.
+ * The ONE place for that rule; the apps only follow `canRenew` / `canUpgrade` / `purchasablePlanIds`.
+ * #1629: a shop that does not auto-renew renews or upgrades at any time (was: the same plan only with ≤ 7 days left).
  *
  * Pure and import-light (relative imports, like installments.ts) so rule tests and route tests stay fast.
  */
 import { civilDaysBetween } from '../../../packages/utils/src/core/billing-dates';
 
 export type PlanTier = 'basic' | 'professional';
-export type BillingChannel = 'APP_STORE' | 'PLAY_STORE' | 'LEMON' | 'MANUAL';
+/** #1631 POLAR: the web card subscription through Polar (replaces LEMON for new purchases) */
+export type BillingChannel = 'APP_STORE' | 'PLAY_STORE' | 'LEMON' | 'POLAR' | 'MANUAL';
 
-/** Renewing the same plan opens this many Vietnam days before the period ends (0 = the last day). */
+/**
+ * The apps' Home reminder ("Gói còn N ngày · Gia hạn") shows in the last this many Vietnam days (0 = the last day).
+ * #1459 also opened renewing the same plan only in these days; #1629 dropped that, the value stays for the reminder.
+ */
 export const RENEW_WINDOW_DAYS = 7;
 
 const TIER_RANK: Record<PlanTier, number> = { basic: 1, professional: 2 };
@@ -91,7 +96,7 @@ export function parseSandboxMerchantIds(raw: string | null | undefined): number[
 }
 
 export function normaliseChannel(raw: string | null | undefined): BillingChannel {
-  return raw === 'APP_STORE' || raw === 'PLAY_STORE' || raw === 'LEMON' ? raw : 'MANUAL';
+  return raw === 'APP_STORE' || raw === 'PLAY_STORE' || raw === 'LEMON' || raw === 'POLAR' ? raw : 'MANUAL';
 }
 
 /**
@@ -121,6 +126,14 @@ export function isStoreChannel(channel: string | null | undefined): channel is '
   return channel === 'APP_STORE' || channel === 'PLAY_STORE';
 }
 
+/**
+ * #1631 A channel that charges on its own dates: the two stores and Polar. The A13 credit, admin extensions and the next
+ * charge date treat Polar like a store (its subscription id is kept in `storeOriginalTransactionId`).
+ */
+export function isAutoBilledChannel(channel: string | null | undefined): channel is 'APP_STORE' | 'PLAY_STORE' | 'POLAR' {
+  return isStoreChannel(channel) || channel === 'POLAR';
+}
+
 /** The stored credit in ms (null or negative = none) */
 export function creditMs(row: Pick<CreditRow, 'storeBonusMs'> | null | undefined): number {
   const value = Number(row?.storeBonusMs ?? 0);
@@ -145,15 +158,15 @@ export function storeCreditForPurchase(existing: CreditRow | null | undefined, c
   if (!existing || end === null) return 0;
   const left = Math.max(0, end - purchasedAt.getTime());
   if (left === 0) return 0;
-  const sameStore = isStoreChannel(existing.billingChannel) && existing.billingChannel === channel && !!existing.storeProductId;
+  const sameStore = isAutoBilledChannel(existing.billingChannel) && existing.billingChannel === channel && !!existing.storeProductId;
   return sameStore ? Math.min(creditMs(existing), left) : left;
 }
 
-/** A store plan (App Store / Google Play) still in its period: auto-renewing, or auto-renew off but not ended */
+/** A store or Polar plan still in its period: auto-renewing, or auto-renew off but not ended */
 export function isRunningStoreSubscription(row: CreditRow | null | undefined, now: Date = new Date()): boolean {
   const end = endMs(row);
   return (
-    !!row && isStoreChannel(row.billingChannel) && !!row.storeProductId && String(row.status ?? '').toUpperCase() !== 'EXPIRED' &&
+    !!row && isAutoBilledChannel(row.billingChannel) && !!row.storeProductId && String(row.status ?? '').toUpperCase() !== 'EXPIRED' &&
     end !== null && end > now.getTime()
   );
 }
@@ -212,8 +225,8 @@ export interface RenewalInput {
   autoRenew: boolean | null | undefined;
   /** How the plan is paid (Subscription.billingChannel) */
   billingChannel?: string | null;
-  /** The store of the device asking (`deviceStoreFromHeaders`); null for the web and old apps */
-  deviceStore?: 'APP_STORE' | 'PLAY_STORE' | null;
+  /** The store of the device asking (`deviceStoreFromHeaders`); POLAR for the web checkout (#1631); null for old apps */
+  deviceStore?: 'APP_STORE' | 'PLAY_STORE' | 'POLAR' | null;
   now?: Date;
 }
 
@@ -236,12 +249,11 @@ export interface RenewalOffer {
 }
 
 /**
- * What the shop may buy now (#1459, owner 2026-11-02):
+ * What the shop may buy now (#1459, owner 2026-11-02; #1629, owner 2026-11-19):
  * - expired or trial: any plan sold in the apps;
  * - auto-renewing (and not expired): only higher plans, and only on the store that renews it (A5); never the same plan;
  * - a store plan with auto-renew off on this device's store: re-enable it in the store, higher plans may be bought (A6);
- * - active with 0..7 Vietnam days left: the same plan and higher ones;
- * - active with more days left: only higher plans (upgrade any time).
+ * - otherwise (active, not auto-renewing): the same plan and higher ones at any time; the days left carry (A13).
  */
 export function renewalOffer(input: RenewalInput, plans: InAppPlan[]): RenewalOffer {
   const now = input.now ?? new Date();
@@ -269,10 +281,8 @@ export function renewalOffer(input: RenewalInput, plans: InAppPlan[]): RenewalOf
   } else if (reenableAutoRenew) {
     // A6: the same plan is turned back on in the store; higher plans may still be bought
     purchasable = higher;
-  } else if (daysRemaining !== null && daysRemaining <= RENEW_WINDOW_DAYS) {
-    purchasable = current ? [current, ...higher] : higher;
   } else {
-    purchasable = higher;
+    purchasable = current ? [current, ...higher] : higher;
   }
 
   const ids = purchasable.map((p) => p.id);

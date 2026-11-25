@@ -2583,10 +2583,8 @@
     <string name="signup_country">Quốc gia</string>
     <string name="signup_country_search">Tìm quốc gia</string>
     <string name="signup_country_empty">Không có quốc gia phù hợp</string>
-    <string name="signup_country_hint">Tiền tệ %1$s · Email tiếng Việt · đổi được trong Cài đặt.</string>
+    <string name="signup_country_hint">Tiền tệ %1$s · đổi được trong Cài đặt.</string>
     <string name="signup_app_language">vi</string>
-    <string name="settings_email_language">Ngôn ngữ email</string>
-    <string name="settings_email_language_hint">Email xác thực, đặt lại mật khẩu và thông báo gói gửi bằng ngôn ngữ này.</string>
     <!-- #1612 AI weekly summary on Tổng quan (button, sheet) -->
     <string name="weekly_summary_title">Tóm tắt tuần</string>
     <string name="weekly_summary_whole_shop">Cả shop</string>
@@ -2607,4 +2605,24 @@
     <plurals name="weekly_summary_times">
         <item quantity="other">%1$d lượt</item>
     </plurals>
+    <!-- #1633 bill: fees at return -->
+    <string name="bill_return_title">Khi nhận trả</string>
+    <string name="bill_return_excess_deposit">Cọc dư</string>
+    <string name="bill_return_give_back">Trả khách</string>
+    <string name="shopinfo_links_title">Liên kết (hiện ở trang shop)</string>
+    <string name="shopinfo_links_hint">Hiện ở trang shop công khai của chi nhánh này.</string>
+    <string name="shopinfo_links_add">Thêm liên kết</string>
+    <string name="shopinfo_links_edit_title">Sửa liên kết</string>
+    <string name="shopinfo_links_done">Xong</string>
+    <string name="shopinfo_links_used">Đã dùng %1$d / %2$d</string>
+    <string name="shopinfo_links_type_title">Loại liên kết</string>
+    <string name="shopinfo_links_url_title">Địa chỉ liên kết</string>
+    <string name="shopinfo_links_label_title">Tên liên kết</string>
+    <string name="shopinfo_links_remove">Xóa liên kết</string>
+    <string name="shopinfo_links_err_invalid">Link chưa đúng, ví dụ %1$s</string>
+    <string name="shopinfo_links_err_platform">Link %1$s chưa đúng, ví dụ %2$s</string>
+    <string name="shopinfo_links_err_label_required">Nhập tên cho liên kết</string>
+    <string name="shopinfo_links_err_label_too_long">Tối đa %1$d ký tự</string>
+    <string name="shopinfo_links_type_website">Trang web</string>
+    <string name="shopinfo_links_type_other">Khác</string>
 </resources>

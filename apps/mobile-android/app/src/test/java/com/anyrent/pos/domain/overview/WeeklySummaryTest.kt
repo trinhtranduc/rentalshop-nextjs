@@ -177,4 +177,18 @@ class WeeklySummaryTest {
     @Test fun pathSendsTheShopZone() {
         assertEquals("/api/analytics/weekly-summary?timeZone=Asia%2FHo_Chi_Minh", WeeklySummaryLogic.path())
     }
+
+    /** #1618 (owner): the ✦ pops with a quarter turn and rests; the loop ends where a 4-point star looks like the start */
+    @Test
+    fun sparkleTwinkleLoopsWithoutAJump() {
+        assertEquals(1f to 0f, WeeklySummaryTwinkle.at(0f))
+        assertEquals(1.3f to 45f, WeeklySummaryTwinkle.at(0.15f))
+        assertEquals(1f to 90f, WeeklySummaryTwinkle.at(0.35f))
+        assertEquals(1f to 90f, WeeklySummaryTwinkle.at(1f))
+        val (midScale, midTurn) = WeeklySummaryTwinkle.at(0.075f)
+        assertEquals(1.15f, midScale, 0.001f)
+        assertEquals(22.5f, midTurn, 0.001f)
+        assertEquals(true, WeeklySummaryTwinkle.runs(1f))
+        assertEquals(false, WeeklySummaryTwinkle.runs(0f))
+    }
 }

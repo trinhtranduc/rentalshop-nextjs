@@ -18,6 +18,8 @@ interface PublicProductSheetProps {
   booking?: {
     tenantKey: string;
     enabled: boolean;
+    /** #1646 */
+    showStock?: boolean;
     outlets: BookingOutlet[];
     todayKey: string;
     draft: BookingRequestDraft;
@@ -141,6 +143,7 @@ export function PublicProductSheet({ product, categoryName, currency, phone, onC
                 todayKey={booking.todayKey}
                 draft={booking.draft}
                 showPublicPrice={showPublicPrice}
+                showStock={booking.showStock === true}
                 onAdd={(where, quantity) => {
                   booking.onAdd(where, quantity);
                   onClose();

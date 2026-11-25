@@ -542,7 +542,7 @@ fun RegisterStoreV2Screen(onBack: () -> Unit, onRegistered: (email: String) -> U
     val context = LocalContext.current
     val errorText = rememberErrorText()
     // #1545 the language of the strings on screen (values / values-vi), not locales[0]: a phone listing French then
-    // Vietnamese shows Vietnamese strings, so the hint says "Email tiếng Việt" and the request sends vi (as iOS)
+    // Vietnamese shows Vietnamese strings, so the request sends vi (as iOS)
     val appLanguage = Locale.forLanguageTag(stringResource(R.string.signup_app_language))
     val appLocale = SignupCountries.appLocale(appLanguage)
 

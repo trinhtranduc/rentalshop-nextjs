@@ -575,7 +575,10 @@
       "row": "Pilih pesanan #{number}",
       "page": "Pilih seluruh halaman",
       "export": "Ekspor Excel ({count} pesanan)",
-      "clear": "Batal pilih"
+      "clear": "Batal pilih",
+      "count": "{count} pesanan dipilih",
+      "all": "Pilih semua {count} pesanan sesuai filter",
+      "allChosen": "Semua {count} pesanan sesuai filter dipilih"
     },
     "create": "Buat pesanan",
     "editor": {
@@ -1120,7 +1123,19 @@
       "bankTitle": "Transfer bank",
       "bankName": "Bank",
       "bankAccount": "No. rekening",
-      "bankHolder": "Atas nama"
+      "bankHolder": "Atas nama",
+      "return": {
+        "title": "Saat pengembalian",
+        "cancelTitle": "Dibatalkan",
+        "collateral": "Uang jaminan",
+        "excessDeposit": "Kelebihan uang muka",
+        "lateFee": "Biaya keterlambatan",
+        "surcharge": "Biaya tambahan",
+        "kept": "Biaya tambahan",
+        "giveBack": "Kembalikan ke pelanggan",
+        "collect": "Tagih tambahan",
+        "refund": "Dikembalikan ke pelanggan"
+      }
     },
     "online": {
       "button": "Pesanan online",
@@ -1263,6 +1278,11 @@
       "lateDays": "Terlambat {days} hari",
       "stageShort": "tahap {n}",
       "walkIn": "Pelanggan umum"
+    },
+    "view": {
+      "label": "Tampilan",
+      "table": "Tabel",
+      "calendar": "Kalender"
     }
   }
 }

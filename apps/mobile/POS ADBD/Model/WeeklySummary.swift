@@ -535,3 +535,14 @@ enum WeeklySummaryLogic {
         (content?.actions ?? []).compactMap(text)
     }
 }
+
+/// #1618 (owner): the ✦ on the weekly summary button twinkles: a pop with a quarter turn, then a rest. ✦ looks the
+/// same after a quarter turn, so the loop has no jump. Off with Reduce Motion. Android: `WeeklySummaryTwinkle`.
+enum WeeklySummaryTwinkle {
+    static let duration: Double = 2.4
+    static let keyTimes: [Double] = [0, 0.15, 0.35, 1]
+    static let scales: [Double] = [1, 1.3, 1, 1]
+    static let turns: [Double] = [0, Double.pi / 4, Double.pi / 2, Double.pi / 2]
+
+    static func runs(reduceMotion: Bool) -> Bool { !reduceMotion }
+}

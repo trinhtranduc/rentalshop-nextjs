@@ -2433,10 +2433,8 @@
     <string name="signup_country">Страна</string>
     <string name="signup_country_search">Поиск страны</string>
     <string name="signup_country_empty">Подходящих стран нет</string>
-    <string name="signup_country_hint">Валюта %1$s · письма на вьетнамском · можно изменить в настройках.</string>
+    <string name="signup_country_hint">Валюта %1$s · можно изменить в настройках.</string>
     <string name="signup_app_language">vi</string>
-    <string name="settings_email_language">Язык писем</string>
-    <string name="settings_email_language_hint">Письма для подтверждения, сброса пароля и уведомления о тарифе отправляются на этом языке.</string>
     <string-array name="history_kinds">
         <item>ORDER_CREATED|Создание заказа</item>
         <item>ORDER_EDITED|Изменение заказа</item>
@@ -2539,4 +2537,24 @@
         <item quantity="many">%1$d раз</item>
         <item quantity="other">%1$d раза</item>
     </plurals>
+    <!-- #1633 bill: fees at return -->
+    <string name="bill_return_title">При возврате</string>
+    <string name="bill_return_excess_deposit">Излишек предоплаты</string>
+    <string name="bill_return_give_back">Вернуть клиенту</string>
+    <string name="shopinfo_links_title">Ссылки (показываются на странице магазина)</string>
+    <string name="shopinfo_links_hint">Показываются на публичной странице магазина этого филиала.</string>
+    <string name="shopinfo_links_add">Добавить ссылку</string>
+    <string name="shopinfo_links_edit_title">Изменить ссылку</string>
+    <string name="shopinfo_links_done">Готово</string>
+    <string name="shopinfo_links_used">Использовано %1$d из %2$d</string>
+    <string name="shopinfo_links_type_title">Тип ссылки</string>
+    <string name="shopinfo_links_url_title">Адрес ссылки</string>
+    <string name="shopinfo_links_label_title">Название ссылки</string>
+    <string name="shopinfo_links_remove">Удалить ссылку</string>
+    <string name="shopinfo_links_err_invalid">Ссылка выглядит неверной, например %1$s</string>
+    <string name="shopinfo_links_err_platform">Это не допустимая ссылка %1$s, например %2$s</string>
+    <string name="shopinfo_links_err_label_required">Введите название ссылки</string>
+    <string name="shopinfo_links_err_label_too_long">Не более %1$d символов</string>
+    <string name="shopinfo_links_type_website">Сайт</string>
+    <string name="shopinfo_links_type_other">Другое</string>
 </resources>

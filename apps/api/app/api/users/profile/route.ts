@@ -2,7 +2,7 @@ import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { NextRequest, NextResponse } from 'next/server';
 import { withAnyAuth } from '@rentalshop/auth/server';
 import { db, getDefaultBankAccount } from '@rentalshop/database';
-import { API, USER_ROLE, shopLanguage } from '@rentalshop/constants';
+import { API, USER_ROLE, emailLanguageFor } from '@rentalshop/constants';
 import { toPublicUser } from '../../../../lib/user-scope';
 import { readOldAppsMode } from '../../../../lib/block-pricing-settings';
 import { readShareOrderNote } from '../../../../lib/share-order-note-settings';
@@ -81,12 +81,14 @@ export const GET = withAnyAuth(async (request: NextRequest, { user, userScope })
         onlineBookingEnabled: (userProfile.merchant as { onlineBookingEnabled?: boolean }).onlineBookingEnabled === true,
         // #1174 "Hiện giá trên trang shop" (additive; true when missing so old shops keep showing prices)
         showPublicPrice: (userProfile.merchant as { showPublicPrice?: boolean }).showPublicPrice !== false,
+        // #1646 "Hiện còn / hết trên lịch đặt thuê" (additive; false when off or missing)
+        showPublicStock: (userProfile.merchant as { showPublicStock?: boolean }).showPublicStock === true,
         // #1189 "Với app cũ" for day-block prices (additive; 'recompute' when unset)
         blockPricing: { oldApps: readOldAppsMode((userProfile.merchant as { settings?: unknown }).settings) },
         // #1344 "Hiện ghi chú đơn trên ảnh chia sẻ" (additive; false when unset, readable by every role)
         shareOrderNote: readShareOrderNote((userProfile.merchant as { settings?: unknown }).settings),
         // #1539 shop language for emails (additive; 'vi' when unset)
-        language: shopLanguage((userProfile.merchant as { language?: unknown }).language),
+        language: emailLanguageFor(userProfile.merchant as { country?: unknown; language?: unknown }), // #1648 the language the emails go out in (follows the country)
         // #567 shop time zone (additive; missing = Asia/Ho_Chi_Minh for every client)
         ...merchantTimeZoneField(userProfile.merchant),
         // #1199 "Cách thu cọc" (additive)

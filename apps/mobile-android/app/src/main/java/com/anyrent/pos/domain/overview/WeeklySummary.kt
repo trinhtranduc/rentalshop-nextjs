@@ -232,3 +232,26 @@ object WeeklySummaryLogic {
 
     private fun day(o: JSONObject?, key: String): LocalDate? = text(o, key)?.let { runCatching { LocalDate.parse(it.take(10)) }.getOrNull() }
 }
+
+/**
+ * #1618 (owner): the ✦ on the weekly summary button twinkles: a pop with a quarter turn, then a rest. ✦ looks the same
+ * after a quarter turn, so the loop has no jump. Off when the system turns animations off. iOS: `WeeklySummaryTwinkle`.
+ */
+object WeeklySummaryTwinkle {
+    const val DURATION_MS = 2400
+    val keyTimes = listOf(0f, 0.15f, 0.35f, 1f)
+    val scales = listOf(1f, 1.3f, 1f, 1f)
+    /** Degrees */
+    val turns = listOf(0f, 45f, 90f, 90f)
+
+    fun runs(animatorDurationScale: Float): Boolean = animatorDurationScale > 0f
+
+    /** Scale and turn (degrees) at [progress] 0..1 of one loop; ease in-out between key times, like iOS */
+    fun at(progress: Float): Pair<Float, Float> {
+        val p = progress.coerceIn(0f, 1f)
+        val i = (1 until keyTimes.size).first { p <= keyTimes[it] }
+        val f = ((p - keyTimes[i - 1]) / (keyTimes[i] - keyTimes[i - 1])).let { it * it * (3 - 2 * it) }
+        fun lerp(values: List<Float>) = values[i - 1] + (values[i] - values[i - 1]) * f
+        return lerp(scales) to lerp(turns)
+    }
+}

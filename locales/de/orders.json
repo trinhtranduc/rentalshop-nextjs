@@ -575,7 +575,10 @@
       "row": "Auftrag #{number} auswählen",
       "page": "Gesamte Seite auswählen",
       "export": "Excel exportieren ({count} Aufträge)",
-      "clear": "Auswahl aufheben"
+      "clear": "Auswahl aufheben",
+      "count": "{count} Aufträge ausgewählt",
+      "all": "Alle {count} Aufträge des Filters auswählen",
+      "allChosen": "Alle {count} Aufträge des Filters ausgewählt"
     },
     "create": "Auftrag erstellen",
     "editor": {
@@ -1120,7 +1123,19 @@
       "bankTitle": "Überweisung",
       "bankName": "Bank",
       "bankAccount": "Kontonr.",
-      "bankHolder": "Kontoinhaber"
+      "bankHolder": "Kontoinhaber",
+      "return": {
+        "title": "Bei Rückgabe",
+        "cancelTitle": "Storniert",
+        "collateral": "Kaution",
+        "excessDeposit": "Anzahlung über der Miete",
+        "lateFee": "Verspätungsgebühr",
+        "surcharge": "Zuschlag",
+        "kept": "Zuschlag",
+        "giveBack": "An Kunden zurück",
+        "collect": "Nachkassieren",
+        "refund": "An Kunden erstatten"
+      }
     },
     "online": {
       "button": "Online-Buchungen",
@@ -1263,6 +1278,11 @@
       "lateDays": "{days} Tage zu spät",
       "stageShort": "Etappe {n}",
       "walkIn": "Laufkunde"
+    },
+    "view": {
+      "label": "Ansicht",
+      "table": "Tabelle",
+      "calendar": "Kalender"
     }
   }
 }

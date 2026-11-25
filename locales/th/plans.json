@@ -194,6 +194,25 @@
       "products": "สินค้า",
       "customers": "ลูกค้า",
       "orders": "คำสั่งซื้อ"
+    },
+    "polar": {
+      "perMonths": "/ {months} เดือน",
+      "perMonthEach": "≈ {price}/เดือน",
+      "saving": "ประหยัด {percent}%",
+      "inApp": "ซื้อในแอป AnyRent",
+      "unavailable": "ยังซื้อไม่ได้ในขณะนี้",
+      "contact": "ติดต่อ AnyRent",
+      "renewsInStore": "ต่ออายุผ่าน App Store / Google Play",
+      "manage": "จัดการ / ยกเลิกแพ็กเกจ",
+      "manageHint": "แพ็กเกจต่ออายุด้วยบัตรผ่าน Polar ยกเลิกหรือเปลี่ยนบัตร แพ็กเกจ หรือรอบได้ในหน้าจัดการ",
+      "renew": "ต่ออายุ",
+      "method": "บัตร (Polar)",
+      "confirmHint": "คุณจะไปที่หน้าชำระเงินของ Polar แพ็กเกจต่ออายุทุกรอบและยกเลิกได้ทุกเมื่อ วันที่เหลือของแพ็กเกจปัจจุบันจะถูกนับต่อ",
+      "success": "ได้รับการชำระเงินแล้ว แพ็กเกจจะอัปเดตในไม่กี่วินาที",
+      "cycle": {
+        "semi_annual": "6 เดือน",
+        "annual": "12 เดือน"
+      }
     }
   },
   "pricingPage": {

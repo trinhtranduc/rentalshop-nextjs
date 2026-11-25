@@ -575,7 +575,10 @@
       "row": "Chọn đơn #{number}",
       "page": "Chọn cả trang",
       "export": "Xuất Excel ({count} đơn)",
-      "clear": "Bỏ chọn"
+      "clear": "Bỏ chọn",
+      "count": "Đã chọn {count} đơn",
+      "all": "Chọn cả {count} đơn theo bộ lọc",
+      "allChosen": "Đã chọn cả {count} đơn theo bộ lọc"
     },
     "create": "Tạo đơn",
     "editor": {
@@ -1120,7 +1123,19 @@
       "bankTitle": "Chuyển khoản",
       "bankName": "Ngân hàng",
       "bankAccount": "STK",
-      "bankHolder": "Chủ TK"
+      "bankHolder": "Chủ TK",
+      "return": {
+        "title": "Khi nhận trả",
+        "cancelTitle": "Đã huỷ",
+        "collateral": "Thế chân",
+        "excessDeposit": "Cọc dư",
+        "lateFee": "Phí trễ",
+        "surcharge": "Phụ thu",
+        "kept": "Phụ thu",
+        "giveBack": "Trả khách",
+        "collect": "Thu thêm",
+        "refund": "Hoàn cho khách"
+      }
     },
     "online": {
       "button": "Đặt online",
@@ -1263,6 +1278,11 @@
       "lateDays": "Trễ {days} ngày",
       "stageShort": "giai đoạn {n}",
       "walkIn": "Khách lẻ"
+    },
+    "view": {
+      "label": "Dạng xem",
+      "table": "Bảng",
+      "calendar": "Lịch"
     }
   }
 }

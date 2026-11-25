@@ -27,15 +27,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.semantics.testTagsAsResourceId
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.anyrent.pos.R
@@ -48,10 +43,8 @@ import com.anyrent.pos.domain.money.ShopCurrency
 import com.anyrent.pos.domain.money.ShopMoney
 import com.anyrent.pos.domain.settings.BranchFormValues
 import com.anyrent.pos.domain.settings.BranchRow
-import com.anyrent.pos.domain.settings.EmailLanguageSetting
 import com.anyrent.pos.domain.settings.ShopFormValues
 import com.anyrent.pos.domain.settings.ShopInfoLogic
-import com.anyrent.pos.domain.settings.ShopLanguage
 import com.anyrent.pos.ui.common.AppAlertConfirm
 import com.anyrent.pos.ui.common.AppAlertError
 import com.anyrent.pos.ui.home.v2.SectionBand
@@ -184,12 +177,30 @@ private fun BranchForm(
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    var form by remember(outlet) { mutableStateOf(StoreForm(name = outlet.name, phone = outlet.phone.orEmpty(), address = outlet.address.orEmpty())) }
+    var form by remember(outlet) {
+        mutableStateOf(StoreForm(name = outlet.name, phone = outlet.phone.orEmpty(), address = outlet.address.orEmpty(), links = outlet.links))
+    }
+    // #1643: the link being added (-1) or edited; null = the form itself
+    var editingLink by remember(outlet) { mutableStateOf<Int?>(null) }
     var saving by remember { mutableStateOf(false) }
     var submitted by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
     val values = BranchFormValues(form.name, form.phone, form.address)
     val problem = ShopInfoLogic.problem(values)
+    val editing = editingLink
+    val links = form.links
+    if (editing != null && links != null) {
+        BackHandler { editingLink = null }
+        BranchLinkEditor(
+            links = links, index = editing,
+            onBack = { editingLink = null },
+            onDone = { next ->
+                form = form.copy(links = next)
+                editingLink = null
+            },
+        )
+        return
+    }
     StoreInfoV2Page(
         kind = StoreFormKind.BRANCH,
         title = title,
@@ -204,6 +215,7 @@ private fun BranchForm(
         message = null,
         error = error,
         onBack = onBack,
+        onOpenLink = { editingLink = it },
         onSave = {
             submitted = true
             if (problem == ShopInfoLogic.Problem.ADDRESS_REQUIRED) {
@@ -212,7 +224,7 @@ private fun BranchForm(
                 saving = true
                 error = null
                 scope.launch {
-                    val result = withContext(Dispatchers.IO) { ApiParity.updateBranch(outlet.id, ShopInfoLogic.branchPayload(values)) }
+                    val result = withContext(Dispatchers.IO) { ApiParity.updateBranch(outlet.id, ShopInfoLogic.branchPayload(values), form.links) }
                     saving = false
                     result.onSuccess {
                         if (outlet.id == SessionStore.outletId) {
@@ -284,26 +296,6 @@ private fun ShopHub(
     var currencySaving by remember { mutableStateOf(false) }
     var currencyError by remember { mutableStateOf<String?>(null) }
     val currencyFailedText = stringResource(R.string.settings_v2_currency_failed)
-    // #1539 (app) "Ngôn ngữ email": owner only, shown when the profile carries `merchant.language`; PUT /api/settings/merchant
-    var emailLanguage by remember(shop) { mutableStateOf(shop?.language) }
-    var emailLanguageChoice by remember { mutableStateOf(false) }
-    var emailLanguageSaving by remember { mutableStateOf(false) }
-    var emailLanguageError by remember { mutableStateOf<String?>(null) }
-    val requestFailedText = stringResource(R.string.request_failed)
-
-    fun saveEmailLanguage(target: ShopLanguage) {
-        if (emailLanguageSaving) return
-        emailLanguageSaving = true
-        scope.launch {
-            val result = withContext(Dispatchers.IO) { ApiParity.setEmailLanguage(target) }
-            emailLanguageSaving = false
-            // On failure the old value stays
-            result.onSuccess { emailLanguage = it }.onFailure { failure ->
-                val id = ApiErrorMessages.stringId(AppError.from(failure).code)
-                emailLanguageError = if (id != 0) context.getString(id) else failure.message?.takeIf { it.isNotBlank() } ?: requestFailedText
-            }
-        }
-    }
 
     fun saveCurrency(target: ShopCurrency) {
         if (currencySaving) return
@@ -344,9 +336,6 @@ private fun ShopHub(
             }
             ThinDivider()
             SettingRow(title = stringResource(R.string.settings_v2_currency), value = currency.code, chevron = true) { currencyChoice = true }
-            emailLanguage?.takeIf { EmailLanguageSetting.visible(SessionStore.role, it) }?.let { language ->
-                EmailLanguageRow(language, enabled = !emailLanguageSaving) { emailLanguageChoice = true }
-            }
             SectionBand(stringResource(R.string.shopinfo_branches, rows.size)) {
                 Text(stringResource(R.string.shopinfo_tap_to_edit), fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted)
             }
@@ -401,80 +390,5 @@ private fun ShopHub(
             onConfirm = { saveCurrency(target) },
         )
     }
-    if (emailLanguageChoice) {
-        emailLanguage?.let { current ->
-            EmailLanguageChoiceDialog(
-                current = current,
-                onDismiss = { emailLanguageChoice = false },
-                onPick = { picked ->
-                    emailLanguageChoice = false
-                    if (picked != current) saveEmailLanguage(picked)
-                },
-            )
-        }
-    }
     currencyError?.let { message -> AppAlertError(message = message, onDismiss = { currencyError = null }) }
-    emailLanguageError?.let { message -> AppAlertError(message = message, onDismiss = { emailLanguageError = null }) }
-}
-
-/** #1539 (app) "Ngôn ngữ email" row: title and hint, the language and a chevron (like Tiền tệ) */
-@Composable
-private fun EmailLanguageRow(language: ShopLanguage, enabled: Boolean, onClick: () -> Unit) {
-    Row(
-        Modifier
-            .fillMaxWidth()
-            .clickable(enabled = enabled, role = Role.Button, onClick = onClick)
-            .testTag("emailLanguage")
-            .heightIn(min = 64.dp)
-            .padding(horizontal = 16.dp, vertical = 10.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-            Text(stringResource(R.string.settings_email_language), fontSize = DS.TextSize.Body, color = DS.Colors.Text)
-            Text(stringResource(R.string.settings_email_language_hint), fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted)
-        }
-        Text(language.nativeName, fontSize = DS.TextSize.Body, color = DS.Colors.TextMuted)
-        Icon(
-            Icons.AutoMirrored.Outlined.KeyboardArrowRight, contentDescription = null, tint = Color(0xFF94A3B8),
-            modifier = Modifier.size(DS.Icon.Sm),
-        )
-    }
-    ThinDivider()
-}
-
-/** #1539 (app) Tiếng Việt / English as radio rows, the current one marked (like the Tiền tệ choice) */
-@OptIn(ExperimentalComposeUiApi::class)
-@Composable
-private fun EmailLanguageChoiceDialog(current: ShopLanguage, onDismiss: () -> Unit, onPick: (ShopLanguage) -> Unit) {
-    androidx.compose.material3.AlertDialog(
-        onDismissRequest = onDismiss,
-        containerColor = DS.Colors.Surface,
-        title = { Text(stringResource(R.string.settings_email_language), fontWeight = FontWeight.Bold, color = DS.Colors.Text) },
-        text = {
-            // A dialog is its own semantics tree: tags reach uiautomator only when asked here too
-            Column(Modifier.semantics { testTagsAsResourceId = true }) {
-                ShopLanguage.entries.forEach { option ->
-                    val selected = option == current
-                    Row(
-                        Modifier.fillMaxWidth().heightIn(min = 52.dp)
-                            .clickable(role = Role.RadioButton) { onPick(option) }
-                            .testTag("emailLanguage-${option.code}"),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    ) {
-                        androidx.compose.material3.RadioButton(selected = selected, onClick = { onPick(option) })
-                        Text(
-                            option.nativeName, fontSize = DS.TextSize.Body, color = DS.Colors.Text,
-                            fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
-                        )
-                    }
-                }
-            }
-        },
-        confirmButton = {},
-        dismissButton = {
-            TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) }
-        },
-    )
 }

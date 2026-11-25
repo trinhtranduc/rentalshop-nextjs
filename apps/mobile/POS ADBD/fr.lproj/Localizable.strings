@@ -3074,12 +3074,9 @@
 "order.reorder.limit" = "10 paniers sont ouverts. Fermez-en un avant de recommander.";
 "order.reorder.failed" = "Impossible de lire la commande à recommander";
 "authv2.country" = "Pays";
-"authv2.countryHint" = "Devise %@ · E-mails en vietnamien · modifiable dans Réglages.";
+"authv2.countryHint" = "Devise %@ · modifiable dans Réglages.";
 "authv2.country.search" = "Rechercher un pays";
 "authv2.country.empty" = "Aucun pays correspondant";
-"shopinfo.emailLanguage" = "Langue des e-mails";
-"shopinfo.emailLanguage.hint" = "Les e-mails de vérification, de réinitialisation du mot de passe et les notifications de forfait sont envoyés dans cette langue.";
-"shopinfo.emailLanguage.failed" = "Impossible d'enregistrer la langue des e-mails. Veuillez réessayer.";
 
 /* #1612 AI weekly summary on Tổng quan (floating button and sheet) */
 "weeklySummary.title" = "Résumé de la semaine";
@@ -3103,3 +3100,26 @@
 "weeklySummary.footer.written" = "Rédigé %1$@ · prochain %2$@";
 "weeklySummary.noOrders" = "Aucune commande la semaine dernière, rien à résumer.";
 "weeklySummary.error" = "Impossible de rédiger le résumé.";
+
+/* #1633 bill: fees at return */
+"bill.return.title" = "Au retour";
+"bill.return.collateral" = "Dépôt de garantie";
+"bill.return.excessDeposit" = "Acompte au-delà de la location";
+"bill.return.giveBack" = "À rendre au client";
+/* #1643: links of a branch (Thông tin cửa hàng) */
+"shopinfo.links.title" = "Liens (affichés sur la page de la boutique)";
+"shopinfo.links.add" = "Ajouter un lien";
+"shopinfo.links.used" = "%d / 6 utilisés. Les clients voient ces liens en ouvrant la page boutique de cette succursale.";
+"shopinfo.links.typeTitle" = "Type";
+"shopinfo.links.urlTitle" = "Adresse du lien";
+"shopinfo.links.labelTitle" = "Nom";
+"shopinfo.links.labelPlaceholder" = "p. ex. Shopee";
+"shopinfo.links.remove" = "Supprimer le lien";
+"shopinfo.links.hint" = "https:// est ajouté s'il manque.";
+"shopinfo.links.tooMany" = "Vous pouvez ajouter jusqu'à 6 liens.";
+"shopinfo.links.err.invalid" = "Saisissez un lien, par exemple tenshop.vn ou https://tenshop.vn";
+"shopinfo.links.err.platform" = "Ce lien n'appartient pas au réseau choisi.";
+"shopinfo.links.err.labelRequired" = "Saisissez un nom pour ce lien.";
+"shopinfo.links.err.labelTooLong" = "Le nom comporte 30 caractères au maximum.";
+"shopinfo.links.type.website" = "Site web";
+"shopinfo.links.type.other" = "Autre";

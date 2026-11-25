@@ -182,6 +182,8 @@ model Merchant {
   onlineBookingEnabled Boolean              @default(false)
   /// #1174 Hiện giá trên trang shop công khai. true (default) = today's catalogue. false = API nulls amounts; UI shows "Liên hệ".
   showPublicPrice      Boolean              @default(true)
+  /// #1646 Hiện còn / hết trên lịch đặt thuê của trang shop. false (default) = the public calendar says nothing. true = availability API adds `available` per day.
+  showPublicStock      Boolean              @default(false)
   /// #1189 shop settings JSON (nullable). { blockPricing: { oldApps: 'recompute' | 'block' } }
   settings             Json?
   /// #567 Shop time zone (IANA id). Every "day" of this shop (today, calendar, availability, revenue by day)
@@ -256,6 +258,8 @@ model Outlet {
   printBankQr  Boolean       @default(false)
   /// #1124 this outlet takes online booking requests (only when Merchant.onlineBookingEnabled)
   acceptsOnlineBooking Boolean @default(true)
+  /// #1643 links shown on the public shop page: [{ type, url, label? }], at most 6 (`@rentalshop/utils` outlet-links). Null = none yet.
+  links        Json?
   isActive     Boolean       @default(true)
   isDefault    Boolean       @default(false)
   createdAt    DateTime      @default(now())
@@ -996,6 +1000,8 @@ enum PaymentMethod {
   PAYPAL
   IAP_APPLE
   IAP_GOOGLE
+  /// #1631 web card payment through Polar
+  POLAR
 }
 
 enum PaymentType {

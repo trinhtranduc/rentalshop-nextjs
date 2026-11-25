@@ -556,9 +556,7 @@
       "currencyHint": "网页和店铺页面上价格的显示方式。金额不会自动换算。",
       "currencyConfirmTitle": "将货币改为 {code}？",
       "currencyConfirmBody": "网页和店铺页面上的所有价格都将以 {code} 显示。金额保持不变，不做换算（{example}）。",
-      "currencyConfirmOk": "改为 {code}",
-      "emailLanguage": "邮件语言",
-      "emailLanguageHint": "验证、重置密码和套餐邮件将使用此语言发送。"
+      "currencyConfirmOk": "改为 {code}"
     },
     "outlets": {
       "title": "分店",
@@ -679,7 +677,8 @@
         "CHECK": "支票",
         "PAYPAL": "PayPal",
         "IAP_APPLE": "App Store",
-        "IAP_GOOGLE": "Google Play"
+        "IAP_GOOGLE": "Google Play",
+        "POLAR": "银行卡（Polar）"
       },
       "history": {
         "title": "套餐记录",
@@ -716,7 +715,8 @@
           "REFUNDED": "已退款",
           "CANCELLED": "已取消"
         }
-      }
+      },
+      "manage": "管理 / 取消套餐"
     },
     "bank": {
       "title": "银行账户"
@@ -777,6 +777,9 @@
     "publicPage": {
       "showPrice": "在店铺页面显示价格",
       "showPriceHint": "关闭后，访客会看到“联系商家”，而不是金额。",
+      "showStock": "在预订日历中显示剩余数量",
+      "showStockHint": "开启后，店铺页面的预订日历会显示每天还剩几件，或已订完。关闭后日历不显示任何信息。",
+      "showStockNeedsBooking": "请先开启“在线预订”：只有顾客可以预订时才会显示日历。",
       "ownerOnly": "只有店主可以开启或关闭此功能。"
     },
     "groups": {

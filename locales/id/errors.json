@@ -573,5 +573,11 @@
   "DEPOSIT_PLAN_UPDATED": "Rencana uang muka berhasil diperbarui",
   "CANCEL_AMOUNTS_MISMATCH": "Jumlah yang ditahan lebih besar dari yang sudah dibayar atau tidak valid.",
   "CANCELLED_ORDER_KEEPS_AMOUNT": "Pesanan yang dibatalkan menahan uang muka sehingga disimpan dalam riwayat dan tidak dapat dihapus.",
-  "ADMIN_REVENUE_SUCCESS": "Pendapatan berhasil diambil"
+  "ADMIN_REVENUE_SUCCESS": "Pendapatan berhasil diambil",
+  "POLAR_NOT_CONFIGURED": "Pembayaran kartu belum diatur. Silakan hubungi dukungan.",
+  "POLAR_MANAGE_IN_PORTAL": "Paket Anda diperpanjang dengan kartu. Ubah paket atau periode di Kelola / batalkan paket.",
+  "SUBSCRIPTION_RENEWS_IN_STORE": "Paket Anda diperpanjang melalui App Store atau Google Play. Matikan perpanjangan otomatis di sana sebelum membayar di web.",
+  "PLAN_NOT_PURCHASABLE": "Paket ini belum bisa dibeli sekarang.",
+  "POLAR_CUSTOMER_NOT_FOUND": "Belum ada langganan kartu untuk dikelola.",
+  "POLAR_REQUEST_FAILED": "Halaman pembayaran tidak dapat dibuka. Silakan coba lagi."
 }

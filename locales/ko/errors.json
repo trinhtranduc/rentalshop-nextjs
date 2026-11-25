@@ -573,5 +573,11 @@
   "DEPOSIT_PLAN_UPDATED": "예약금 계획을 수정했습니다",
   "CANCEL_AMOUNTS_MISMATCH": "유지하는 금액이 수납한 금액보다 크거나 올바르지 않습니다.",
   "CANCELLED_ORDER_KEEPS_AMOUNT": "금액을 유지한 채 취소된 주문은 이력에 남기므로 삭제할 수 없습니다.",
-  "ADMIN_REVENUE_SUCCESS": "매출을 조회했습니다"
+  "ADMIN_REVENUE_SUCCESS": "매출을 조회했습니다",
+  "POLAR_NOT_CONFIGURED": "카드 결제가 아직 설정되지 않았습니다. 고객 지원에 문의하세요.",
+  "POLAR_MANAGE_IN_PORTAL": "요금제가 카드로 자동 갱신 중입니다. 요금제나 기간은 요금제 관리 / 해지에서 변경하세요.",
+  "SUBSCRIPTION_RENEWS_IN_STORE": "요금제가 App Store 또는 Google Play에서 자동 갱신 중입니다. 웹에서 결제하기 전에 그곳에서 자동 갱신을 끄세요.",
+  "PLAN_NOT_PURCHASABLE": "지금은 이 요금제를 구매할 수 없습니다.",
+  "POLAR_CUSTOMER_NOT_FOUND": "관리할 카드 구독이 아직 없습니다.",
+  "POLAR_REQUEST_FAILED": "결제 페이지를 열 수 없습니다. 다시 시도하세요."
 }

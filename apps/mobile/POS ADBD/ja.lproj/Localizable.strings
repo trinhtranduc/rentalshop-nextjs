@@ -3074,12 +3074,9 @@
 "order.reorder.limit" = "カートは10件まで開けます。カートを1つ閉じてから再注文してください。";
 "order.reorder.failed" = "再注文する注文を読み込めませんでした";
 "authv2.country" = "国・地域";
-"authv2.countryHint" = "通貨 %@ · メールは日本語 · 設定から変更できます。";
+"authv2.countryHint" = "通貨 %@ · 設定から変更できます。";
 "authv2.country.search" = "国・地域を検索";
 "authv2.country.empty" = "該当する国・地域がありません";
-"shopinfo.emailLanguage" = "メールの言語";
-"shopinfo.emailLanguage.hint" = "確認メール、パスワード再設定、プランのお知らせは、この言語で送信されます。";
-"shopinfo.emailLanguage.failed" = "メールの言語を保存できませんでした。もう一度お試しください。";
 
 /* #1612 AI weekly summary on Tổng quan (floating button and sheet) */
 "weeklySummary.title" = "週間まとめ";
@@ -3103,3 +3100,26 @@
 "weeklySummary.footer.written" = "作成 %1$@ · 次回 %2$@";
 "weeklySummary.noOrders" = "先週は注文がなかったため、まとめる内容がありません。";
 "weeklySummary.error" = "まとめを作成できませんでした。";
+
+/* #1633 bill: fees at return */
+"bill.return.title" = "返却時";
+"bill.return.collateral" = "保証金";
+"bill.return.excessDeposit" = "内金の超過分";
+"bill.return.giveBack" = "お客様へ返金";
+/* #1643: links of a branch (Thông tin cửa hàng) */
+"shopinfo.links.title" = "リンク（ショップページに表示）";
+"shopinfo.links.add" = "リンクを追加";
+"shopinfo.links.used" = "%d / 6 件使用中。お客様はこの店舗のショップページを開くとこれらのリンクを見られます。";
+"shopinfo.links.typeTitle" = "種類";
+"shopinfo.links.urlTitle" = "リンクのアドレス";
+"shopinfo.links.labelTitle" = "名前";
+"shopinfo.links.labelPlaceholder" = "例：Shopee";
+"shopinfo.links.remove" = "リンクを削除";
+"shopinfo.links.hint" = "https:// がない場合は自動で追加されます。";
+"shopinfo.links.tooMany" = "リンクは最大6件まで追加できます。";
+"shopinfo.links.err.invalid" = "tenshop.vn や https://tenshop.vn のようにリンクを入力してください";
+"shopinfo.links.err.platform" = "このリンクは選択したサービスのものではありません。";
+"shopinfo.links.err.labelRequired" = "このリンクの名前を入力してください。";
+"shopinfo.links.err.labelTooLong" = "名前は30文字以内です。";
+"shopinfo.links.type.website" = "ウェブサイト";
+"shopinfo.links.type.other" = "その他";

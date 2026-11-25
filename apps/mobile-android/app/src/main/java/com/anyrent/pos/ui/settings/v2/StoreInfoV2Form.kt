@@ -62,6 +62,7 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.anyrent.pos.R
+import com.anyrent.pos.domain.settings.OutletLinkEntry
 import com.anyrent.pos.ui.home.v2.ThinDivider
 import com.anyrent.pos.ui.home.v2.V2Colors
 import com.anyrent.pos.ui.theme.DS
@@ -80,6 +81,8 @@ internal data class StoreForm(
     val country: String = "",
     val zipCode: String = "",
     val description: String = "",
+    /** #1643 (branch form): links of the branch; null = not known (the API did not send them), so the section is hidden and a save leaves them alone */
+    val links: List<OutletLinkEntry>? = null,
 )
 
 /** Country names the API stores (English, iOS `CountryList.getAllCountries`) */
@@ -149,6 +152,8 @@ internal fun StoreInfoV2Page(
     error: String?,
     onBack: () -> Unit,
     onSave: () -> Unit,
+    /** #1643: a link row was tapped (its index) or "Thêm liên kết" (-1); the screen that owns the form opens the editor */
+    onOpenLink: (Int) -> Unit = {},
 ) {
     var showCountries by remember { mutableStateOf(false) }
     SettingsDetailPage(
@@ -240,6 +245,7 @@ internal fun StoreInfoV2Page(
                         value = form.address, enabled = canEdit, isError = addressError,
                         capitalization = KeyboardCapitalization.Sentences,
                     ) { onChange(form.copy(address = it)) }
+                    form.links?.let { BranchLinksSection(it, canEdit = canEdit, onOpen = onOpenLink) }
                 }
             }
             message?.let { SettingsDetailNote(it, DS.Colors.Primary) }

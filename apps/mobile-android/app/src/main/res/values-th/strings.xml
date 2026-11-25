@@ -2433,10 +2433,8 @@
     <string name="signup_country">ประเทศ</string>
     <string name="signup_country_search">ค้นหาประเทศ</string>
     <string name="signup_country_empty">ไม่พบประเทศที่ตรงกัน</string>
-    <string name="signup_country_hint">สกุลเงิน %1$s · อีเมลภาษาเวียดนาม · เปลี่ยนได้ในการตั้งค่า</string>
+    <string name="signup_country_hint">สกุลเงิน %1$s · เปลี่ยนได้ในการตั้งค่า</string>
     <string name="signup_app_language">vi</string>
-    <string name="settings_email_language">ภาษาอีเมล</string>
-    <string name="settings_email_language_hint">อีเมลยืนยันตัวตน ตั้งรหัสผ่านใหม่ และแจ้งเตือนแพ็กเกจ จะส่งเป็นภาษานี้</string>
     <string-array name="history_kinds">
         <item>ORDER_CREATED|สร้างออเดอร์</item>
         <item>ORDER_EDITED|แก้ไขออเดอร์</item>
@@ -2536,4 +2534,24 @@
     <plurals name="weekly_summary_times">
         <item quantity="other">%1$d ครั้ง</item>
     </plurals>
+    <!-- #1633 bill: fees at return -->
+    <string name="bill_return_title">เมื่อรับคืน</string>
+    <string name="bill_return_excess_deposit">มัดจำส่วนเกิน</string>
+    <string name="bill_return_give_back">คืนให้ลูกค้า</string>
+    <string name="shopinfo_links_title">ลิงก์ (แสดงในหน้าร้าน)</string>
+    <string name="shopinfo_links_hint">แสดงในหน้าร้านสาธารณะของสาขานี้</string>
+    <string name="shopinfo_links_add">เพิ่มลิงก์</string>
+    <string name="shopinfo_links_edit_title">แก้ไขลิงก์</string>
+    <string name="shopinfo_links_done">เสร็จ</string>
+    <string name="shopinfo_links_used">ใช้แล้ว %1$d / %2$d</string>
+    <string name="shopinfo_links_type_title">ประเภทลิงก์</string>
+    <string name="shopinfo_links_url_title">ที่อยู่ลิงก์</string>
+    <string name="shopinfo_links_label_title">ชื่อลิงก์</string>
+    <string name="shopinfo_links_remove">ลบลิงก์</string>
+    <string name="shopinfo_links_err_invalid">ลิงก์ดูไม่ถูกต้อง เช่น %1$s</string>
+    <string name="shopinfo_links_err_platform">ไม่ใช่ลิงก์ %1$s ที่ถูกต้อง เช่น %2$s</string>
+    <string name="shopinfo_links_err_label_required">กรอกชื่อลิงก์</string>
+    <string name="shopinfo_links_err_label_too_long">ไม่เกิน %1$d ตัวอักษร</string>
+    <string name="shopinfo_links_type_website">เว็บไซต์</string>
+    <string name="shopinfo_links_type_other">อื่น ๆ</string>
 </resources>

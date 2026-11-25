@@ -31,3 +31,28 @@ export function signupShopPrefs(
     currency: code === '' || code === 'VN' ? 'VND' : 'USD',
   };
 }
+
+/** "Việt Nam" / "viet nam" / "VN" → "vietnam": lower case, no accents, no spaces or dots */
+function countryKey(value: unknown): string {
+  return String(value ?? '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/đ/gi, 'd')
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, '');
+}
+
+/**
+ * #1648 the language of the emails to a shop and its users: by the shop's COUNTRY (Việt Nam → vi, Nhật Bản → ja, any
+ * other country → en). The country is stored as its English name (`Merchant.country`); the Vietnamese name and the
+ * ISO code are read too. No country yet → the stored `Merchant.language` (empty → vi), as before. Not a stored choice:
+ * a shop that changes its country gets its emails in the new language with nothing else to do.
+ */
+export function emailLanguageFor(merchant: { country?: unknown; language?: unknown } | null | undefined): ShopLanguage {
+  const key = countryKey(merchant?.country);
+  if (key === '') return shopLanguage(merchant?.language);
+  if (key === 'vietnam' || key === 'vn' || key === 'vnm') return 'vi';
+  if (key === 'japan' || key === 'jp' || key === 'jpn' || key === 'nhatban') return 'ja';
+  return 'en';
+}
+

@@ -3077,12 +3077,9 @@ Abra el Calendario y lo verá.";
 "order.reorder.limit" = "Hay 10 carritos abiertos. Cierre uno y repita el pedido.";
 "order.reorder.failed" = "No se pudo leer el pedido para repetirlo";
 "authv2.country" = "País";
-"authv2.countryHint" = "Moneda %@ · Correos en vietnamita · se puede cambiar en Configuración.";
+"authv2.countryHint" = "Moneda %@ · se puede cambiar en Configuración.";
 "authv2.country.search" = "Buscar país";
 "authv2.country.empty" = "No hay países que coincidan";
-"shopinfo.emailLanguage" = "Idioma de los correos";
-"shopinfo.emailLanguage.hint" = "Los correos de verificación, de restablecimiento de contraseña y de avisos del plan se envían en este idioma.";
-"shopinfo.emailLanguage.failed" = "No se pudo guardar el idioma de los correos. Intente nuevamente.";
 
 /* #1612 AI weekly summary on Tổng quan (floating button and sheet) */
 "weeklySummary.title" = "Resumen semanal";
@@ -3106,3 +3103,26 @@ Abra el Calendario y lo verá.";
 "weeklySummary.footer.written" = "Escrito %1$@ · el próximo %2$@";
 "weeklySummary.noOrders" = "La semana pasada no hubo pedidos, así que no hay nada que resumir.";
 "weeklySummary.error" = "No se pudo crear el resumen.";
+
+/* #1633 bill: fees at return */
+"bill.return.title" = "Al devolver";
+"bill.return.collateral" = "Depósito de garantía";
+"bill.return.excessDeposit" = "Anticipo sobre el alquiler";
+"bill.return.giveBack" = "Devolver al cliente";
+/* #1643: links of a branch (Thông tin cửa hàng) */
+"shopinfo.links.title" = "Enlaces (visibles en la página de la tienda)";
+"shopinfo.links.add" = "Añadir enlace";
+"shopinfo.links.used" = "%d / 6 usados. Los clientes ven estos enlaces al abrir la página de la tienda de esta sucursal.";
+"shopinfo.links.typeTitle" = "Tipo";
+"shopinfo.links.urlTitle" = "Dirección del enlace";
+"shopinfo.links.labelTitle" = "Nombre";
+"shopinfo.links.labelPlaceholder" = "p. ej. Shopee";
+"shopinfo.links.remove" = "Eliminar enlace";
+"shopinfo.links.hint" = "Se añade https:// si falta.";
+"shopinfo.links.tooMany" = "Puedes añadir hasta 6 enlaces.";
+"shopinfo.links.err.invalid" = "Escribe un enlace, por ejemplo tenshop.vn o https://tenshop.vn";
+"shopinfo.links.err.platform" = "Este enlace no es de la red seleccionada.";
+"shopinfo.links.err.labelRequired" = "Escribe un nombre para este enlace.";
+"shopinfo.links.err.labelTooLong" = "El nombre admite como máximo 30 caracteres.";
+"shopinfo.links.type.website" = "Sitio web";
+"shopinfo.links.type.other" = "Otro";

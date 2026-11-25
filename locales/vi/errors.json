@@ -596,5 +596,11 @@
   "DEPOSIT_PLAN_UPDATED": "Đã cập nhật kế hoạch thu cọc",
   "CANCEL_AMOUNTS_MISMATCH": "Số tiền giữ lại lớn hơn số đã thu hoặc không hợp lệ.",
   "CANCELLED_ORDER_KEEPS_AMOUNT": "Đơn đã huỷ có giữ lại tiền cọc nên được lưu trong lịch sử, không xoá được.",
-  "ADMIN_REVENUE_SUCCESS": "Lấy doanh thu thành công"
+  "ADMIN_REVENUE_SUCCESS": "Lấy doanh thu thành công",
+  "POLAR_NOT_CONFIGURED": "Thanh toán bằng thẻ chưa được bật. Vui lòng liên hệ hỗ trợ.",
+  "POLAR_MANAGE_IN_PORTAL": "Gói đang tự gia hạn bằng thẻ. Đổi gói hoặc kỳ hạn trong mục Quản lý / huỷ gói.",
+  "SUBSCRIPTION_RENEWS_IN_STORE": "Gói đang tự gia hạn qua App Store hoặc Google Play. Tắt tự gia hạn ở đó trước khi trả trên web.",
+  "PLAN_NOT_PURCHASABLE": "Gói này chưa mua được lúc này.",
+  "POLAR_CUSTOMER_NOT_FOUND": "Chưa có gói trả bằng thẻ để quản lý.",
+  "POLAR_REQUEST_FAILED": "Không mở được trang thanh toán. Vui lòng thử lại."
 }

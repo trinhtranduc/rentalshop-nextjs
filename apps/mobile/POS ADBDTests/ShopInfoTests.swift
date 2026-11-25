@@ -93,6 +93,26 @@ final class ShopInfoTests: XCTestCase {
         XCTAssertEqual(payload["address"] as? String, "45 Đường Số 9")
     }
 
+    // #1643: links go in the body only when the app loaded them; a form that never knew them must not wipe them
+    func testBranchPayloadWithoutLinksKeepsTheOldShape() {
+        let form = BranchFormValues(name: "Thủ Đức", phone: "0900", address: "45 Đường Số 9")
+        XCTAssertNil(form.links)
+        XCTAssertNil(ShopInfoLogic.branchPayload(form)["links"], "unknown links are not sent: the API keeps them")
+    }
+
+    func testBranchPayloadSendsLinksAndAnEmptyListClearsThem() {
+        var form = BranchFormValues(name: "Thủ Đức", phone: "0900", address: "45 Đường Số 9",
+                                    links: [OutletLink(type: .instagram, url: "https://instagram.com/a"), OutletLink(type: .other, url: "https://shopee.vn/a", label: "Shopee")])
+        let payload = ShopInfoLogic.branchPayload(form)
+        XCTAssertEqual(Set(payload.keys), ["name", "phone", "address", "links"])
+        let links = payload["links"] as? [[String: Any]]
+        XCTAssertEqual(links?.count, 2)
+        XCTAssertEqual(links?[0]["type"] as? String, "instagram")
+        XCTAssertEqual(links?[1]["label"] as? String, "Shopee")
+        form.links = []
+        XCTAssertEqual((ShopInfoLogic.branchPayload(form)["links"] as? [[String: Any]])?.count, 0, "[] is sent: the owner removed every link")
+    }
+
     func testBranchListHidesClosedBranchesAndPutsDefaultFirst() {
         let rows = ShopInfoLogic.branchRows([
             BranchRow(id: 2, name: "B", isActive: true, isDefault: false),
@@ -115,35 +135,18 @@ final class ShopInfoTests: XCTestCase {
         XCTAssertEqual(value(.outletInventory), "Chỉ xem")
     }
 
-    // MARK: - Ngôn ngữ email (#1539 (app))
+    // MARK: - Ngôn ngữ email (#1648: follows the shop's country, no row)
 
-    func testEmailLanguageOnlyForTheOwnerWhenTheProfileSendsIt() {
-        XCTAssertEqual(EmailLanguageLogic.visibleLanguage(role: .merchant, profileLanguage: "en"), .en)
-        XCTAssertEqual(EmailLanguageLogic.visibleLanguage(role: .merchant, profileLanguage: "vi"), .vi)
-        XCTAssertNil(EmailLanguageLogic.visibleLanguage(role: .merchant, profileLanguage: nil), "older API: hidden")
-        XCTAssertNil(EmailLanguageLogic.visibleLanguage(role: .merchant, profileLanguage: "ja"))
-        for role in [Role.outletAdmin, .outletStaff, .outletInventory, .admin] {
-            XCTAssertNil(EmailLanguageLogic.visibleLanguage(role: role, profileLanguage: "en"), "\(role)")
-        }
-        XCTAssertNil(EmailLanguageLogic.visibleLanguage(role: nil, profileLanguage: "en"))
+    func testShopBlockHasOnlyTheShopCardAndCurrency() {
+        XCTAssertEqual(ShopInfoLogic.shopRows(), [.shop, .currency])
     }
 
-    func testProfileWithoutLanguageHidesTheRow() throws {
+    func testProfileWithOrWithoutLanguageDecodes() throws {
         let old = try JSONDecoder.shared.decode(TabsV2APIService.MerchantInfoBody.self,
                                                 from: Data(#"{"name":"Shop A","currency":"VND"}"#.utf8))
-        XCTAssertNil(old.language)
-        XCTAssertEqual(ShopInfoLogic.shopRows(emailLanguage: EmailLanguageLogic.visibleLanguage(role: .merchant, profileLanguage: old.language)),
-                       [.shop, .currency])
-
+        XCTAssertEqual(old.name, "Shop A")
         let new = try JSONDecoder.shared.decode(TabsV2APIService.MerchantInfoBody.self,
                                                 from: Data(#"{"name":"Shop A","language":"en"}"#.utf8))
-        XCTAssertEqual(new.language, "en")
-        XCTAssertEqual(ShopInfoLogic.shopRows(emailLanguage: EmailLanguageLogic.visibleLanguage(role: .merchant, profileLanguage: new.language)),
-                       [.shop, .currency, .emailLanguage], "right after Tiền tệ")
-    }
-
-    func testEmailLanguageBodyOnlyCarriesTheLanguage() {
-        XCTAssertEqual(EmailLanguageLogic.body(.en) as? [String: String], ["language": "en"])
-        XCTAssertEqual(EmailLanguageLogic.body(.vi) as? [String: String], ["language": "vi"])
+        XCTAssertEqual(new.name, "Shop A", "the profile still carries `language`; the app ignores it")
     }
 }

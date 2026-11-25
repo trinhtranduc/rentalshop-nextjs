@@ -115,6 +115,24 @@ export function parseListQuery(get: (key: string) => string | null): ListQuery {
   };
 }
 
+/** #1627 the URL keys of the list (search, categories, branch, sort, page, rows per page) */
+const LIST_KEYS = ['q', 'category', 'outlet', 'sort', 'page', 'limit'] as const;
+
+/** #1627 where the list saves its query for this tab (`sessionStorage`) */
+export const LIST_RETURN_KEY = 'anyrent.products.listQuery';
+
+/**
+ * #1627 the way back to the list from a product page: `/products` with the filters and page this tab last showed
+ * (`saved` = the list's query string). Only the list keys are kept.
+ */
+export function productsListHref(saved: string | null | undefined): string {
+  const from = new URLSearchParams(saved || '');
+  const kept = new URLSearchParams();
+  for (const [key, value] of from) if ((LIST_KEYS as readonly string[]).includes(key) && value) kept.append(key, value);
+  const qs = kept.toString();
+  return qs ? `/products?${qs}` : '/products';
+}
+
 /**
  * Filters for `productsApi.searchProducts` (the client sends `search` as `q`).
  * #1341 `listed: true` keeps only the products listed at the branch ("Hiện ở chi nhánh"); without it the call is as before.

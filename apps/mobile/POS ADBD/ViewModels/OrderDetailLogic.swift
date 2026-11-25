@@ -483,6 +483,14 @@ enum OrderDetailLogic {
         return nested.isEmpty ? nil : nested
     }
 
+    /// #1618: the order's branch on the detail, for an owner with 2+ active branches (a one-branch shop and the
+    /// branch roles only ever see one branch); nil when the name is blank
+    static func branchName(_ name: String?, role: Role?, activeOutletCount: Int) -> String? {
+        guard role == .merchant, activeOutletCount >= 2 else { return nil }
+        let trimmed = name?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        return trimmed.isEmpty ? nil : trimmed
+    }
+
     /// `dd/MM/yy` civil day (#888)
     static func dayMonth(_ date: Date, timeZone: TimeZone = Date.shopTimeZone) -> String {
         DayFormatter.dmy(date, timeZone: timeZone)

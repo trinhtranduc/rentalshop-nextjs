@@ -556,9 +556,7 @@
       "currencyHint": "Cách hiện giá trên web và trang shop. Số tiền không tự quy đổi.",
       "currencyConfirmTitle": "Đổi tiền tệ sang {code}?",
       "currencyConfirmBody": "Mọi giá trên web và trang shop sẽ hiện bằng {code}. Số tiền giữ nguyên, không quy đổi ({example}).",
-      "currencyConfirmOk": "Đổi sang {code}",
-      "emailLanguage": "Ngôn ngữ email",
-      "emailLanguageHint": "Email xác thực, đặt lại mật khẩu và thông báo gói gửi bằng ngôn ngữ này."
+      "currencyConfirmOk": "Đổi sang {code}"
     },
     "outlets": {
       "title": "Chi nhánh",
@@ -679,7 +677,8 @@
         "CHECK": "Séc",
         "PAYPAL": "PayPal",
         "IAP_APPLE": "App Store",
-        "IAP_GOOGLE": "Google Play"
+        "IAP_GOOGLE": "Google Play",
+        "POLAR": "Thẻ (Polar)"
       },
       "history": {
         "title": "Lịch sử gói",
@@ -716,7 +715,8 @@
           "REFUNDED": "Đã hoàn tiền",
           "CANCELLED": "Đã huỷ"
         }
-      }
+      },
+      "manage": "Quản lý / huỷ gói"
     },
     "bank": {
       "title": "Tài khoản ngân hàng"
@@ -777,6 +777,9 @@
     "publicPage": {
       "showPrice": "Hiện giá trên trang shop",
       "showPriceHint": "Tắt thì khách thấy “Liên hệ”, không thấy số tiền.",
+      "showStock": "Hiện còn / hết trên lịch đặt thuê",
+      "showStockHint": "Bật thì lịch đặt thuê trên trang shop báo mỗi ngày còn mấy cái, hoặc hết. Tắt thì lịch không báo gì.",
+      "showStockNeedsBooking": "Cần bật “Nhận đặt online” trước, vì lịch chỉ hiện khi khách đặt được.",
       "ownerOnly": "Chỉ chủ shop bật / tắt được."
     },
     "groups": {

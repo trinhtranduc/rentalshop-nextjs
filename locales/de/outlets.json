@@ -134,7 +134,27 @@
       "create": "Filiale hinzufügen",
       "save": "Speichern",
       "saving": "Wird gespeichert…",
-      "close": "Schließen"
+      "close": "Schließen",
+      "links": {
+        "title": "Links",
+        "hint": "Wird auf der öffentlichen Shop-Seite dieser Filiale angezeigt.",
+        "add": "Link hinzufügen",
+        "remove": "Link entfernen",
+        "typeLabel": "Linktyp",
+        "urlLabel": "Linkadresse",
+        "labelPlaceholder": "Linkname",
+        "used": "{count} / {max} verwendet",
+        "err": {
+          "invalid": "Der Link scheint falsch zu sein, zum Beispiel {example}",
+          "platform": "Das ist kein gültiger {type}-Link, zum Beispiel {example}",
+          "labelRequired": "Namen für den Link eingeben",
+          "labelTooLong": "Höchstens {max} Zeichen"
+        },
+        "type": {
+          "website": "Webseite",
+          "other": "Sonstiges"
+        }
+      }
     },
     "detail": {
       "title": "Filialdetails",

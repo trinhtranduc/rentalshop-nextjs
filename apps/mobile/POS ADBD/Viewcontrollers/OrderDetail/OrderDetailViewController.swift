@@ -443,6 +443,13 @@ final class OrderDetailViewController: BaseViewControler {
         if OrderDetailLogic.showsSteps(orderType: detail.orderType, status: detail.status) {
             box.addArrangedSubview(progressView(detail))
         }
+        // #1618: which branch the order belongs to (owner with 2+ branches), as the web's store line
+        if let branch = OrderDetailLogic.branchName(detail.outlet.name, role: ProductAccess.currentRole,
+                                                    activeOutletCount: CurrentOutlet.shared.outlets.count) {
+            let row = branchRow(branch)
+            box.addArrangedSubview(row)
+            box.setCustomSpacing(8, after: row)
+        }
         // #891 (owner): who created the order, next to the created step; no line without a name
         if let creator = OrderDetailLogic.creatorName(detail) {
             let label = V2.label(String(format: "order.detail.createdBy".localized(), creator), size: DS.TextSize.secondary,
@@ -451,6 +458,25 @@ final class OrderDetailViewController: BaseViewControler {
             box.addArrangedSubview(label)
         }
         return box
+    }
+
+    /// #1618: store icon + branch name, one line
+    private func branchRow(_ name: String) -> UIView {
+        let icon = UIImageView(image: DS.symbol("storefront", DS.Icon.sm))
+        icon.tintColor = DS.Color.textMuted
+        icon.contentMode = .scaleAspectFit
+        icon.setContentHuggingPriority(.required, for: .horizontal)
+        icon.setContentCompressionResistancePriority(.required, for: .horizontal)
+        let label = V2.label(name, size: DS.TextSize.secondary, color: DS.Color.text, lines: 1)
+        label.lineBreakMode = .byTruncatingTail
+        let row = UIStackView(arrangedSubviews: [icon, label])
+        row.axis = .horizontal
+        row.alignment = .center
+        row.spacing = 6
+        row.isAccessibilityElement = true
+        row.accessibilityLabel = "Branch".localized() + ": " + name
+        row.accessibilityIdentifier = "order.detail.branch"
+        return row
     }
 
     private func lateBanner(_ detail: OrderDetail, days: Int) -> UIView {

@@ -657,6 +657,21 @@ final class OrderDetailDeletedCreatorTests: XCTestCase {
         XCTAssertEqual(vi?.localizedString(forKey: "order.detail.createdBy", value: nil, table: nil), "Người tạo: %@")
     }
 
+    /// #1618: the branch line shows the order's `outlet.name` to an owner with 2+ active branches only
+    func testBranchNameShowsForAnOwnerWithTwoBranches() throws {
+        let detail = try XCTUnwrap(JSONDecoder.shared.decode(APIResponse<OrderDetail>.self, from: Data(payload.utf8)).data)
+        XCTAssertEqual(OrderDetailLogic.branchName(detail.outlet.name, role: .merchant, activeOutletCount: 2),
+                       "Rental Shop Demo - Main Branch")
+        XCTAssertNil(OrderDetailLogic.branchName(detail.outlet.name, role: .merchant, activeOutletCount: 1), "one-branch shop")
+        XCTAssertNil(OrderDetailLogic.branchName(detail.outlet.name, role: .merchant, activeOutletCount: 0), "branches not loaded")
+        for role: Role in [.outletAdmin, .outletStaff] {
+            XCTAssertNil(OrderDetailLogic.branchName(detail.outlet.name, role: role, activeOutletCount: 2), "\(role) sees one branch")
+        }
+        XCTAssertNil(OrderDetailLogic.branchName(nil, role: .merchant, activeOutletCount: 2))
+        XCTAssertNil(OrderDetailLogic.branchName("  ", role: .merchant, activeOutletCount: 2))
+        XCTAssertEqual(OrderDetailLogic.branchName(" Quận 1 ", role: .merchant, activeOutletCount: 3), "Quận 1")
+    }
+
     // MARK: Sale subtotal (#939)
 
     /// "Tiền hàng" of a sale = the item lines, as the web and the printed bill; never `totalAmount`

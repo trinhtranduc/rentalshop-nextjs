@@ -2433,10 +2433,8 @@
     <string name="signup_country">Land</string>
     <string name="signup_country_search">Land suchen</string>
     <string name="signup_country_empty">Kein passendes Land gefunden</string>
-    <string name="signup_country_hint">Währung %1$s · E-Mails auf Vietnamesisch · in den Einstellungen änderbar.</string>
+    <string name="signup_country_hint">Währung %1$s · in den Einstellungen änderbar.</string>
     <string name="signup_app_language">vi</string>
-    <string name="settings_email_language">E-Mail-Sprache</string>
-    <string name="settings_email_language_hint">Bestätigungs-, Passwort-zurücksetzen- und Tarif-E-Mails werden in dieser Sprache gesendet.</string>
     <string-array name="history_kinds">
         <item>ORDER_CREATED|Auftrag erstellt</item>
         <item>ORDER_EDITED|Auftrag bearbeitet</item>
@@ -2537,4 +2535,24 @@
         <item quantity="one">%1$d-mal</item>
         <item quantity="other">%1$d-mal</item>
     </plurals>
+    <!-- #1633 bill: fees at return -->
+    <string name="bill_return_title">Bei Rückgabe</string>
+    <string name="bill_return_excess_deposit">Anzahlung über der Miete</string>
+    <string name="bill_return_give_back">An Kunden zurück</string>
+    <string name="shopinfo_links_title">Links (auf der Shop-Seite sichtbar)</string>
+    <string name="shopinfo_links_hint">Wird auf der öffentlichen Shop-Seite dieser Filiale angezeigt.</string>
+    <string name="shopinfo_links_add">Link hinzufügen</string>
+    <string name="shopinfo_links_edit_title">Link bearbeiten</string>
+    <string name="shopinfo_links_done">Fertig</string>
+    <string name="shopinfo_links_used">%1$d / %2$d verwendet</string>
+    <string name="shopinfo_links_type_title">Linktyp</string>
+    <string name="shopinfo_links_url_title">Linkadresse</string>
+    <string name="shopinfo_links_label_title">Linkname</string>
+    <string name="shopinfo_links_remove">Link entfernen</string>
+    <string name="shopinfo_links_err_invalid">Der Link scheint falsch zu sein, zum Beispiel %1$s</string>
+    <string name="shopinfo_links_err_platform">Das ist kein gültiger %1$s-Link, zum Beispiel %2$s</string>
+    <string name="shopinfo_links_err_label_required">Namen für den Link eingeben</string>
+    <string name="shopinfo_links_err_label_too_long">Höchstens %1$d Zeichen</string>
+    <string name="shopinfo_links_type_website">Webseite</string>
+    <string name="shopinfo_links_type_other">Sonstiges</string>
 </resources>

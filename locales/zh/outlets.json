@@ -134,7 +134,27 @@
       "create": "添加分店",
       "save": "保存",
       "saving": "保存中…",
-      "close": "关闭"
+      "close": "关闭",
+      "links": {
+        "title": "链接",
+        "hint": "显示在该分店的公开店铺页面上。",
+        "add": "添加链接",
+        "remove": "删除链接",
+        "typeLabel": "链接类型",
+        "urlLabel": "链接地址",
+        "labelPlaceholder": "链接名称",
+        "used": "已使用 {count} / {max}",
+        "err": {
+          "invalid": "链接似乎不正确，例如 {example}",
+          "platform": "不是有效的{type}链接，例如 {example}",
+          "labelRequired": "请输入链接名称",
+          "labelTooLong": "最多 {max} 个字符"
+        },
+        "type": {
+          "website": "网站",
+          "other": "其他"
+        }
+      }
     },
     "detail": {
       "title": "分店详情",

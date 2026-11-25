@@ -419,6 +419,7 @@ export const simplifiedUsers = {
             language: true, // #1539 shop language for emails, GET /api/users/profile
             onlineBookingEnabled: true, // #1124 online booking switch for GET /api/users/profile
             ...({ showPublicPrice: true } as object), // #1174 public catalogue prices (column after migrate)
+            ...({ showPublicStock: true } as object), // #1646 stock on the public booking calendar (column after migrate)
             settings: true, // #1189/#1199 shop settings JSON (depositMode reaches the client with the profile)
             isActive: true,
             planId: true,
@@ -477,7 +478,7 @@ export const simplifiedUsers = {
         outletId: true,
         deletedAt: true,
         // #1539 language: password reset / verification emails go out in the shop language
-        merchant: { select: { id: true, name: true, language: true } },
+        merchant: { select: { id: true, name: true, language: true, country: true } },
         // #824: login refuses OUTLET_* users of a disabled outlet
         outlet: { select: { id: true, name: true, isActive: true } }
       }

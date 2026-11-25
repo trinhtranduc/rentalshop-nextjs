@@ -79,6 +79,7 @@ export async function findSubscriptionsExpiringInDays(
           name: true,
           email: true,
           language: true,
+          country: true,
           users: {
             where: { role: USER_ROLE.MERCHANT, isActive: true, deletedAt: null },
             select: { email: true }
@@ -100,7 +101,8 @@ export async function findSubscriptionsExpiringInDays(
       id: row.merchant.id,
       name: row.merchant.name,
       email: row.merchant.email,
-      language: row.merchant.language ?? null
+      language: row.merchant.language ?? null,
+      country: row.merchant.country ?? null
     },
     merchantUserEmails: (row.merchant.users || [])
       .map((user: { email: string }) => user.email)

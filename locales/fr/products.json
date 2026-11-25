@@ -804,6 +804,11 @@
       "pickHint": "Choisissez le jour du retrait, puis celui du retour.",
       "legendFull": "complet",
       "legendSelected": "choisi",
+      "stockLegend": "Quantité restante",
+      "stockLow": "Reste 1",
+      "stockFull": "Complet",
+      "stockFullWarn": "Certains jours sont complets ({days}). Vous pouvez quand même envoyer la demande ; la boutique vous contactera pour confirmer.",
+      "stockShortWarn": "Le {date}, il n’en reste que {count}, vous en avez choisi {quantity}. Vous pouvez quand même envoyer la demande ; la boutique vous contactera pour confirmer.",
       "loadingDays": "Chargement du calendrier…",
       "daysError": "Impossible de charger le calendrier. Réessayez.",
       "rangeFull": "Certains jours de cette période sont complets. Choisissez d’autres dates.",
@@ -877,6 +882,13 @@
       "errorNetwork": "Pas de connexion. Vérifiez votre réseau et réessayez.",
       "errorGeneric": "La recherche n’a pas fonctionné. Réessayez."
     },
-    "priceHidden": "Nous contacter"
+    "priceHidden": "Nous contacter",
+    "outlets": "Succursales",
+    "mainOutlet": "principale",
+    "links": "Liens de la boutique",
+    "linkTypes": {
+      "website": "Site web",
+      "other": "Autre"
+    }
   }
 }

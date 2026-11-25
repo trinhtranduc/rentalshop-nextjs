@@ -2433,10 +2433,8 @@
     <string name="signup_country">País</string>
     <string name="signup_country_search">Buscar país</string>
     <string name="signup_country_empty">No hay ningún país coincidente</string>
-    <string name="signup_country_hint">Moneda %1$s · Correos en vietnamita · se puede cambiar en Ajustes.</string>
+    <string name="signup_country_hint">Moneda %1$s · se puede cambiar en Ajustes.</string>
     <string name="signup_app_language">vi</string>
-    <string name="settings_email_language">Idioma de los correos</string>
-    <string name="settings_email_language_hint">Los correos de verificación, restablecimiento de contraseña y de planes se envían en este idioma.</string>
     <string-array name="history_kinds">
         <item>ORDER_CREATED|Crear pedido</item>
         <item>ORDER_EDITED|Editar pedido</item>
@@ -2537,4 +2535,24 @@
         <item quantity="one">%1$d vez</item>
         <item quantity="other">%1$d veces</item>
     </plurals>
+    <!-- #1633 bill: fees at return -->
+    <string name="bill_return_title">Al devolver</string>
+    <string name="bill_return_excess_deposit">Anticipo sobre el alquiler</string>
+    <string name="bill_return_give_back">Devolver al cliente</string>
+    <string name="shopinfo_links_title">Enlaces (visible en la página de la tienda)</string>
+    <string name="shopinfo_links_hint">Se muestra en la página pública de la tienda de esta sucursal.</string>
+    <string name="shopinfo_links_add">Añadir enlace</string>
+    <string name="shopinfo_links_edit_title">Editar enlace</string>
+    <string name="shopinfo_links_done">Listo</string>
+    <string name="shopinfo_links_used">%1$d / %2$d en uso</string>
+    <string name="shopinfo_links_type_title">Tipo de enlace</string>
+    <string name="shopinfo_links_url_title">Dirección del enlace</string>
+    <string name="shopinfo_links_label_title">Nombre del enlace</string>
+    <string name="shopinfo_links_remove">Quitar enlace</string>
+    <string name="shopinfo_links_err_invalid">El enlace parece incorrecto, por ejemplo %1$s</string>
+    <string name="shopinfo_links_err_platform">No es un enlace válido de %1$s, por ejemplo %2$s</string>
+    <string name="shopinfo_links_err_label_required">Escribe un nombre para el enlace</string>
+    <string name="shopinfo_links_err_label_too_long">Máximo %1$d caracteres</string>
+    <string name="shopinfo_links_type_website">Sitio web</string>
+    <string name="shopinfo_links_type_other">Otro</string>
 </resources>

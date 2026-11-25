@@ -3292,12 +3292,9 @@
 "order.reorder.failed" = "Could not read the order to reorder";
 /* #1539 (app): sign-up country, email language in Store Information. #1545: only the country; the hint names the currency (%@ = VND / USD) */
 "authv2.country" = "Country";
-"authv2.countryHint" = "Currency %@ · Emails in English · change in Settings.";
+"authv2.countryHint" = "Currency %@ · change in Settings.";
 "authv2.country.search" = "Search country";
 "authv2.country.empty" = "No matching country";
-"shopinfo.emailLanguage" = "Email language";
-"shopinfo.emailLanguage.hint" = "Verification, password reset and plan emails are sent in this language.";
-"shopinfo.emailLanguage.failed" = "Could not save the email language. Please try again.";
 
 /* #1612 AI weekly summary on Tổng quan (floating button and sheet) */
 "weeklySummary.title" = "Weekly summary";
@@ -3321,3 +3318,26 @@
 "weeklySummary.footer.written" = "Written %1$@ · next one %2$@";
 "weeklySummary.noOrders" = "There were no orders last week, so there is nothing to summarize.";
 "weeklySummary.error" = "Could not write the summary.";
+
+/* #1633 bill: fees at return */
+"bill.return.title" = "At return";
+"bill.return.collateral" = "Security deposit";
+"bill.return.excessDeposit" = "Booking deposit above the rent";
+"bill.return.giveBack" = "Give back";
+/* #1643: links of a branch (Thông tin cửa hàng) */
+"shopinfo.links.title" = "Links (shown on the shop page)";
+"shopinfo.links.add" = "Add link";
+"shopinfo.links.used" = "Used %d / 6. Customers see these links when they open this branch's shop page.";
+"shopinfo.links.typeTitle" = "Type";
+"shopinfo.links.urlTitle" = "Link address";
+"shopinfo.links.labelTitle" = "Name";
+"shopinfo.links.labelPlaceholder" = "e.g. Shopee";
+"shopinfo.links.remove" = "Delete link";
+"shopinfo.links.hint" = "https:// is added if it is missing.";
+"shopinfo.links.tooMany" = "You can add up to 6 links.";
+"shopinfo.links.err.invalid" = "Enter a link such as tenshop.vn or https://tenshop.vn";
+"shopinfo.links.err.platform" = "This link is not from the selected network.";
+"shopinfo.links.err.labelRequired" = "Enter a name for this link.";
+"shopinfo.links.err.labelTooLong" = "The name is at most 30 characters.";
+"shopinfo.links.type.website" = "Website";
+"shopinfo.links.type.other" = "Other";

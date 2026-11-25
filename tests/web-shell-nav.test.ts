@@ -17,7 +17,7 @@ const hrefs = (role?: string) =>
   filterNavForRole(SHELL_NAV_ITEMS, role).map((i) => i.href);
 
 // #960 menu order (owner option A): Tổng quan · Bán & cho thuê · Hàng hoá · Khách hàng · Nhân sự · Cửa hàng.
-const SALES = ['/dashboard', '/orders', '/calendar', '/availability', '/products', '/categories', '/customers'];
+const SALES = ['/dashboard', '/orders', '/availability', '/products', '/categories', '/customers'];
 
 describe('filterNavForRole', () => {
   it('MERCHANT sees everything but module items, including outlets', () => {
@@ -168,7 +168,7 @@ describe('menu groups (#960, option A)', () => {
   it('MERCHANT with the module: every group, Chấm công under Nhân sự', () => {
     expect(groups('MERCHANT', ['attendance', 'loyalty'])).toEqual([
       '-: overview',
-      'sales: orders,calendar,availability',
+      'sales: orders,availability',
       'goods: products,categories',
       'customers: customers,loyalty',
       'people: staff,attendance',
@@ -183,7 +183,7 @@ describe('menu groups (#960, option A)', () => {
   it('OUTLET_ADMIN: no Khách thân thiết, no Chi nhánh', () => {
     expect(groups('OUTLET_ADMIN', ['attendance'])).toEqual([
       '-: overview',
-      'sales: orders,calendar,availability',
+      'sales: orders,availability',
       'goods: products,categories',
       'customers: customers',
       'people: staff,attendance',
@@ -195,7 +195,7 @@ describe('menu groups (#960, option A)', () => {
     for (const role of ['OUTLET_STAFF', 'OUTLET_INVENTORY']) {
       expect(groups(role, ['attendance'])).toEqual([
         '-: overview',
-        'sales: orders,calendar,availability',
+        'sales: orders,availability',
         'goods: products,categories',
         'customers: customers',
         'shop: settings',

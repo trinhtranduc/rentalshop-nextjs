@@ -556,9 +556,7 @@
       "currencyHint": "Cara harga ditampilkan di web dan halaman toko. Jumlah tidak dikonversi otomatis.",
       "currencyConfirmTitle": "Ubah mata uang ke {code}?",
       "currencyConfirmBody": "Semua harga di web dan halaman toko akan ditampilkan dalam {code}. Jumlahnya tetap sama, tidak dikonversi ({example}).",
-      "currencyConfirmOk": "Ubah ke {code}",
-      "emailLanguage": "Bahasa email",
-      "emailLanguageHint": "Email verifikasi, atur ulang kata sandi, dan pemberitahuan paket dikirim dalam bahasa ini."
+      "currencyConfirmOk": "Ubah ke {code}"
     },
     "outlets": {
       "title": "Cabang",
@@ -679,7 +677,8 @@
         "CHECK": "Cek",
         "PAYPAL": "PayPal",
         "IAP_APPLE": "App Store",
-        "IAP_GOOGLE": "Google Play"
+        "IAP_GOOGLE": "Google Play",
+        "POLAR": "Kartu (Polar)"
       },
       "history": {
         "title": "Riwayat paket",
@@ -716,7 +715,8 @@
           "REFUNDED": "Dikembalikan",
           "CANCELLED": "Dibatalkan"
         }
-      }
+      },
+      "manage": "Kelola / batalkan paket"
     },
     "bank": {
       "title": "Rekening bank"
@@ -777,6 +777,9 @@
     "publicPage": {
       "showPrice": "Tampilkan harga di halaman toko",
       "showPriceHint": "Jika dinonaktifkan, pengunjung melihat “Hubungi kami” alih-alih jumlah.",
+      "showStock": "Tampilkan ketersediaan di kalender pemesanan",
+      "showStockHint": "Aktif: kalender pemesanan di halaman toko menampilkan sisa tiap hari, atau habis. Nonaktif: kalender tidak menampilkan apa pun.",
+      "showStockNeedsBooking": "Aktifkan dulu “Pemesanan online”: kalender hanya muncul saat pelanggan bisa memesan.",
       "ownerOnly": "Hanya pemilik toko yang dapat mengaktifkan / menonaktifkan."
     },
     "groups": {

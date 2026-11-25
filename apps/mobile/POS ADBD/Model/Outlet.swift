@@ -28,4 +28,6 @@ struct Outlet: Codable {
     /// #1308: what the branch prints on its bills (`GET /api/outlets`); nil on an older payload
     var printNote: String? = nil
     var printBankQr: Bool? = nil
+    /// #1643: links of the branch shown on its public shop page; nil on an older payload (then the app does not send `links`)
+    var links: [OutletLinkEntry]? = nil
 }
