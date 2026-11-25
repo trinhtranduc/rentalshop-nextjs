@@ -2643,7 +2643,7 @@
     </plurals>
     <!-- #1633 bill: fees at return -->
     <string name="bill_return_title">At return</string>
-    <string name="bill_return_excess_deposit">Deposit above the rent</string>
+    <string name="bill_return_excess_deposit">Booking deposit above the rent</string>
     <string name="bill_return_give_back">Give back</string>
     <string name="shopinfo_links_title">Links (shown on the shop page)</string>
     <string name="shopinfo_links_hint">Shown on this branch\'s public shop page.</string>
