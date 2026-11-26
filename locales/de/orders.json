@@ -673,6 +673,7 @@
         "pickCustomer": "Kunde wählen",
         "change": "Ändern",
         "choose": "Wählen",
+        "payment": "Zahlung",
         "rentItems": "Mietartikel · {count} Stück",
         "saleItems": "Verkaufsartikel · {count} Stück",
         "empty": "Tippen Sie bei einem Artikel auf +, um ihn hinzuzufügen.",

@@ -673,6 +673,7 @@
         "pickCustomer": "Choisir un client",
         "change": "Changer",
         "choose": "Choisir",
+        "payment": "Paiement",
         "rentItems": "Articles en location · {count} articles",
         "saleItems": "Articles vendus · {count} articles",
         "empty": "Appuyez sur + à côté d'un produit pour l'ajouter à la commande.",
