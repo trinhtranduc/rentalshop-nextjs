@@ -131,8 +131,16 @@ describe('read calls', () => {
   it('GET /rules gives the AnyRent article rules', async () => {
     const r: any = await call('GET', 'rules');
     expect(r.body.data).toEqual(RULES);
-    expect(r.body.data).toMatchObject({ disclosure: false, riskPath: null, locales: ['vi'], wordRange: { min: 800, max: 3000 } });
+    expect(r.body.data).toMatchObject({ disclosure: false, riskPath: null, wordRange: { min: 800, max: 3000 } });
     expect(typeof r.body.data.voice).toBe('string');
+  });
+
+  it('#1672 GET /rules lists every public language, the same as /meta, or the Hub skips them; the voice does not force Vietnamese', async () => {
+    const rules: any = await call('GET', 'rules');
+    const meta: any = await call('GET', 'meta');
+    expect(rules.body.data.locales).toEqual(meta.body.data.locales);
+    expect(rules.body.data.locales).toEqual(expect.arrayContaining(['vi', 'en', 'ja', 'ko', 'zh', 'zh-TW', 'th']));
+    expect(rules.body.data.voice).toMatch(/ngôn ngữ của bài/);
   });
 
   it('GET /articles lists published posts with full public urls; `since` filters on updatedAt; a bad date is invalid', async () => {
@@ -208,11 +216,20 @@ describe('POST /drafts', () => {
     expect(mockDb.prisma.post.findUnique.mock.calls[0][0].where).toEqual({ slug_locale: { slug: 'rebate-la-gi', locale: 'vi' } });
   });
 
-  it('400 invalid with field details for a missing title, a bad slug, no body and an unknown locale', async () => {
-    const r: any = await call('POST', 'drafts', { body: { title: '', slug: 'Bad Slug', body: '', locale: 'xx' }, idem: 'bad' });
+  it('400 invalid with field details for a missing title, a bad slug and no body', async () => {
+    const r: any = await call('POST', 'drafts', { body: { title: '', slug: 'Bad Slug', body: '', locale: 'vi' }, idem: 'bad' });
     expect(r.status).toBe(400);
     expect(r.body.error.code).toBe('invalid');
-    expect(Object.keys(r.body.error.details).sort()).toEqual(['body', 'locale', 'slug', 'title']);
+    expect(Object.keys(r.body.error.details).sort()).toEqual(['body', 'slug', 'title']);
+    expect(mockDb.posts.create).not.toHaveBeenCalled();
+  });
+
+  it('#1672 422 invalid with details.locale for a language the site does not have, and nothing is stored', async () => {
+    const r: any = await call('POST', 'drafts', { body: { ...draft, locale: 'xx' }, idem: 'badloc' });
+    expect(r.status).toBe(422);
+    expect(r.body.error.code).toBe('invalid');
+    expect(Object.keys(r.body.error.details)).toEqual(['locale']);
+    expect(mockDb.prisma.post.findUnique).not.toHaveBeenCalled();
     expect(mockDb.posts.create).not.toHaveBeenCalled();
   });
 
