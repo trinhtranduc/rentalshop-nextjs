@@ -503,6 +503,18 @@ model Order {
   @@index([deletedAt])
 }
 
+/// #1665: Idempotency-Key of a write call from the SEO Agent Hub connector (/api/seo-connector/v1). The first answer is
+/// kept so a repeated key returns it unchanged. No foreign keys; rows older than 7 days can be deleted.
+model SeoConnectorKey {
+  id        Int      @id @default(autoincrement())
+  key       String   @unique
+  status    Int      @default(200)
+  response  Json
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+}
+
 /// #341: Idempotency-Key sent by a client with POST /api/orders, scoped to the calling user.
 /// A retry or a second in-flight create with the same key returns `orderId` instead of a new order.
 /// No foreign keys on purpose: the Order table is unchanged and a stale row is ignored.
