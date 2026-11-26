@@ -49,14 +49,15 @@ beforeEach(() => {
   jest.clearAllMocks();
   store.clear();
   process.env.SEO_CONNECTOR_KEY_SHA256 = keyFingerprint(KEY);
-  process.env.SEO_CONNECTOR_AUTHOR_ID = String(AUTHOR);
+  process.env.DEFAULT_AUTHOR_EMAIL = 'hub-author@example.com';
+  delete process.env.SEO_CONNECTOR_AUTHOR_ID;
   process.env.SEO_SITE_URL = 'https://anyrent.shop';
   process.env.ADMIN_URL = 'https://admin.anyrent.shop';
   listS3Files.mockResolvedValue({ files: [] });
   mockDb.prisma.post.findMany.mockResolvedValue([]);
   mockDb.prisma.post.findUnique.mockResolvedValue(null);
   mockDb.posts.create.mockImplementation(async (d: any) => ({ id: 301, ...d }));
-  mockDb.prisma.user.findFirst.mockResolvedValue(null);
+  mockDb.prisma.user.findFirst.mockImplementation(async ({ where }: any) => (where.email ? { id: AUTHOR } : null));
 });
 
 describe('the site key', () => {
@@ -242,57 +243,52 @@ describe('POST /drafts', () => {
     expect(big.status).toBe(400);
   });
 
-  it('answers server (not a crash) when no author is set and the site has no ARTICLE or ADMIN account', async () => {
-    delete process.env.SEO_CONNECTOR_AUTHOR_ID;
+  it('answers server (not a crash) when DEFAULT_AUTHOR_EMAIL is unset and the site has no ARTICLE or ADMIN account', async () => {
+    delete process.env.DEFAULT_AUTHOR_EMAIL;
+    mockDb.prisma.user.findFirst.mockResolvedValue(null);
     const r: any = await call('POST', 'drafts', { body: draft, idem: 'noauthor' });
     expect(r.status).toBe(500);
     expect(r.body.error.code).toBe('server');
     expect(mockDb.posts.create).not.toHaveBeenCalled();
   });
 
-  it('#1682 no SEO_CONNECTOR_AUTHOR_ID and no default account: drafts go under the first ARTICLE account', async () => {
-    delete process.env.SEO_CONNECTOR_AUTHOR_ID;
+  it('#1682 DEFAULT_AUTHOR_EMAIL: the draft goes under the account with that email (any letter case)', async () => {
+    process.env.DEFAULT_AUTHOR_EMAIL = '  Hub-Author@Example.com ';
+    const r: any = await call('POST', 'drafts', { body: draft, idem: 'mail' });
+    expect(r.status).toBe(201);
+    expect(mockDb.posts.create.mock.calls[0][0].authorId).toBe(AUTHOR);
+    expect(mockDb.prisma.user.findFirst.mock.calls[0][0].where).toEqual({ email: { equals: 'Hub-Author@Example.com', mode: 'insensitive' } });
+  });
+
+  it('#1682 DEFAULT_AUTHOR_EMAIL unset: no email lookup, the first ARTICLE account', async () => {
+    delete process.env.DEFAULT_AUTHOR_EMAIL;
     mockDb.prisma.user.findFirst.mockImplementation(async ({ where }: any) => (where.role === 'ARTICLE' ? { id: 7 } : where.role === 'ADMIN' ? { id: 1 } : null));
     const r: any = await call('POST', 'drafts', { body: draft, idem: 'art' });
     expect(r.status).toBe(201);
     expect(mockDb.posts.create.mock.calls[0][0].authorId).toBe(7);
-    expect(mockDb.prisma.user.findFirst.mock.calls[1][0]).toMatchObject({ where: { role: 'ARTICLE' }, orderBy: { id: 'asc' } });
+    expect(mockDb.prisma.user.findFirst.mock.calls[0][0]).toMatchObject({ where: { role: 'ARTICLE' }, orderBy: { id: 'asc' } });
   });
 
-  it('#1682 no SEO_CONNECTOR_AUTHOR_ID: the default author account is found by email, ahead of ARTICLE and ADMIN', async () => {
-    delete process.env.SEO_CONNECTOR_AUTHOR_ID;
-    mockDb.prisma.user.findFirst.mockImplementation(async ({ where }: any) => (where.email ? { id: 55 } : { id: 1 }));
-    const r: any = await call('POST', 'drafts', { body: draft, idem: 'mail' });
-    expect(r.status).toBe(201);
-    expect(mockDb.posts.create.mock.calls[0][0].authorId).toBe(55);
-    expect(mockDb.prisma.user.findFirst.mock.calls[0][0].where).toEqual({ email: { equals: 'kathypham28088@gmail.com', mode: 'insensitive' } });
-  });
-
-  it('#1682 no SEO_CONNECTOR_AUTHOR_ID and no ARTICLE account: the first ADMIN', async () => {
-    delete process.env.SEO_CONNECTOR_AUTHOR_ID;
+  it('#1682 an email that matches no account falls back to ARTICLE, then the first ADMIN', async () => {
     mockDb.prisma.user.findFirst.mockImplementation(async ({ where }: any) => (where.role === 'ADMIN' ? { id: 1 } : null));
     const r: any = await call('POST', 'drafts', { body: draft, idem: 'adm' });
     expect(r.status).toBe(201);
     expect(mockDb.posts.create.mock.calls[0][0].authorId).toBe(1);
   });
 
-  it('#1682 SEO_CONNECTOR_AUTHOR_ID still wins and no account lookup is made', async () => {
-    const r: any = await call('POST', 'drafts', { body: draft, idem: 'env' });
+  it('#1682 SEO_CONNECTOR_AUTHOR_ID is no longer read', async () => {
+    process.env.SEO_CONNECTOR_AUTHOR_ID = '999';
+    const r: any = await call('POST', 'drafts', { body: draft, idem: 'oldenv' });
     expect(r.status).toBe(201);
     expect(mockDb.posts.create.mock.calls[0][0].authorId).toBe(AUTHOR);
-    expect(mockDb.prisma.user.findFirst).not.toHaveBeenCalled();
   });
 
-  it('#1682 a draft is editable by the connector when the author came from the fallback', async () => {
-    delete process.env.SEO_CONNECTOR_AUTHOR_ID;
-    mockDb.prisma.user.findFirst.mockImplementation(async ({ where }: any) => (where.role === 'ARTICLE' ? { id: 7 } : null));
-    mockDb.prisma.post.findUnique.mockResolvedValue({ id: 301, slug: 's', locale: 'vi', status: 'DRAFT', authorId: 7, publishedAt: null, title: 'T' });
+  it('#1682 the connector edits only the posts of the chosen author account (another author: 403)', async () => {
+    mockDb.prisma.post.findUnique.mockResolvedValue({ id: 301, slug: 's', locale: 'vi', status: 'DRAFT', authorId: AUTHOR, publishedAt: null, title: 'T' });
     mockDb.prisma.post.update.mockResolvedValue({});
-    const r: any = await call('PUT', 'drafts/301', { body: { title: 'Mới' }, idem: 'put7' });
-    expect(r.status).toBe(200);
-    const other = { id: 302, slug: 's', locale: 'vi', status: 'DRAFT', authorId: 99, publishedAt: null, title: 'T' };
-    mockDb.prisma.post.findUnique.mockResolvedValue(other);
-    expect(((await call('PUT', 'drafts/302', { body: { title: 'X' }, idem: 'put99' })) as any).status).toBe(403);
+    expect(((await call('PUT', 'drafts/301', { body: { title: 'Mới' }, idem: 'put1' })) as any).status).toBe(200);
+    mockDb.prisma.post.findUnique.mockResolvedValue({ id: 302, slug: 's', locale: 'vi', status: 'DRAFT', authorId: 99, publishedAt: null, title: 'T' });
+    expect(((await call('PUT', 'drafts/302', { body: { title: 'X' }, idem: 'put2' })) as any).status).toBe(403);
   });
 
   it('never leaks a database error message', async () => {

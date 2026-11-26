@@ -8,7 +8,7 @@
  *
  * - The key is checked before anything else, on every path (unknown ones included).
  * - Write calls need `Idempotency-Key`; the first successful answer is stored and replayed unchanged.
- * - The connector only edits, publishes and unpublishes drafts it created (author = `SEO_CONNECTOR_AUTHOR_ID`, else the first ARTICLE / ADMIN account), never a post
+ * - The connector only edits, publishes and unpublishes drafts it created (author = the `DEFAULT_AUTHOR_EMAIL` account, else the first ARTICLE / ADMIN), never a post
  *   the owner wrote by hand.
  */
 import { db } from '@rentalshop/database';
@@ -45,20 +45,17 @@ export const fail = (code: string, message: string, status: number, details?: un
 
 const siteUrl = () => (process.env.SEO_SITE_URL || process.env.CLIENT_URL || 'https://anyrent.shop').replace(/\/+$/, '');
 const adminUrl = () => (process.env.ADMIN_URL || 'https://admin.anyrent.shop').replace(/\/+$/, '');
-/** #1682 the account connector drafts are written under, so no environment variable is needed */
-const DEFAULT_AUTHOR_EMAIL = 'kathypham28088@gmail.com';
-
 /**
- * The account connector drafts are written under (and the only posts it may edit, publish or unpublish):
- * `SEO_CONNECTOR_AUTHOR_ID` when set (optional), else the DEFAULT_AUTHOR_EMAIL account, else the first ARTICLE account,
- * else the first ADMIN.
+ * The account connector drafts are written under (and the only posts it may edit, publish or unpublish): the account whose email
+ * is `DEFAULT_AUTHOR_EMAIL` (#1682, optional), else the first ARTICLE account, else the first ADMIN. No account: null.
  */
 const authorId = async (): Promise<number | null> => {
-  const n = Number(process.env.SEO_CONNECTOR_AUTHOR_ID);
-  if (Number.isInteger(n) && n > 0) return n;
   const pick = { orderBy: { id: 'asc' as const }, select: { id: true } };
-  const byEmail = await db.prisma.user.findFirst({ where: { email: { equals: DEFAULT_AUTHOR_EMAIL, mode: 'insensitive' as const } }, ...pick });
-  if (byEmail) return byEmail.id;
+  const email = (process.env.DEFAULT_AUTHOR_EMAIL || '').trim();
+  if (email) {
+    const byEmail = await db.prisma.user.findFirst({ where: { email: { equals: email, mode: 'insensitive' as const } }, ...pick });
+    if (byEmail) return byEmail.id;
+  }
   const article = await db.prisma.user.findFirst({ where: { role: 'ARTICLE' as const }, ...pick });
   if (article) return article.id;
   const admin = await db.prisma.user.findFirst({ where: { role: 'ADMIN' as const }, ...pick });
