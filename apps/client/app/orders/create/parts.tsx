@@ -487,7 +487,7 @@ export function CartLineRow({
     ? t('editor.pricing.chipEmpty', { mode: t(`editor.pricing.mode.${modeKey(type)}`, { type }) })
     : t(`editor.option.${['DAILY', 'HOURLY', 'FIXED', 'SALE', 'BLOCK'].includes(type) ? type : 'FIXED'}`, { price: money(line.unitPrice) });
   return (
-    <div className="flex flex-col gap-2 border-t border-ar-line-soft py-3">
+    <div className="flex flex-col gap-2 rounded-xl border border-ar-line bg-ar-subtle p-3">
       <div className="flex items-start gap-2">
         <span className="min-w-0 flex-1 text-[15px] font-semibold text-ar-ink">{line.name}</span>
         <span className="text-[15px] font-bold tabular-nums text-ar-ink">{money(total)}</span>

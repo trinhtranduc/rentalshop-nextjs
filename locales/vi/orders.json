@@ -673,6 +673,7 @@
         "pickCustomer": "Chọn khách",
         "change": "Đổi",
         "choose": "Chọn",
+        "payment": "Thanh toán",
         "rentItems": "Đồ thuê · {count} món",
         "saleItems": "Đồ bán · {count} món",
         "empty": "Bấm + ở sản phẩm để thêm vào đơn.",

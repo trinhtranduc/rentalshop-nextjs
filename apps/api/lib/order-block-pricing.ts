@@ -77,10 +77,16 @@ export function tableOfSnapshot(snapshot: unknown): BlockPricingTable | null {
   return isValidBlockTable(table) ? table : null;
 }
 
-/** The BLOCK option a request line means, or null when it is not a BLOCK line (see file header) */
+/**
+ * The BLOCK option a request line means, or null when it is not a BLOCK line (see file header).
+ * #1667 `clientKnowsBlock` (the request has the `block-pricing` capability): such a client says BLOCK when it means BLOCK,
+ * so an explicit FIXED / DAILY / HOURLY type without an option id is what the staff chose, not a BLOCK line in disguise.
+ * Installed apps (no capability) cannot tell, so for them nothing changes.
+ */
 export function findBlockOption(
   product: { pricingOptions?: BlockOptionLike[] | null } | null | undefined,
-  line: { pricingOptionId?: number | null; pricingType?: string | null }
+  line: { pricingOptionId?: number | null; pricingType?: string | null },
+  opts?: { clientKnowsBlock?: boolean }
 ): BlockOptionLike | null {
   const options = (product?.pricingOptions ?? []).filter((o) => o && o.isActive !== false);
   const blocks = options.filter((o) => tableOf(o));
@@ -90,6 +96,7 @@ export function findBlockOption(
   const type = (line.pricingType || '').toUpperCase();
   if (type === 'BLOCK') return blocks[0];
   if (type === 'DAILY' || type === 'HOURLY') return null;
+  if (opts?.clientKnowsBlock && type === 'FIXED') return null;
   const preferred = options.find((o) => o.isDefault) || options[0];
   return preferred && preferred.type === 'BLOCK' && tableOf(preferred) ? preferred : null;
 }
@@ -232,12 +239,14 @@ export async function repriceOrderEdit(a: RepriceEditArgs): Promise<RepriceEditR
     const existing = idx >= 0 ? a.existingItems[idx] : undefined;
     if (idx >= 0) used.add(idx);
     const type = (item.pricingType || '').toUpperCase();
-    let table = existing && existing.pricingType === 'BLOCK' && type !== 'DAILY' ? tableOfSnapshot(existing.pricingSnapshot) : null;
+    // #1667 a client that knows BLOCK and now says FIXED / DAILY / HOURLY changed the line on purpose: do not keep the stored table
+    const changedAway = a.clientKnowsBlock && (type === 'FIXED' || type === 'DAILY' || type === 'HOURLY');
+    let table = existing && existing.pricingType === 'BLOCK' && type !== 'DAILY' && !changedAway ? tableOfSnapshot(existing.pricingSnapshot) : null;
     let optionId: number | null = table ? existing?.pricingOptionId ?? null : null;
     const isNewLine = !table;
     if (!table) {
       const product = await a.loadProduct(item.productId);
-      const option = findBlockOption(product, item);
+      const option = findBlockOption(product, item, { clientKnowsBlock: a.clientKnowsBlock });
       table = tableOf(option);
       optionId = option?.id ?? null;
     }

@@ -673,6 +673,7 @@
         "pickCustomer": "選擇客戶",
         "change": "更換",
         "choose": "選擇",
+        "payment": "付款",
         "rentItems": "租借商品 · {count} 件",
         "saleItems": "銷售商品 · {count} 件",
         "empty": "在商品上點 + 即可加入訂單。",

@@ -673,6 +673,7 @@
         "pickCustomer": "选择客户",
         "change": "更换",
         "choose": "选择",
+        "payment": "付款",
         "rentItems": "租赁商品 · {count} 件",
         "saleItems": "销售商品 · {count} 件",
         "empty": "点击商品上的 + 添加到订单。",

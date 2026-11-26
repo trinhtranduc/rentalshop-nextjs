@@ -673,6 +673,7 @@
         "pickCustomer": "顧客を選択",
         "change": "変更",
         "choose": "選択",
+        "payment": "お支払い",
         "rentItems": "レンタル品 · {count} 点",
         "saleItems": "販売品 · {count} 点",
         "empty": "商品の+ボタンを押して注文に追加します。",
