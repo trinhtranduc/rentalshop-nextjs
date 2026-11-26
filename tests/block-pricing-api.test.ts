@@ -164,6 +164,21 @@ describe('findBlockOption: which order lines are BLOCK lines', () => {
     expect(findBlockOption(many, { pricingOptionId: 31 })?.id).toBe(31);
     expect(findBlockOption(many, { pricingType: 'BLOCK' })?.id).toBe(31);
   });
+  it('#1667 a client that knows block-pricing and says FIXED / DAILY / HOURLY without an option id: not a BLOCK line', () => {
+    const k = { clientKnowsBlock: true };
+    expect(findBlockOption(only, { pricingType: 'FIXED' }, k)).toBeNull();
+    expect(findBlockOption(only, { pricingType: 'daily' }, k)).toBeNull();
+    expect(findBlockOption(only, { pricingType: 'HOURLY' }, k)).toBeNull();
+    expect(findBlockOption({ pricingOptions: [BLOCK, FIXED] }, { pricingType: 'FIXED', pricingOptionId: null }, k)).toBeNull();
+    // what it did not say is still decided by the default option, and an explicit BLOCK / BLOCK id stays a BLOCK line
+    expect(findBlockOption(only, { pricingType: null }, k)?.id).toBe(31);
+    expect(findBlockOption(only, {}, k)?.id).toBe(31);
+    expect(findBlockOption(only, { pricingType: 'BLOCK' }, k)?.id).toBe(31);
+    expect(findBlockOption(only, { pricingOptionId: 31, pricingType: 'FIXED' }, k)?.id).toBe(31);
+    // an old client (no flag, or false) is unchanged
+    expect(findBlockOption(only, { pricingType: 'FIXED' }, { clientKnowsBlock: false })?.id).toBe(31);
+    expect(findBlockOption(only, { pricingType: 'FIXED' })?.id).toBe(31);
+  });
   it('the default option decides when the line says nothing', () => {
     expect(findBlockOption({ pricingOptions: [{ ...BLOCK, isDefault: false }, { ...FIXED, isDefault: true }] }, { pricingType: 'FIXED' })).toBeNull();
   });
@@ -243,6 +258,29 @@ describe('repriceOrderEdit (PUT /api/orders/[orderId])', () => {
     expect(refused.error).toBe('PRICING_TYPE_REQUIRES_UPDATE');
     const existingOk = await repriceOrderEdit({ ...base, bodyItems: [stored[0]], loadOldAppsMode: async () => 'block' });
     expect(existingOk.error).toBeUndefined();
+  });
+
+  it('#1667 a client that knows block-pricing changes a stored BLOCK line to FIXED / DAILY: priced as sent, no table kept', async () => {
+    const toFixed = { ...stored[0], pricingType: 'FIXED', pricingOptionId: null, pricingSnapshot: undefined, unitPrice: 550000, totalPrice: 550000 };
+    const out = await repriceOrderEdit({ ...base, clientKnowsBlock: true, bodyItems: [toFixed, stored[1]], loadProduct: async () => ({ pricingOptions: [BLOCK] }) });
+    expect(out.error).toBeUndefined();
+    expect(out.items![0]).toMatchObject({ pricingType: 'FIXED', unitPrice: 550000, totalPrice: 550000 });
+    expect(out.items![0].pricingSnapshot).toBeUndefined();
+    expect(out.totalAmount).toBeUndefined(); // a client that knows BLOCK keeps its own total
+    const toDaily = { ...toFixed, pricingType: 'DAILY', unitPrice: 50000, totalPrice: 150000 };
+    const daily = await repriceOrderEdit({ ...base, clientKnowsBlock: true, bodyItems: [toDaily, stored[1]], loadProduct: async () => ({ pricingOptions: [BLOCK] }) });
+    expect(daily.error).toBeUndefined();
+    expect(daily.items![0].pricingSnapshot).toBeUndefined();
+  });
+
+  it('#1667 an old app sending FIXED for a stored BLOCK line still keeps the stored table (unchanged)', async () => {
+    const out = await repriceOrderEdit({ ...base, clientKnowsBlock: false, bodyItems: [{ ...stored[0], pricingType: 'FIXED', pricingOptionId: null, pricingSnapshot: undefined, unitPrice: 80000, totalPrice: 80000 }, stored[1]] });
+    expect(out.items![0]).toMatchObject({ pricingType: 'BLOCK', totalPrice: 120000, pricingOptionId: 31 });
+  });
+
+  it('#1667 a client that knows block-pricing and keeps the line BLOCK is still checked against the stored table', async () => {
+    const bad = await repriceOrderEdit({ ...base, clientKnowsBlock: true, bodyItems: [{ ...stored[0], pricingSnapshot: undefined, totalPrice: 5 }, stored[1]] });
+    expect(bad.error).toBe('BLOCK_PRICE_MISMATCH');
   });
 
   it('a client-sent snapshot on a non-BLOCK line is removed', async () => {

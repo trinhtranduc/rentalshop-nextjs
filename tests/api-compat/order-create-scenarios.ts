@@ -27,6 +27,14 @@ const PRODUCTS: Record<number, any> = {
       { id: 31, type: 'BLOCK', price: 80000, isDefault: true, isActive: true, sortOrder: 0, blockTiers: [80000, 100000, 120000], blockStartDay: null, blockExtraMode: 'EXTRA_PER_DAY', blockExtraPrice: 20000 },
     ],
   },
+  // #1667: a day-block default next to a real "Theo lần" (FIXED) option; only block tests use it
+  14: {
+    id: 14, name: 'Áo dài khối + theo lần', barcode: '8930000000014', images: null, pricingType: 'FIXED', rentPrice: 50000, merchantId: 1,
+    pricingOptions: [
+      { id: 35, type: 'FIXED', price: 50000, isDefault: false, isActive: true, sortOrder: 1 },
+      { id: 34, type: 'BLOCK', price: 80000, isDefault: true, isActive: true, sortOrder: 0, blockTiers: [80000, 100000, 120000], blockStartDay: null, blockExtraMode: 'EXTRA_PER_DAY', blockExtraPrice: 20000 },
+    ],
+  },
 };
 
 export const AUTH = { user: STAFF, userScope: { merchantId: 1, outletId: 1 } };
