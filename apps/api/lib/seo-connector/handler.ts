@@ -55,8 +55,8 @@ export const RULES = {
   disclosure: false,
   riskPath: null,
   voice:
-    'Nói với chủ shop cho thuê đồ bằng tiếng Việt rõ ràng, thực tế, không thuật ngữ khó. Không hứa kết quả, không dùng "độc quyền", "hàng đầu", "rẻ nhất". Chỉ nêu tính năng AnyRent đã có.',
-  locales: ['vi'],
+    'Nói với chủ shop cho thuê đồ bằng ngôn ngữ của bài (tiếng Việt là ngôn ngữ gốc), rõ ràng, thực tế, không thuật ngữ khó. Không hứa kết quả, không dùng "độc quyền", "hàng đầu", "rẻ nhất". Chỉ nêu tính năng AnyRent đã có.',
+  locales: [...PUBLIC_LOCALES],
   wordRange: { min: 800, max: 3000 },
 } as const;
 
@@ -179,7 +179,8 @@ async function createDraft(body: Record<string, unknown>): Promise<ConnectorResu
   if (!html.trim()) details.body = 'required (HTML)';
   const locale = body.locale === undefined ? 'vi' : body.locale;
   if (!isPublicLocale(locale)) details.locale = `one of ${PUBLIC_LOCALES.join(', ')}`;
-  if (Object.keys(details).length) return fail('invalid', 'Missing or wrong fields.', 400, details);
+  // #1672 a language the site does not have is 422 (the draft is never stored in another language); other field errors stay 400
+  if (Object.keys(details).length) return fail('invalid', 'Missing or wrong fields.', details.locale ? 422 : 400, details);
 
   const loc = locale as PublicLocale;
   const taken = await db.prisma.post.findUnique({ where: { slug_locale: { slug: slug!, locale: loc } }, select: { id: true } });
