@@ -117,6 +117,15 @@ const nextConfig = {
       },
     ];
   }, 
+  // #1665: the SEO Agent Hub calls `${site}/api/seo-connector/v1/*`; only that path is passed on to the API app.
+  // Everything else in the client still calls the API directly using NEXT_PUBLIC_API_URL.
+  async rewrites() {
+    const api = (process.env.NEXT_PUBLIC_API_URL || process.env.API_URL || 'http://localhost:3002').replace(/\/+$/, '');
+    return [
+      { source: '/api/seo-connector', destination: `${api}/api/seo-connector` },
+      { source: '/api/seo-connector/:path*', destination: `${api}/api/seo-connector/:path*` },
+    ];
+  },
   // Removed rewrites() - client app calls API directly using NEXT_PUBLIC_API_URL
   // API calls are made from client-side (browser) to the API URL configured in @rentalshop/utils
   // No need to proxy through Next.js server

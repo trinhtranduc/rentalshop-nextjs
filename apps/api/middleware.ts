@@ -27,6 +27,7 @@ const publicRoutes = [
   '/api/docs',
   '/api/plans/public',
   '/api/public', // Public product pages for merchants to share with customers
+  '/api/seo-connector', // #1665 SEO Agent Hub connector: no user JWT, the site key is checked in the route handler
   '/api/posts/public', // Public blog posts for landing page
   '/api/posts/slug/', // Public post by slug (for client app) - note: trailing slash for pattern matching
   '/api/posts/categories/public', // Public post categories
