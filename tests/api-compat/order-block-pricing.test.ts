@@ -156,6 +156,57 @@ describe('clients with the block-pricing capability', () => {
   });
 });
 
+describe('#1667 a line the staff priced "Theo lần" / "Theo ngày" on a product whose default option is BLOCK', () => {
+  // 3 Vietnam days; the table gives 120.000. The staff typed 550.000 per rental (no FIXED option on product 13).
+  const fixedLine = (productId: number, extra: Record<string, unknown> = {}) => ({
+    productId, quantity: 1, unitPrice: 550000, totalPrice: 550000, deposit: 0, pricingType: 'FIXED', rentDays: 1, ...extra,
+  });
+
+  it('client WITH the capability: an explicit FIXED line without an option id is kept as FIXED at the sent price', async () => {
+    const { first } = await post(body([fixedLine(13)], { totalAmount: 550000 }), { headers: CAP });
+    expect(first.status).toBe(200);
+    expect(first.body.data.totalAmount).toBe(550000);
+    const item = first.body.data.orderItems[0];
+    expect(item).toMatchObject({ unitPrice: 550000, totalPrice: 550000, pricingType: 'FIXED' });
+    expect(item.pricingSnapshot).toBeUndefined();
+  });
+
+  it('client WITH the capability: the same on a product that also has a real FIXED option (id sent or not)', async () => {
+    const noId = await post(body([fixedLine(14)], { totalAmount: 550000 }), { headers: CAP });
+    expect(noId.first.status).toBe(200);
+    expect(noId.first.body.data.orderItems[0]).toMatchObject({ totalPrice: 550000, pricingType: 'FIXED' });
+    expect(noId.first.body.data.orderItems[0].pricingSnapshot).toBeUndefined();
+    const withId = await post(body([fixedLine(14, { pricingOptionId: 35 })], { totalAmount: 550000 }), { headers: CAP });
+    expect(withId.first.status).toBe(200);
+    expect(withId.first.body.data.orderItems[0]).toMatchObject({ totalPrice: 550000, pricingType: 'FIXED', pricingOptionId: 35 });
+  });
+
+  it('client WITH the capability: an explicit DAILY line without an option id is not a BLOCK line either', async () => {
+    const line = { productId: 13, quantity: 1, unitPrice: 50000, totalPrice: 150000, deposit: 0, pricingType: 'DAILY', rentDays: 3 };
+    const { first } = await post(body([line], { totalAmount: 150000 }), { headers: CAP });
+    expect(first.status).toBe(200);
+    expect(first.body.data.totalAmount).toBe(150000);
+    expect(first.body.data.orderItems[0].pricingSnapshot).toBeUndefined();
+  });
+
+  it('an OLD app sending the same FIXED line is still repriced from the table (nothing changes for installed apps)', async () => {
+    const { first } = await post(body([fixedLine(13)], { totalAmount: 550000 }));
+    expect(first.status).toBe(200);
+    expect(first.body.data.totalAmount).toBe(120000);
+    expect(first.body.data.orderItems[0]).toMatchObject({ pricingType: 'BLOCK', totalPrice: 120000 });
+    expect(first.body.data.orderItems[0].pricingSnapshot).toMatchObject({ type: 'BLOCK', days: 3 });
+  });
+
+  it('a BLOCK line (type BLOCK, or the option id) of a client with the capability is still checked against the table', async () => {
+    const wrong = await post(body([fixedLine(13, { pricingType: 'BLOCK', pricingOptionId: 31 })], { totalAmount: 550000 }), { headers: CAP });
+    expect(wrong.first.status).toBe(400);
+    expect(wrong.first.body.code).toBe('BLOCK_PRICE_MISMATCH');
+    const byId = await post(body([fixedLine(14, { pricingType: 'FIXED', pricingOptionId: 34 })], { totalAmount: 550000 }), { headers: CAP });
+    expect(byId.first.status).toBe(400);
+    expect(byId.first.body.code).toBe('BLOCK_PRICE_MISMATCH');
+  });
+});
+
 describe('a client-sent pricingSnapshot is never stored', () => {
   it('POST ignores it (zod strips the key)', async () => {
     const { first } = await post(body([{ productId: 11, quantity: 1, unitPrice: 1, totalPrice: 1, pricingSnapshot: { type: 'BLOCK', tiers: [1] } }], { totalAmount: 1 }));

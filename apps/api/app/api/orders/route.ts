@@ -927,7 +927,7 @@ export const POST = withPermissions(['orders.create'])(async (request, { user, u
           let lineType = optionType;
           let pricingSnapshot: BlockSnapshot | undefined;
           if (parsed.data.orderType === ORDER_TYPE.RENT) {
-            const blockOption = findBlockOption(product, { pricingOptionId: item.pricingOptionId, pricingType: item.pricingType });
+            const blockOption = findBlockOption(product, { pricingOptionId: item.pricingOptionId, pricingType: item.pricingType }, { clientKnowsBlock });
             const table = tableOf(blockOption);
             if (blockOption && table) {
               if (!clientKnowsBlock && (await loadOldAppsMode()) === 'block') {
