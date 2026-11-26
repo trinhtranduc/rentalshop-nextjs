@@ -189,7 +189,7 @@ async function createDraft(body: Record<string, unknown>): Promise<ConnectorResu
   try {
     content = JSON.stringify(htmlToTipTap(html));
   } catch (error) {
-    if (error instanceof BodyTooComplexError) return fail('invalid', error.message, 400, { body: 'too complex' });
+    if (error instanceof BodyTooComplexError) return fail('invalid', 'Body is too complex: too many elements or nested too deeply.', 400, { body: 'too complex' });
     throw error;
   }
 
@@ -248,7 +248,7 @@ async function writeCalls(req: ConnectorRequest): Promise<ConnectorResult | null
       try {
         data.content = JSON.stringify(htmlToTipTap(body.body));
       } catch (error) {
-        if (error instanceof BodyTooComplexError) return fail('invalid', error.message, 400, { body: 'too complex' });
+        if (error instanceof BodyTooComplexError) return fail('invalid', 'Body is too complex: too many elements or nested too deeply.', 400, { body: 'too complex' });
         throw error;
       }
     }
