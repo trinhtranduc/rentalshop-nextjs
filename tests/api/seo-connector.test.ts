@@ -276,11 +276,22 @@ describe('POST /drafts', () => {
     expect(mockDb.posts.create.mock.calls[0][0].authorId).toBe(1);
   });
 
-  it('#1682 SEO_CONNECTOR_AUTHOR_ID is no longer read', async () => {
-    process.env.SEO_CONNECTOR_AUTHOR_ID = '999';
-    const r: any = await call('POST', 'drafts', { body: draft, idem: 'oldenv' });
+  it('#1682 SEO_CONNECTOR_AUTHOR_ID, when set, wins over the email and no account lookup is made', async () => {
+    process.env.SEO_CONNECTOR_AUTHOR_ID = '1276';
+    const r: any = await call('POST', 'drafts', { body: draft, idem: 'idenv' });
     expect(r.status).toBe(201);
-    expect(mockDb.posts.create.mock.calls[0][0].authorId).toBe(AUTHOR);
+    expect(mockDb.posts.create.mock.calls[0][0].authorId).toBe(1276);
+    expect(mockDb.prisma.user.findFirst).not.toHaveBeenCalled();
+  });
+
+  it('#1682 a SEO_CONNECTOR_AUTHOR_ID that is not a positive whole number is ignored (the email account is used)', async () => {
+    for (const bad of ['abc', '0', '-3', '1.5', '']) {
+      mockDb.posts.create.mockClear();
+      process.env.SEO_CONNECTOR_AUTHOR_ID = bad;
+      const r: any = await call('POST', 'drafts', { body: draft, idem: `bad${bad}` });
+      expect(r.status).toBe(201);
+      expect(mockDb.posts.create.mock.calls[0][0].authorId).toBe(AUTHOR);
+    }
   });
 
   it('#1682 the connector edits only the posts of the chosen author account (another author: 403)', async () => {
