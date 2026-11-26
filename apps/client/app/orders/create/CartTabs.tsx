@@ -23,6 +23,7 @@ export function CartTabs({
   onRemove,
   t,
   money,
+  trailing,
 }: {
   carts: DraftCart[];
   activeId: string;
@@ -34,6 +35,8 @@ export function CartTabs({
   onRemove: (id: string) => void;
   t: T;
   money: (n: number) => string;
+  /** #1668 pinned at the right end of the bar (Cho thuê / Bán), above the cart column */
+  trailing?: React.ReactNode;
 }) {
   const [asking, setAsking] = useState<DraftCart | null>(null);
   const title = (c: DraftCart) => cartTitle(c, (n) => t('editor.carts.title', { n }));
@@ -102,6 +105,7 @@ export function CartTabs({
             {t('editor.carts.new')}
           </button>
         )}
+        {trailing && <div className="sticky right-0 ml-auto flex flex-none items-center self-center bg-ar-subtle pb-1 pl-3">{trailing}</div>}
       </div>
       <Modal
         open={!!asking}

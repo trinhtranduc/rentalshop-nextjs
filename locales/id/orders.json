@@ -673,6 +673,7 @@
         "pickCustomer": "Pilih pelanggan",
         "change": "Ganti",
         "choose": "Pilih",
+        "payment": "Pembayaran",
         "rentItems": "Barang sewa · {count} item",
         "saleItems": "Barang jual · {count} item",
         "empty": "Ketuk + pada produk untuk menambahkannya ke pesanan.",

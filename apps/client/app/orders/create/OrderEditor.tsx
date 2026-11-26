@@ -826,6 +826,32 @@ export function OrderEditor({ order }: { order?: OrderLike & { id: number; order
   const cartRef = useRef<HTMLElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
+  // #1668 the rent / sale switch sits on the cart tab bar when creating (more room in the cart column); at the top of the cart when editing
+  const typeSwitch = (compact: boolean) => (
+    <div
+      role="tablist"
+      aria-label={t('editor.cart.type')}
+      data-testid="cart-type"
+      className={compact ? 'grid w-[136px] grid-cols-2 rounded-xl border border-ar-line bg-ar-surface p-0.5 sm:w-[220px]' : 'grid grid-cols-2 rounded-xl bg-ar-subtle p-1'}
+    >
+      {(['RENT', 'SALE'] as const).map((k) => (
+        <button
+          key={k}
+          type="button"
+          role="tab"
+          aria-selected={orderType === k}
+          disabled={submitting || (editing && orderType !== k)}
+          onClick={() => switchType(k)}
+          className={`${compact ? 'h-8 rounded-[9px] text-[13px] sm:text-sm' : 'h-10 rounded-[9px] text-[15px]'} ${
+            orderType === k ? `${compact ? 'bg-ar-subtle' : 'bg-ar-surface shadow-ar'} font-bold text-ar-ink` : 'font-medium text-ar-muted disabled:opacity-50'
+          }`}
+        >
+          {t(`editor.cart.${k}`)}
+        </button>
+      ))}
+    </div>
+  );
+
   return (
     <div className="flex min-h-full flex-col text-ar-ink">
       {/* #1293: one tab per cart across both columns; Sửa đơn has no carts */}
@@ -843,6 +869,7 @@ export function OrderEditor({ order }: { order?: OrderLike & { id: number; order
           onRemove={store.remove}
           t={t}
           money={money}
+          trailing={typeSwitch(true)}
         />
       )}
       <div className="flex min-h-0 flex-1 flex-col min-[1100px]:flex-row">
@@ -964,30 +991,15 @@ export function OrderEditor({ order }: { order?: OrderLike & { id: number; order
           aria-label={t('editor.cart.label')}
           className={`w-full border-t border-ar-line bg-ar-surface min-[1100px]:w-[400px] min-[1100px]:flex-none min-[1100px]:border-l min-[1100px]:border-t-0 ${editing ? '' : 'scroll-mt-12'}`}
         >
-          {/* Wide screens: the cart stays in view while the grid scrolls (65px = top bar, 48px more for the cart tabs) */}
+          {/* Wide screens: the cart stays in view while the grid scrolls (65px = top bar, 48px more for the cart tabs).
+              #1668: the whole column scrolls (nothing is pinned, so the items get all the room); no block shrinks, so the submit
+              button keeps its 52px. */}
           <div
             className={`box-border flex flex-col gap-4 px-5 pb-24 pt-5 min-[1100px]:sticky min-[1100px]:overflow-y-auto min-[1100px]:pb-6 ${
               editing ? 'min-[1100px]:top-0 min-[1100px]:max-h-[calc(100vh-65px)]' : 'min-[1100px]:top-12 min-[1100px]:max-h-[calc(100vh-65px-48px)]'
             }`}
           >
-            <div role="tablist" aria-label={t('editor.cart.type')} className="grid grid-cols-2 rounded-xl bg-ar-subtle p-1">
-              {(['RENT', 'SALE'] as const).map((k) => (
-                <button
-                  key={k}
-                  type="button"
-                  role="tab"
-                  aria-selected={orderType === k}
-                  disabled={editing && orderType !== k}
-                  onClick={() => switchType(k)}
-                  className={`h-10 rounded-[9px] text-[15px] ${
-                    orderType === k ? 'bg-ar-surface font-bold text-ar-ink shadow-ar' : 'font-medium text-ar-muted disabled:opacity-50'
-                  }`}
-                >
-                  {t(`editor.cart.${k}`)}
-                </button>
-              ))}
-            </div>
-
+            {editing && typeSwitch(false)}
             {orderType === 'RENT' && (
               <button
                 type="button"
@@ -1051,8 +1063,8 @@ export function OrderEditor({ order }: { order?: OrderLike & { id: number; order
               </div>
             )}
 
-            <div className="flex flex-col">
-              <span className="pb-1.5 text-xs font-bold uppercase tracking-[.06em] text-ar-muted">
+            <div className="flex flex-col gap-2.5">
+              <span className="text-xs font-bold uppercase tracking-[.06em] text-ar-muted">
                 {t(orderType === 'RENT' ? 'editor.cart.rentItems' : 'editor.cart.saleItems', { count: itemCount })}
               </span>
               {lines.length === 0 ? (
@@ -1145,7 +1157,9 @@ export function OrderEditor({ order }: { order?: OrderLike & { id: number; order
               </button>
             )}
 
-            <div className="flex flex-col gap-2 border-t border-ar-line pt-3">
+            <div data-testid="cart-payment" className="flex flex-none flex-col gap-3 rounded-xl bg-ar-subtle p-4">
+            <span className="text-xs font-bold uppercase tracking-[.06em] text-ar-muted">{t('editor.cart.payment')}</span>
+            <div className="flex flex-col gap-2">
               <div className="flex justify-between text-[15px]">
                 <span>{t(orderType === 'RENT' ? 'editor.money.rent' : 'editor.money.goods')}</span>
                 <span className="tabular-nums">{money(totals.subtotal)}</span>
@@ -1198,9 +1212,9 @@ export function OrderEditor({ order }: { order?: OrderLike & { id: number; order
                   <span className="tabular-nums">−{money(totals.loyaltyDiscount)}</span>
                 </div>
               )}
-              <div className="flex justify-between text-lg font-bold">
-                <span>{t('editor.money.total')}</span>
-                <span className="tabular-nums">{money(totals.totalAmount - totals.loyaltyDiscount)}</span>
+              <div className="flex items-baseline justify-between border-t border-ar-line pt-2.5 font-bold">
+                <span className="text-[15px]">{t('editor.money.total')}</span>
+                <span className="text-2xl tabular-nums">{money(totals.totalAmount - totals.loyaltyDiscount)}</span>
               </div>
             </div>
 
@@ -1265,10 +1279,11 @@ export function OrderEditor({ order }: { order?: OrderLike & { id: number; order
               type="button"
               onClick={() => void submit()}
               disabled={submitting || compressing || cta === 'blocked' || !!discountTooHigh || stagesOver || (!!missing && missing !== 'days' && missing !== 'customer')}
-              className="h-[52px] rounded-[14px] bg-ar-primary text-base font-semibold text-ar-on-primary hover:opacity-95 disabled:opacity-50"
+              className="h-[52px] flex-none shrink-0 rounded-[14px] bg-ar-primary text-base font-semibold text-ar-on-primary hover:opacity-95 disabled:opacity-50"
             >
               {submitLabel}
             </button>
+            </div>
           </div>
         </aside>
       </div>

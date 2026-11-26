@@ -673,6 +673,7 @@
         "pickCustomer": "Choose a customer",
         "change": "Change",
         "choose": "Choose",
+        "payment": "Payment",
         "rentItems": "Rented items · {count}",
         "saleItems": "Sold items · {count}",
         "empty": "Press + on a product to add it.",

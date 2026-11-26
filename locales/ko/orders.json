@@ -673,6 +673,7 @@
         "pickCustomer": "고객 선택",
         "change": "변경",
         "choose": "선택",
+        "payment": "결제",
         "rentItems": "대여 상품 · {count}개",
         "saleItems": "판매 상품 · {count}개",
         "empty": "상품의 +를 눌러 주문에 추가하십시오.",
