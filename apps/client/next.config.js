@@ -120,7 +120,9 @@ const nextConfig = {
   // #1665: the SEO Agent Hub calls `${site}/api/seo-connector/v1/*`; only that path is passed on to the API app.
   // Everything else in the client still calls the API directly using NEXT_PUBLIC_API_URL.
   async rewrites() {
-    const api = (process.env.NEXT_PUBLIC_API_URL || process.env.API_URL || 'http://localhost:3002').replace(/\/+$/, '');
+    // #1676 SEO_CONNECTOR_API_URL: on Railway point it at the API service's private address (http://<service>.railway.internal:<PORT>)
+    // so the call does not go out through Cloudflare (which answers 403 "DNS points to prohibited IP"). Unset = as before.
+    const api = (process.env.SEO_CONNECTOR_API_URL || process.env.NEXT_PUBLIC_API_URL || process.env.API_URL || 'http://localhost:3002').replace(/\/+$/, '');
     return [
       { source: '/api/seo-connector', destination: `${api}/api/seo-connector` },
       { source: '/api/seo-connector/:path*', destination: `${api}/api/seo-connector/:path*` },
