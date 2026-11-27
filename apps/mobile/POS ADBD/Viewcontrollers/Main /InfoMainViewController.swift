@@ -1165,6 +1165,14 @@ class InfoMainViewController: BaseViewControler {
         }
     }
 
+    private var isEditModeForDates: Bool { CartStore.shared.cart.isEditMode }
+
+    /// #1685: a day the calendar no longer offers (before its minimum) is shown as not chosen
+    private func keepPickable(_ day: Date?, minimum: Date) -> Date? {
+        guard let day, PickupDayRule.appliesTo(orderType: methodSelect, isEditMode: isEditModeForDates) else { return day }
+        return Calendar.current.startOfDay(for: day) < Calendar.current.startOfDay(for: minimum) ? nil : day
+    }
+
     @objc private func rentalPeriodTapped() {
         let controller = DatePickerViewController.instance()
         controller.delegate = self
@@ -1172,12 +1180,14 @@ class InfoMainViewController: BaseViewControler {
 
         let calendar = Calendar.current
         let today = Date()
-        let minimumDate = calendar.date(byAdding: .year, value: -1, to: today)!
+        // #1685: a new rental cannot start before today (shop day)
+        let minimumDate = PickupDayRule.calendarMinimum(orderType: methodSelect, isEditMode: isEditModeForDates,
+                                                        fallback: calendar.date(byAdding: .year, value: -1, to: today))!
         let maximumDate = calendar.date(byAdding: .year, value: 1, to: today)!
 
         controller.configureForDateRange(
-            startDate: getDate,
-            endDate: returnDate,
+            startDate: keepPickable(getDate, minimum: minimumDate),
+            endDate: keepPickable(returnDate, minimum: minimumDate),
             minimumDate: minimumDate,
             maximumDate: maximumDate
         )
@@ -1192,13 +1202,15 @@ class InfoMainViewController: BaseViewControler {
         // Allow selecting dates in the past (1 year ago) and future (1 year from now)
         let calendar = Calendar.current
         let today = Date()
-        let minDate = calendar.date(byAdding: .year, value: -1, to: today)! // Allow 1 year in the past
+        // #1685: a new rental cannot start before today (shop day)
+        let minDate = PickupDayRule.calendarMinimum(orderType: methodSelect, isEditMode: isEditModeForDates,
+                                                    fallback: calendar.date(byAdding: .year, value: -1, to: today))!
         let maxDate = calendar.date(byAdding: .year, value: 1, to: today)! // Allow 1 year in the future
         
         // Configure the date picker with proper bounds
         controller.configureForDateRange(
-            startDate: getDate,
-            endDate: returnDate == nil ? nil : (returnDate! > maxDate ? maxDate : returnDate!),
+            startDate: keepPickable(getDate, minimum: minDate),
+            endDate: keepPickable(returnDate, minimum: minDate).map { $0 > maxDate ? maxDate : $0 },
             minimumDate: minDate,
             maximumDate: maxDate
         )

@@ -257,6 +257,10 @@ fun CartV2Screen(
         CartProblem.NO_RETURN to stringResource(R.string.v2_cart_need_return),
     )
 
+    val pickupPastMessage = stringResource(R.string.v2_cart_pickup_past)
+    // #1685: a draft opened with a pickup day before today (kept overnight, a booking of a day that passed) asks for the days again
+    LaunchedEffect(Unit) { if (CartStore.dropPastPickupDays()) error = pickupPastMessage }
+
     // Batch availability for the dates (rent) or today (sale), same call as the old cart's check
     // #951: a product may be on several lines; availability is asked for the units of all its lines
     val productQuantities = CartV2Logic.quantitiesByProduct(lines)
@@ -365,6 +369,11 @@ fun CartV2Screen(
 
     // Same checks, request and messages as the review screen's submit (CartCheckoutScreen)
     fun submitOrder(confirm: CreateOrderSheet.Confirm) {
+        // #1685: a pickup day before today (the day changed while the cart was open) goes back to "choose the days"
+        if (CartStore.dropPastPickupDays()) {
+            error = pickupPastMessage
+            return
+        }
         if (!submission.begin()) return
         submitting = true
         scope.launch {
@@ -675,6 +684,10 @@ fun CartV2Screen(
         // The cart button: the create / sale confirm sheet, or the "Lưu thay đổi" sheet while editing
         fun onCta() {
             if (discountInvalid) return
+            if (CartStore.dropPastPickupDays()) { // #1685
+                error = pickupPastMessage
+                return
+            }
             val problems = CartV2Logic.problems(lines.sumOf { it.quantity }, customer != null, isSale, datesChosen)
             val messages = problems.map { problemText.getValue(it) } +
                 CartV2Logic.missingPrices(lines, isSale).map { needPriceText.format(it) }
@@ -831,6 +844,7 @@ fun CartV2Screen(
             initialStart = pickup,
             initialEnd = ret,
             onDismiss = { showDates = false },
+            minDate = CartStore.minPickupDay(), // #1685: no pickup day before today on a new order
             onConfirm = { start, end ->
                 CartStore.setPickup(start)
                 CartStore.setReturn(end)

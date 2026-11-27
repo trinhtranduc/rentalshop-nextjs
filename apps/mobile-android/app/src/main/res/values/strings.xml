@@ -550,6 +550,7 @@
     <string name="api_error_product_held_by_other_outlets_no_params">Another branch still has this product; only the shop owner can delete it. To stop selling it at your branch, set your stock to 0.</string>
     <string name="api_error_outlet_has_open_orders">This branch still has orders that are reserved or being rented. Complete or cancel them before turning the branch off.</string>
     <string name="api_error_block_price_mismatch">The price of a day-block item does not match the price list. Reload the product and try again.</string>
+    <string name="api_error_pickup_date_in_past">Pick up a day from today onward. Orders for past days cannot be created.</string>
     <string name="api_error_pricing_type_requires_update">This product uses day-block pricing. Please update the app to place this rental.</string>
     <string name="api_error_block_table_invalid">The day-block price list is not valid. Use 1 to 31 days, prices of 0 or more, and one block price list per product.</string>
     <string name="api_error_customer_duplicate">A customer with this email or phone already exists</string>
@@ -1110,6 +1111,7 @@
     <!-- #448: new cart and review match iOS -->
     <string name="v2_cart_pick_dates">Choose rental dates</string>
     <string name="v2_cart_need_pickup">Please set pickup date for rental order.</string>
+    <string name="v2_cart_pickup_past">The pickup day cannot be before today.</string>
     <string name="v2_cart_need_return">Please set return date for rental order.</string>
     <string name="v2_cart_need_items">Cart is empty. Please add at least one item.</string>
     <string name="v2_cart_need_customer">Please select a customer.</string>

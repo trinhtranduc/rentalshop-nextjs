@@ -625,6 +625,7 @@
         "hint": "Chọn ngày để xem số món còn trong lịch đó.",
         "summary": "{from} → {to} · {days} ngày",
         "reversed": "Ngày trả phải từ ngày giao trở đi.",
+        "past": "Ngày giao không được trước hôm nay.",
         "tooLong": "Một đơn thuê tối đa {days} ngày.",
         "apply": "Chọn · {days} ngày",
         "applyEmpty": "Chọn",

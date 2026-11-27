@@ -31,10 +31,36 @@ final class OrderDetailLogicTests: XCTestCase {
             let result = actions(.rent, status)
             XCTAssertEqual(result.primary, .none)
             XCTAssertFalse(result.canEdit)
-            XCTAssertFalse(result.canCancel)
         }
         XCTAssertTrue(actions(.rent, .cancelled).canDelete)
         XCTAssertFalse(actions(.rent, .cancelled, deleteCancelled: false).canDelete)
+    }
+
+    /// #1689 (#1688): a returned rental can be cancelled by MERCHANT / OUTLET_ADMIN (`canManageOrders`), never by staff
+    func testReturnedRentalCanBeCancelledOnlyWithManageOrders() {
+        XCTAssertTrue(actions(.rent, .returned).canCancel)
+        XCTAssertFalse(actions(.rent, .returned, manage: false).canCancel)
+        XCTAssertFalse(actions(.rent, .returned).canDelete, "Delete stays for cancelled orders only")
+        XCTAssertEqual(actions(.rent, .returned).primary, .none)
+    }
+
+    func testCancelledOrdersCannotBeCancelledAgain() {
+        XCTAssertFalse(actions(.rent, .cancelled).canCancel)
+        XCTAssertFalse(actions(.sale, .cancelled).canCancel)
+    }
+
+    func testDeleteIsOnlyForCancelledOrders() {
+        for type in OrderType.allCases {
+            for status in [OrderStatus.reserved, .pickuped, .returned, .completed] {
+                XCTAssertFalse(actions(type, status).canDelete, "\(type) \(status)")
+            }
+        }
+    }
+
+    func testSaleCancelRulesStayTheSame() {
+        XCTAssertTrue(actions(.sale, .reserved).canCancel)
+        XCTAssertTrue(actions(.sale, .completed).canCancel)
+        XCTAssertFalse(actions(.sale, .returned).canCancel)
     }
 
     func testSaleCompletedCanCancelAndEditButHasNoPrimary() {

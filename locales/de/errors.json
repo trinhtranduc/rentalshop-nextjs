@@ -579,5 +579,6 @@
   "SUBSCRIPTION_RENEWS_IN_STORE": "Ihr Tarif verlängert sich über den App Store oder Google Play. Schalten Sie die automatische Verlängerung dort aus, bevor Sie im Web bezahlen.",
   "PLAN_NOT_PURCHASABLE": "Dieser Tarif kann gerade nicht gekauft werden.",
   "POLAR_CUSTOMER_NOT_FOUND": "Es gibt noch kein Kartenabo zum Verwalten.",
-  "POLAR_REQUEST_FAILED": "Die Zahlungsseite konnte nicht geöffnet werden. Bitte versuchen Sie es erneut."
+  "POLAR_REQUEST_FAILED": "Die Zahlungsseite konnte nicht geöffnet werden. Bitte versuchen Sie es erneut.",
+  "PICKUP_DATE_IN_PAST": "Wählen Sie ein Abholdatum ab heute. Bestellungen für vergangene Tage können nicht angelegt werden."
 }

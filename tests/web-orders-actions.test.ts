@@ -111,7 +111,7 @@ describe('canCancelOrder (iOS OrderDetailLogic.actions + API transitions)', () =
   it.each([
     ['RENT', 'RESERVED', true],
     ['RENT', 'PICKUPED', true],
-    ['RENT', 'RETURNED', false],
+    ['RENT', 'RETURNED', true], // #1688
     ['RENT', 'CANCELLED', false],
     ['SALE', 'RESERVED', true],
     ['SALE', 'COMPLETED', true],

@@ -20,11 +20,11 @@ import kotlin.math.pow
  * Header every request carries so the API sends the stages of an order and accepts `paymentPlan` (#1199), and sends
  * BLOCK options and checks BLOCK prices (#1189). Old builds never send it and keep getting the answers they decode
  * today. One token per feature this build understands; the value is comma separated. `branch-listing` (#1346): this
- * app has the "Hiện ở chi nhánh" tick, so the API does not list a product again when this app puts it on an order.
+ * app has the "Hiện ở chi nhánh" tick, so the API does not list a product again when this app puts it on an order. `no-past-orders` (#1685): this app offers no pickup day before today (Vietnam day) and shows the 400 `PICKUP_DATE_IN_PAST` text.
  */
 object ClientCapabilities {
     const val HEADER_NAME = "X-Client-Capabilities"
-    val TOKENS: List<String> = listOf("installments", "block-pricing", "branch-listing")
+    val TOKENS: List<String> = listOf("installments", "block-pricing", "branch-listing", "no-past-orders")
     val headerValue: String get() = TOKENS.joinToString(",")
 }
 

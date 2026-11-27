@@ -109,13 +109,15 @@ export type OrderType = typeof ORDER_TYPE[keyof typeof ORDER_TYPE];
 
 /**
  * Status changes the API accepts (#361). Setting the current status again is always allowed (no-op).
- * RENT: RESERVED → PICKUPED → RETURNED, cancel while RESERVED or PICKUPED.
+ * RENT: RESERVED → PICKUPED → RETURNED, cancel while RESERVED, PICKUPED or RETURNED (#1688: a returned rental can be cancelled
+ * so it can be deleted; the API lets only MERCHANT / OUTLET_ADMIN / platform roles do that one, see apps/api/lib/order-cancel-returned.ts).
  * SALE: created COMPLETED, can be cancelled; RESERVED → COMPLETED kept for older sale orders.
  */
 export const ORDER_STATUS_TRANSITIONS: Record<OrderType, Partial<Record<OrderStatus, readonly OrderStatus[]>>> = {
   [ORDER_TYPE.RENT]: {
     [ORDER_STATUS.RESERVED]: [ORDER_STATUS.PICKUPED, ORDER_STATUS.CANCELLED],
     [ORDER_STATUS.PICKUPED]: [ORDER_STATUS.RETURNED, ORDER_STATUS.CANCELLED],
+    [ORDER_STATUS.RETURNED]: [ORDER_STATUS.CANCELLED],
   },
   [ORDER_TYPE.SALE]: {
     [ORDER_STATUS.RESERVED]: [ORDER_STATUS.COMPLETED, ORDER_STATUS.CANCELLED],

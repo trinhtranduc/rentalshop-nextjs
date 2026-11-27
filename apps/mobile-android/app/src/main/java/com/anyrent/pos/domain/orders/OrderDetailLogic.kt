@@ -167,7 +167,7 @@ object OrderDetailLogic {
         }
         val canEdit = canManageOrders && ((isRent && st == "RESERVED") || (isSale && st == "COMPLETED"))
         val canCancel = canManageOrders && (
-            (isRent && (st == "RESERVED" || st == "PICKUPED")) ||
+            (isRent && (st == "RESERVED" || st == "PICKUPED" || st == "RETURNED")) || // #1688: a returned rental can be cancelled
                 (isSale && (st == "RESERVED" || st == "COMPLETED"))
             )
         val canDelete = canDeleteCancelled && st == "CANCELLED"

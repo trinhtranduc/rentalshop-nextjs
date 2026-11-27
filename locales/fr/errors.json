@@ -579,5 +579,6 @@
   "SUBSCRIPTION_RENEWS_IN_STORE": "Votre forfait se renouvelle via l'App Store ou Google Play. Désactivez le renouvellement automatique là-bas avant de payer sur le web.",
   "PLAN_NOT_PURCHASABLE": "Ce forfait ne peut pas être acheté pour le moment.",
   "POLAR_CUSTOMER_NOT_FOUND": "Aucun abonnement par carte à gérer pour l'instant.",
-  "POLAR_REQUEST_FAILED": "Impossible d'ouvrir la page de paiement. Veuillez réessayer."
+  "POLAR_REQUEST_FAILED": "Impossible d'ouvrir la page de paiement. Veuillez réessayer.",
+  "PICKUP_DATE_IN_PAST": "Choisissez une date de retrait à partir d'aujourd'hui. Impossible de créer une commande pour un jour passé."
 }

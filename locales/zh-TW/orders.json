@@ -625,6 +625,7 @@
         "hint": "選擇日期即可查看該期間還剩多少件商品。",
         "summary": "{from} → {to} · {days} 天",
         "reversed": "歸還日必須是交付日當天或之後。",
+        "past": "交付日不能早於今天。",
         "tooLong": "一筆租借訂單最多 {days} 天。",
         "apply": "選擇 · {days} 天",
         "applyEmpty": "選擇",

@@ -3141,3 +3141,4 @@ App 會事先提醒。";
 "shopinfo.links.err.labelTooLong" = "名稱最多 30 個字元。";
 "shopinfo.links.type.website" = "網站";
 "shopinfo.links.type.other" = "其他";
+"PICKUP_DATE_IN_PAST" = "取貨日期須為今天或之後。無法建立過去日期的訂單。";

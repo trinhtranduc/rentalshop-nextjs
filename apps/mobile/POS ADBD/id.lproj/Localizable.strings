@@ -3123,3 +3123,4 @@
 "shopinfo.links.err.labelTooLong" = "Nama maksimal 30 karakter.";
 "shopinfo.links.type.website" = "Situs web";
 "shopinfo.links.type.other" = "Lainnya";
+"PICKUP_DATE_IN_PAST" = "Pilih tanggal pengambilan mulai hari ini. Pesanan untuk hari yang sudah lewat tidak dapat dibuat.";

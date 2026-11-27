@@ -21,6 +21,7 @@ import { buildOrderAuditSnapshot, safeAudit } from '../../../../lib/change-timel
 import { ORDER_SCHEDULE_CONFLICT } from '../../../../lib/schedule-conflict';
 import { checkOrderRefsInMerchant } from '../../../../lib/order-scope';
 import { hasCapability } from '../../../../lib/client-capabilities';
+import { staffCannotCancelReturned } from '../../../../lib/order-cancel-returned';
 import { shapeOrderInstallments, loadShop, unpaidAtPickupBody, unpaidStagesBlockingPickup, recomputeDepositFromPayments, installmentsView, parseCancelRequest, planCancellation, recordPlanCancellation, cancelAuditDescription, keepsCancelAmount, type PlanCancellation } from '../../../../lib/installments';
 import { parseDepositPlan, recalcAfterTotalChange } from '../../../../../../packages/utils/src/core/deposit-plan';
 import { isInstallmentPayment, shapeOrderPayments } from '../../../../lib/order-payments';
@@ -647,6 +648,14 @@ export const PUT = async (
         return NextResponse.json(
           ResponseBuilder.error('INVALID_ORDER_STATUS'),
           { status: 400 }
+        );
+      }
+
+      // #1688: only MERCHANT / OUTLET_ADMIN / platform roles cancel a rental that was already returned
+      if (body.status && staffCannotCancelReturned(user.role, existingOrder.orderType, existingOrder.status, body.status)) {
+        return NextResponse.json(
+          ResponseBuilder.error('INSUFFICIENT_PERMISSIONS'),
+          { status: API.STATUS.FORBIDDEN }
         );
       }
 

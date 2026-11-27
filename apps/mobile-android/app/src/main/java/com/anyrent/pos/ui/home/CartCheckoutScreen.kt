@@ -163,6 +163,7 @@ fun CartCheckoutScreen(
     val availabilityFailedMessage = stringResource(R.string.availability_check_failed)
     val conflictsLabel = stringResource(R.string.availability_conflicts)
     val validationFallbackMessage = stringResource(R.string.order_validation_fallback)
+    val pickupPastMessage = stringResource(R.string.v2_cart_pickup_past)
     val discountSummaryLabel = when {
         discount <= 0 -> stringResource(R.string.discount)
         discountType == CartStore.DiscountType.PERCENT -> stringResource(
@@ -185,6 +186,11 @@ fun CartCheckoutScreen(
         }
         if (customer == null) {
             error = customerRequiredMessage
+            return
+        }
+        // #1685: a pickup day before today (the day changed while the cart was open) goes back to "choose the days"
+        if (CartStore.dropPastPickupDays()) {
+            error = pickupPastMessage
             return
         }
         loading = true
@@ -1003,6 +1009,7 @@ fun CartCheckoutScreen(
             initialStart = pickup,
             initialEnd = ret,
             onDismiss = { showDateSelection = false },
+            minDate = CartStore.minPickupDay(), // #1685: no pickup day before today on a new order
             onConfirm = { startDate, endDate ->
                 CartStore.setPickup(startDate)
                 CartStore.setReturn(endDate)

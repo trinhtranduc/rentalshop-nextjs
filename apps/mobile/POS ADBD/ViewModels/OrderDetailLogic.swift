@@ -207,10 +207,11 @@ enum OrderDetailLogic {
         }
         // Same rule as the current swipe "Update Order" (SaleViewController)
         let editable = (orderType == .rent && status == .reserved) || (orderType == .sale && status == .completed)
-        // ORDER_STATUS_TRANSITIONS: RENT RESERVED/PICKUPED → CANCELLED, SALE RESERVED/COMPLETED → CANCELLED
+        // ORDER_STATUS_TRANSITIONS: RENT RESERVED/PICKUPED/RETURNED → CANCELLED (#1688, a returned rental only for
+        // canManageOrders, which `canCancel` below requires), SALE RESERVED/COMPLETED → CANCELLED
         let cancellable: Bool
         switch (orderType, status) {
-        case (.rent, .reserved), (.rent, .pickuped), (.sale, .reserved), (.sale, .completed): cancellable = true
+        case (.rent, .reserved), (.rent, .pickuped), (.rent, .returned), (.sale, .reserved), (.sale, .completed): cancellable = true
         default: cancellable = false
         }
         return OrderDetailActions(

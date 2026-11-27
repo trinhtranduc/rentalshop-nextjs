@@ -66,9 +66,12 @@ class OrderActionSheetTest {
     }
 
     @Test fun finishedOrdersPrintAtTheBottom() {
+        // #1688: a returned rental gets the red Huỷ đơn in the sheet (never on the bar), no Delete until it is cancelled
         val returned = rows("RENT", "RETURNED")
         assertEquals(listOf(Action.HISTORY), returned.main)
-        assertTrue(returned.danger.isEmpty())
+        assertEquals(listOf(Action.CANCEL), returned.danger)
+        assertEquals(listOf(Action.CANCEL), rows("RENT", "RETURNED", deleteCancelled = false).danger)
+        assertTrue(rows("RENT", "RETURNED", manage = false).danger.isEmpty())
         val cancelled = rows("RENT", "CANCELLED")
         assertEquals(listOf(Action.HISTORY), cancelled.main)
         assertEquals(listOf(Action.DELETE), cancelled.danger)
@@ -98,7 +101,11 @@ class OrderActionSheetTest {
     @Test fun `a staff member on a returned order has an empty sheet, so the dots button is hidden`() {
         val r = OrderActionSheet.rows(OrderDetailLogic.actions("RENT", "RETURNED", false, false), isSale = false, canExtend = false, canViewHistory = false)
         assertTrue(r.isEmpty)
-        assertTrue(!rows("RENT", "RETURNED").isEmpty) // the owner still has History
+        assertTrue(!rows("RENT", "RETURNED").isEmpty) // the owner still has History and Huỷ đơn
+        // #1688: an outlet admin without history right still sees Huỷ đơn, so ⋯ stays; staff (no manage) have none
+        val admin = OrderActionSheet.rows(OrderDetailLogic.actions("RENT", "RETURNED", true, true), isSale = false, canExtend = false, canViewHistory = false)
+        assertEquals(listOf(Action.CANCEL), admin.danger)
+        assertTrue(!admin.isEmpty)
     }
 
     @Test fun notesSubtitle() {

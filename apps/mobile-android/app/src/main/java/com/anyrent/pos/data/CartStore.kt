@@ -15,6 +15,7 @@ import com.anyrent.pos.domain.deposit.DepositTemplate
 import com.anyrent.pos.domain.deposit.PaymentPlanRequest
 import com.anyrent.pos.domain.orders.EditOrderSheet
 import com.anyrent.pos.domain.orders.OrderPlanDays
+import com.anyrent.pos.domain.orders.PickupDayRule
 import com.anyrent.pos.domain.products.BlockPricing
 import com.anyrent.pos.domain.products.CartV2Logic
 import com.anyrent.pos.domain.products.PricingMode
@@ -277,6 +278,28 @@ object CartStore {
         syncRentalDays()
         persist()
     }
+
+    /**
+     * #1685: the first pickup day a calendar offers for this cart: today (Vietnam) for a new rental, null (no
+     * minimum) while an order is edited, whose days may already be past.
+     */
+    fun minPickupDay(): LocalDate? = PickupDayRule.minPickupDay(editing = isEditing)
+
+    /**
+     * #1685: a new rental holding a pickup day before today (a draft kept overnight, a booking of a day that passed)
+     * asks for its days again: the days go back to "not chosen" (today → tomorrow) and the cart will not submit
+     * until they are picked. True when it did. A sale, an edit, or a cart without chosen days is left as it is.
+     */
+    fun dropPastPickupDays(today: LocalDate = ShopTime.today()): Boolean {
+        if (!PickupDayRule.mustAskDaysAgain(_orderType.value == "SALE", isEditing, _datesChosen.value, _pickupDate.value, today)) return false
+        _pickupDate.value = today
+        _returnDate.value = today.plusDays(1)
+        _datesChosen.value = false
+        syncRentalDays()
+        persist()
+        return true
+    }
+
     fun setNotes(value: String) {
         _notes.value = value
         persist()

@@ -579,5 +579,6 @@
   "SUBSCRIPTION_RENEWS_IN_STORE": "Paket Anda diperpanjang melalui App Store atau Google Play. Matikan perpanjangan otomatis di sana sebelum membayar di web.",
   "PLAN_NOT_PURCHASABLE": "Paket ini belum bisa dibeli sekarang.",
   "POLAR_CUSTOMER_NOT_FOUND": "Belum ada langganan kartu untuk dikelola.",
-  "POLAR_REQUEST_FAILED": "Halaman pembayaran tidak dapat dibuka. Silakan coba lagi."
+  "POLAR_REQUEST_FAILED": "Halaman pembayaran tidak dapat dibuka. Silakan coba lagi.",
+  "PICKUP_DATE_IN_PAST": "Pilih tanggal pengambilan mulai hari ini. Pesanan untuk hari yang sudah lewat tidak dapat dibuat."
 }

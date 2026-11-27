@@ -623,6 +623,8 @@ export function OrderEditor({ order }: { order?: OrderLike & { id: number; order
   const discountTooHigh = discountExceeds(discountType, discountValue, totals.subtotal)
     ? t('editor.money.discountTooHigh', { limit: discountType === 'percentage' ? '100%' : money(totals.subtotal) })
     : null;
+  // #1684: a new rental cannot start before today (Vietnam day); an order being edited keeps the days it has
+  const minDay = editing ? undefined : todayKey;
   const missing = firstMissing({
     orderType,
     pickup,
@@ -630,6 +632,7 @@ export function OrderEditor({ order }: { order?: OrderLike & { id: number; order
     customerId: customer?.id ?? null,
     outletId,
     lines,
+    minDay,
   });
   const itemCount = lines.reduce((s, l) => s + l.quantity, 0);
 
@@ -1314,6 +1317,7 @@ export function OrderEditor({ order }: { order?: OrderLike & { id: number; order
         todayKey={todayKey}
         weekdays={weekdays}
         maxDays={BUSINESS.MAX_RENTAL_DAYS}
+        minDay={minDay}
         onApply={(a, b) => {
           setPickup(a);
           setRet(b);
