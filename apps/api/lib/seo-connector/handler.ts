@@ -8,7 +8,7 @@
  *
  * - The key is checked before anything else, on every path (unknown ones included).
  * - Write calls need `Idempotency-Key`; the first successful answer is stored and replayed unchanged.
- * - The connector only edits, publishes and unpublishes drafts it created (author = `SEO_CONNECTOR_AUTHOR_ID`), never a post
+ * - The connector only edits, publishes and unpublishes drafts it created (author = `SEO_CONNECTOR_AUTHOR_ID`, else the `DEFAULT_AUTHOR_EMAIL` account, else the first ARTICLE / ADMIN), never a post
  *   the owner wrote by hand.
  */
 import { db } from '@rentalshop/database';
@@ -45,9 +45,25 @@ export const fail = (code: string, message: string, status: number, details?: un
 
 const siteUrl = () => (process.env.SEO_SITE_URL || process.env.CLIENT_URL || 'https://anyrent.shop').replace(/\/+$/, '');
 const adminUrl = () => (process.env.ADMIN_URL || 'https://admin.anyrent.shop').replace(/\/+$/, '');
-const authorId = (): number | null => {
+/**
+ * The account connector drafts are written under (and the only posts it may edit, publish or unpublish): `SEO_CONNECTOR_AUTHOR_ID`
+ * when it is a positive whole number, else the account whose email is `DEFAULT_AUTHOR_EMAIL`, else the first ARTICLE account,
+ * else the first ADMIN (#1682, both variables optional). No account: null.
+ */
+const authorId = async (): Promise<number | null> => {
   const n = Number(process.env.SEO_CONNECTOR_AUTHOR_ID);
-  return Number.isInteger(n) && n > 0 ? n : null;
+  if (Number.isInteger(n) && n > 0) return n;
+  const pick = { orderBy: { id: 'asc' as const }, select: { id: true } };
+  const email = (process.env.DEFAULT_AUTHOR_EMAIL || '').trim();
+  if (email) {
+    const byEmail = await db.prisma.user.findFirst({ where: { email: { equals: email, mode: 'insensitive' as const } }, ...pick });
+    if (byEmail) return byEmail.id;
+  }
+  const article = await db.prisma.user.findFirst({ where: { role: 'ARTICLE' as const }, ...pick });
+  if (article) return article.id;
+  const admin = await db.prisma.user.findFirst({ where: { role: 'ADMIN' as const }, ...pick });
+  if (admin) return admin.id;
+  return null;
 };
 
 /** What the writer is told about AnyRent's voice and limits (the `write-article` rules). */
@@ -94,7 +110,7 @@ async function ownPost(rawId: string): Promise<{ post: PostRow } | { error: Conn
     select: { id: true, slug: true, locale: true, status: true, authorId: true, publishedAt: true, title: true },
   })) as PostRow | null;
   if (!post) return { error: fail('not_found', 'No such draft.', 404) };
-  const author = authorId();
+  const author = await authorId();
   if (author === null || post.authorId !== author) {
     return { error: fail('forbidden', 'This post was not created by the connector.', 403) };
   }
@@ -167,8 +183,8 @@ async function readCalls(req: ConnectorRequest): Promise<ConnectorResult | null>
 }
 
 async function createDraft(body: Record<string, unknown>): Promise<ConnectorResult> {
-  const author = authorId();
-  if (author === null) return fail('server', 'SEO_CONNECTOR_AUTHOR_ID is not configured on the site.', 500);
+  const author = await authorId();
+  if (author === null) return fail('server', 'The site has no ARTICLE or ADMIN account to write drafts under.', 500);
 
   const title = str(body.title, 200);
   const slug = str(body.slug, 120);
