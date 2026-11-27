@@ -89,12 +89,12 @@ export function scheduleRange(o: OrderDetailLike, toDayKey: ToDayKey): { from: s
 }
 
 /**
- * Huỷ đơn like iOS `OrderDetailLogic.actions` (API ORDER_STATUS_TRANSITIONS): rentals before return,
- * sales not yet cancelled; for users with `orders.manage`.
+ * Huỷ đơn like iOS `OrderDetailLogic.actions` (API ORDER_STATUS_TRANSITIONS): rentals not cancelled yet (#1688: a returned one too, so it can
+ * be deleted), sales not yet cancelled; for users with `orders.manage` (staff have none).
  */
 export function canCancelOrder(orderType: string | null | undefined, status: string | null | undefined, canManageOrders: boolean): boolean {
   if (!canManageOrders) return false;
-  if (orderType === 'RENT') return status === 'RESERVED' || status === 'PICKUPED';
+  if (orderType === 'RENT') return status === 'RESERVED' || status === 'PICKUPED' || status === 'RETURNED';
   if (orderType === 'SALE') return status === 'RESERVED' || status === 'COMPLETED';
   return false;
 }
