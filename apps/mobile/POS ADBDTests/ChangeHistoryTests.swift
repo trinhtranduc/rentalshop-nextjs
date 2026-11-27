@@ -467,7 +467,10 @@ final class ChangeHistoryTests: XCTestCase {
     }
 
     func testReturnedAndCancelledOrders() {
-        XCTAssertEqual(sheet(.rent, .returned), OrderSheetActions(main: [.history], destructive: []))
+        // #1689: Cancel is in the red group of a returned rental, for the roles that manage orders
+        XCTAssertEqual(sheet(.rent, .returned), OrderSheetActions(main: [.history], destructive: [.cancel]))
+        XCTAssertEqual(sheet(.rent, .returned, manage: false), OrderSheetActions(main: [.history], destructive: []))
+        XCTAssertEqual(bar(.rent, .returned), [.print], "No primary or bottom Cancel for a returned rental")
         XCTAssertEqual(sheet(.rent, .cancelled), OrderSheetActions(main: [.history], destructive: [.delete]))
     }
 
