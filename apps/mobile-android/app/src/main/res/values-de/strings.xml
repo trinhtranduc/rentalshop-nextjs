@@ -545,6 +545,7 @@
     <string name="api_error_product_held_by_other_outlets_no_params">Andere Filialen führen dieses Produkt noch; nur der Geschäftsinhaber kann es löschen. Um den Verkauf in Ihrer Filiale zu beenden, setzen Sie den Bestand auf 0.</string>
     <string name="api_error_outlet_has_open_orders">Die Filiale hat noch angezahlte oder laufende Bestellungen. Schließen oder stornieren Sie diese, bevor Sie die Filiale deaktivieren.</string>
     <string name="api_error_block_price_mismatch">Der Preis des Artikels nach Tagesblöcken stimmt nicht mit der Preistabelle überein. Laden Sie das Produkt neu und versuchen Sie es erneut.</string>
+    <string name="api_error_pickup_date_in_past">Wählen Sie ein Abholdatum ab heute. Bestellungen für vergangene Tage können nicht angelegt werden.</string>
     <string name="api_error_pricing_type_requires_update">Dieses Produkt verwendet Preise nach Tagesblöcken. Bitte aktualisieren Sie die App, um zu buchen.</string>
     <string name="api_error_block_table_invalid">Die Preistabelle nach Tagesblöcken ist ungültig. Verwenden Sie 1 bis 31 Tage, Preise ab 0 und nur eine Preistabelle pro Produkt.</string>
     <string name="api_error_customer_duplicate">Ein Kunde mit dieser E-Mail-Adresse oder Telefonnummer existiert bereits</string>
@@ -1070,6 +1071,7 @@
     <string name="extend_rental_new_total">Neue Gesamtsumme: %1$s</string>
     <string name="v2_cart_pick_dates">Mietzeitraum wählen</string>
     <string name="v2_cart_need_pickup">Bitte wählen Sie das Abholdatum für die Mietbestellung.</string>
+    <string name="v2_cart_pickup_past">Der Übergabetag darf nicht vor heute liegen.</string>
     <string name="v2_cart_need_return">Bitte wählen Sie das Rückgabedatum für die Mietbestellung.</string>
     <string name="v2_cart_need_items">Der Warenkorb ist leer. Bitte fügen Sie mindestens ein Produkt hinzu.</string>
     <string name="v2_cart_need_customer">Bitte wählen Sie einen Kunden.</string>
