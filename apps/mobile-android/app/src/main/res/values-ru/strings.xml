@@ -545,6 +545,7 @@
     <string name="api_error_product_held_by_other_outlets_no_params">Другой филиал ещё имеет этот товар; удалить его может только владелец магазина. Чтобы прекратить продажи в своём филиале, установите остаток 0.</string>
     <string name="api_error_outlet_has_open_orders">В филиале есть забронированные или арендованные заказы. Завершите или отмените их перед отключением филиала.</string>
     <string name="api_error_block_price_mismatch">Цена товара с посуточным блоком не совпадает с прайс-листом. Обновите товар и попробуйте снова.</string>
+    <string name="api_error_pickup_date_in_past">Выберите дату выдачи начиная с сегодняшнего дня. Нельзя создать заказ на прошедшую дату.</string>
     <string name="api_error_pricing_type_requires_update">Этот товар использует посуточные блоки цен. Обновите приложение, чтобы оформить аренду.</string>
     <string name="api_error_block_table_invalid">Таблица цен по блокам дней некорректна. Используйте от 1 до 31 дня, цены от 0 и одну таблицу блоков на товар.</string>
     <string name="api_error_customer_duplicate">Клиент с таким email или телефоном уже существует</string>
@@ -1070,6 +1071,7 @@
     <string name="extend_rental_new_total">Новый итог: %1$s</string>
     <string name="v2_cart_pick_dates">Выберите даты аренды</string>
     <string name="v2_cart_need_pickup">Укажите дату выдачи для заказа аренды.</string>
+    <string name="v2_cart_pickup_past">Дата выдачи не может быть раньше сегодняшнего дня.</string>
     <string name="v2_cart_need_return">Укажите дату возврата для заказа аренды.</string>
     <string name="v2_cart_need_items">Корзина пуста. Добавьте хотя бы один товар.</string>
     <string name="v2_cart_need_customer">Выберите клиента.</string>

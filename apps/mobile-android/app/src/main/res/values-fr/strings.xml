@@ -545,6 +545,7 @@
     <string name="api_error_product_held_by_other_outlets_no_params">Un autre point de location possède encore ce produit ; seul le propriétaire de la boutique peut le supprimer. Pour arrêter de le vendre dans votre point de location, mettez votre stock à 0.</string>
     <string name="api_error_outlet_has_open_orders">Ce point de location a encore des commandes réservées ou en location. Terminez-les ou annulez-les avant de désactiver le point de location.</string>
     <string name="api_error_block_price_mismatch">Le prix de l’article facturé par tranches de jours ne correspond pas à la grille tarifaire. Rechargez le produit puis réessayez.</string>
+    <string name="api_error_pickup_date_in_past">Choisissez une date de retrait à partir d\'aujourd\'hui. Impossible de créer une commande pour un jour passé.</string>
     <string name="api_error_pricing_type_requires_update">Ce produit utilise la tarification par tranches de jours. Veuillez mettre l’application à jour pour réserver cette location.</string>
     <string name="api_error_block_table_invalid">La grille tarifaire par tranches de jours n’est pas valide. Utilisez de 1 à 31 jours, des prix égaux ou supérieurs à 0, et une seule grille par produit.</string>
     <string name="api_error_customer_duplicate">Un client avec cet e-mail ou ce téléphone existe déjà</string>
@@ -1070,6 +1071,7 @@
     <string name="extend_rental_new_total">Nouveau total : %1$s</string>
     <string name="v2_cart_pick_dates">Choisir les dates de location</string>
     <string name="v2_cart_need_pickup">Veuillez définir la date de retrait pour la commande de location.</string>
+    <string name="v2_cart_pickup_past">La date de remise ne peut pas être antérieure à aujourd\'hui.</string>
     <string name="v2_cart_need_return">Veuillez définir la date de retour pour la commande de location.</string>
     <string name="v2_cart_need_items">Le panier est vide. Veuillez ajouter au moins un produit.</string>
     <string name="v2_cart_need_customer">Veuillez sélectionner un client.</string>

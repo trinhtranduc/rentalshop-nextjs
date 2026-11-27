@@ -794,6 +794,10 @@ class Cart {
                     errors.append("Return date must be on or after pickup date".localized())
                 }
             }
+            // #1685: a new rental cannot start before today (shop day); an edited order keeps its old days
+            if PickupDayRule.isStale(pickup: pickupPlanAt, orderType: orderType, isEditMode: isEditMode) {
+                errors.append(PickupDayRule.errorCode.localized())
+            }
         }
         // SALE orders don't need pickup/return dates or deposit
         

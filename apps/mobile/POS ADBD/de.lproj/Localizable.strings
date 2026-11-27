@@ -3123,3 +3123,4 @@
 "shopinfo.links.err.labelTooLong" = "Der Name darf höchstens 30 Zeichen haben.";
 "shopinfo.links.type.website" = "Webseite";
 "shopinfo.links.type.other" = "Andere";
+"PICKUP_DATE_IN_PAST" = "Wählen Sie ein Abholdatum ab heute. Bestellungen für vergangene Tage können nicht angelegt werden.";

@@ -545,6 +545,7 @@
     <string name="api_error_product_held_by_other_outlets_no_params">Otra sucursal todavía tiene este producto; solo el dueño de la tienda puede eliminarlo. Para dejar de venderlo en su sucursal, ponga el inventario en 0.</string>
     <string name="api_error_outlet_has_open_orders">La sucursal todavía tiene pedidos reservados o en alquiler. Complete o cancele esos pedidos antes de desactivar la sucursal.</string>
     <string name="api_error_block_price_mismatch">El precio del artículo por bloque de días no coincide con la lista de precios. Recargue el producto e intente de nuevo.</string>
+    <string name="api_error_pickup_date_in_past">Elige una fecha de recogida a partir de hoy. No se pueden crear pedidos para días pasados.</string>
     <string name="api_error_pricing_type_requires_update">Este producto usa precio por bloque de días. Actualice la aplicación para realizar este alquiler.</string>
     <string name="api_error_block_table_invalid">La lista de precios por bloque de días no es válida. Use de 1 a 31 días, precios de 0 o más y una sola lista de precios por bloque para cada producto.</string>
     <string name="api_error_customer_duplicate">Ya existe un cliente con este correo electrónico o teléfono</string>
@@ -1070,6 +1071,7 @@
     <string name="extend_rental_new_total">Nuevo total: %1$s</string>
     <string name="v2_cart_pick_dates">Elegir fechas de alquiler</string>
     <string name="v2_cart_need_pickup">Indique la fecha de retiro del pedido de alquiler.</string>
+    <string name="v2_cart_pickup_past">El día de entrega no puede ser anterior a hoy.</string>
     <string name="v2_cart_need_return">Indique la fecha de devolución del pedido de alquiler.</string>
     <string name="v2_cart_need_items">El carrito está vacío. Agregue al menos un producto.</string>
     <string name="v2_cart_need_customer">Seleccione un cliente.</string>

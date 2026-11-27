@@ -3341,3 +3341,4 @@
 "shopinfo.links.err.labelTooLong" = "The name is at most 30 characters.";
 "shopinfo.links.type.website" = "Website";
 "shopinfo.links.type.other" = "Other";
+"PICKUP_DATE_IN_PAST" = "Pick up a day from today onward. Orders for past days cannot be created.";

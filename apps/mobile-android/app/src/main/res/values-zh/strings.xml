@@ -545,6 +545,7 @@
     <string name="api_error_product_held_by_other_outlets_no_params">其他分店仍有此商品；只有店主可以删除。若要在本分店停售，请将库存设为 0。</string>
     <string name="api_error_outlet_has_open_orders">该分店仍有已预订或租赁中的订单。请先完成或取消这些订单，再停用分店。</string>
     <string name="api_error_block_price_mismatch">按日段计价的商品价格与价格表不符。请重新加载商品后重试。</string>
+    <string name="api_error_pickup_date_in_past">取货日期须为今天或之后。无法创建过去日期的订单。</string>
     <string name="api_error_pricing_type_requires_update">此商品使用按日段计价。请更新应用后再办理租赁。</string>
     <string name="api_error_block_table_invalid">日段价格表无效。天数须在 1 到 31 之间，价格不能小于 0，且每件商品只能有一张价格表。</string>
     <string name="api_error_customer_duplicate">已存在使用该邮箱或电话的客户</string>
@@ -1070,6 +1071,7 @@
     <string name="extend_rental_new_total">新合计：%1$s</string>
     <string name="v2_cart_pick_dates">选择租赁日期</string>
     <string name="v2_cart_need_pickup">请为租赁订单选择取货日期。</string>
+    <string name="v2_cart_pickup_past">取货日期不能早于今天。</string>
     <string name="v2_cart_need_return">请为租赁订单选择归还日期。</string>
     <string name="v2_cart_need_items">购物车为空。请至少添加一件商品。</string>
     <string name="v2_cart_need_customer">请选择客户。</string>

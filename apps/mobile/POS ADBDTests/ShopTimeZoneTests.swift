@@ -309,3 +309,157 @@ final class ShopTimeZoneTests: XCTestCase {
         }
     }
 }
+
+/// #1685 (#1684): a new rental cannot start on a shop (Vietnam) day before today. Today stays allowed all day.
+/// Every case runs with the phone set to Tokyo, Los Angeles, UTC and Vietnam: the rule reads the shop zone only.
+final class PickupDayRuleTests: XCTestCase {
+    private static let zones = ["Asia/Tokyo", "America/Los_Angeles", "UTC", "Asia/Ho_Chi_Minh"]
+    private var savedZone: TimeZone!
+    private var savedTZ: String?
+
+    /// Friday 27/11/2026, 17:00 in Vietnam
+    private let now = PickupDayRuleTests.at("2026-11-27T10:00:00Z")
+
+    override func setUp() {
+        super.setUp()
+        savedZone = NSTimeZone.default
+        savedTZ = ProcessInfo.processInfo.environment["TZ"]
+    }
+
+    override func tearDown() {
+        restoreZone()
+        super.tearDown()
+    }
+
+    private static func at(_ text: String) -> Date {
+        ISO8601DateFormatter().date(from: text)!
+    }
+
+    private func setPhoneZone(_ zone: TimeZone) {
+        setenv("TZ", zone.identifier, 1)
+        tzset()
+        NSTimeZone.resetSystemTimeZone()
+        NSTimeZone.default = zone
+    }
+
+    private func restoreZone() {
+        if let savedTZ { setenv("TZ", savedTZ, 1) } else { unsetenv("TZ") }
+        tzset()
+        NSTimeZone.resetSystemTimeZone()
+        NSTimeZone.default = savedZone
+    }
+
+    private func inEachPhoneZone(_ body: (String) -> Void) {
+        for id in Self.zones {
+            setPhoneZone(TimeZone(identifier: id)!)
+            body(id)
+        }
+        restoreZone()
+    }
+
+    private func blocked(_ pickup: String, now: Date? = nil, timeZone: TimeZone = Date.shopTimeZone) -> Bool {
+        PickupDayRule.isBeforeToday(Self.at(pickup), now: now ?? self.now, timeZone: timeZone)
+    }
+
+    // MARK: The rule
+
+    func testYesterdayIsBlocked() {
+        inEachPhoneZone { id in
+            // 26/11 00:00 and 26/11 12:00 in Vietnam
+            XCTAssertTrue(blocked("2026-11-25T17:00:00Z"), id)
+            XCTAssertTrue(blocked("2026-11-26T05:00:00Z"), id)
+        }
+    }
+
+    func testTodayIsAllowedEvenWhenTheHourHasPassed() {
+        inEachPhoneZone { id in
+            // 27/11 00:00 (start of the shop day), 27/11 00:30 (17:00 VN is already past), 27/11 16:59:59 UTC
+            XCTAssertFalse(blocked("2026-11-26T17:00:00Z"), id)
+            XCTAssertFalse(blocked("2026-11-26T17:30:00Z"), id)
+            XCTAssertFalse(blocked("2026-11-27T10:00:00Z"), id)
+        }
+    }
+
+    func testTomorrowIsAllowed() {
+        inEachPhoneZone { id in
+            XCTAssertFalse(blocked("2026-11-27T17:00:00Z"), id)
+            XCTAssertFalse(blocked("2026-12-30T05:00:00Z"), id)
+        }
+    }
+
+    func testOneMinuteBeforeVietnamMidnightIsStillYesterday() {
+        inEachPhoneZone { id in
+            // 26/11 23:59 VN = 16:59 UTC: yesterday for a shop whose "now" is 27/11 17:00 VN
+            XCTAssertTrue(blocked("2026-11-26T16:59:00Z"), id)
+            // the same instant is allowed while "now" is still 26/11 23:59:59 VN
+            XCTAssertFalse(blocked("2026-11-26T16:59:00Z", now: Self.at("2026-11-26T16:59:59Z")), id)
+            // one second later the shop day is 27/11 and 26/11 is over
+            XCTAssertTrue(blocked("2026-11-26T16:59:00Z", now: Self.at("2026-11-26T17:00:00Z")), id)
+        }
+    }
+
+    func testTheShopZoneIsTheOneGivenNotThePhoneZone() {
+        // 26/11 17:30 UTC is 27/11 00:30 in Vietnam (today, allowed) but 26/11 in UTC (yesterday, blocked)
+        inEachPhoneZone { id in
+            XCTAssertFalse(blocked("2026-11-26T17:30:00Z", timeZone: TimeZone(identifier: "Asia/Ho_Chi_Minh")!), id)
+            XCTAssertTrue(blocked("2026-11-26T17:30:00Z", timeZone: TimeZone(identifier: "UTC")!), id)
+        }
+    }
+
+    // MARK: When it applies
+
+    func testOnlyANewRentalIsChecked() {
+        let past = Self.at("2026-11-20T05:00:00Z")
+        func stale(_ type: OrderType, edit: Bool, pickup: Date? = past) -> Bool {
+            PickupDayRule.isStale(pickup: pickup, orderType: type, isEditMode: edit, now: now)
+        }
+        XCTAssertTrue(stale(.rent, edit: false))
+        XCTAssertFalse(stale(.rent, edit: true), "an edited order keeps its old days")
+        XCTAssertFalse(stale(.sale, edit: false), "a sale has no pickup day")
+        XCTAssertFalse(stale(.rent, edit: false, pickup: nil), "no day yet is not stale")
+        XCTAssertFalse(stale(.rent, edit: false, pickup: Self.at("2026-11-26T17:00:00Z")), "today is fine")
+    }
+
+    // MARK: The calendar
+
+    func testCalendarOffersTodayOfTheShopFirstWhateverThePhoneZone() {
+        inEachPhoneZone { id in
+            // 27/11 00:10 in Vietnam: the phone may still show 26/11, the calendar must start on 27/11
+            let early = Self.at("2026-11-26T17:10:00Z")
+            let minimum = PickupDayRule.firstPickableDevicePick(now: early)
+            var device = Calendar(identifier: .gregorian)
+            device.timeZone = .current
+            let parts = device.dateComponents([.year, .month, .day], from: minimum)
+            XCTAssertEqual([parts.year, parts.month, parts.day], [2026, 11, 27], id)
+        }
+    }
+
+    func testCalendarMinimumOnlyMovesForANewRental() {
+        let yearBack = Self.at("2025-11-27T10:00:00Z")
+        XCTAssertEqual(PickupDayRule.calendarMinimum(orderType: .rent, isEditMode: true, fallback: yearBack, now: now), yearBack)
+        XCTAssertEqual(PickupDayRule.calendarMinimum(orderType: .sale, isEditMode: false, fallback: yearBack, now: now), yearBack)
+        XCTAssertNotEqual(PickupDayRule.calendarMinimum(orderType: .rent, isEditMode: false, fallback: yearBack, now: now), yearBack)
+    }
+
+    // MARK: The cart and the API
+
+    func testACartHoldingAPastPickupDoesNotValidate() {
+        var cart = Cart()
+        cart.orderType = .rent
+        cart.pickupPlanAt = Date().addingTimeInterval(-3 * 86_400)
+        cart.returnPlanAt = Date().addingTimeInterval(-2 * 86_400)
+        let message = PickupDayRule.errorCode.localized()
+        XCTAssertNotEqual(message, PickupDayRule.errorCode, "the app has a sentence for PICKUP_DATE_IN_PAST")
+        XCTAssertTrue(cart.validate().errors.contains(message))
+
+        cart.orderId = 1 // an edited order keeps its days
+        XCTAssertFalse(cart.validate().errors.contains(message))
+    }
+
+    func testTheCapabilityIsSent() {
+        XCTAssertEqual(PickupDayRule.capabilityToken, "no-past-orders")
+        XCTAssertTrue(ClientCapabilities.tokens.contains("no-past-orders"))
+        XCTAssertTrue(ClientCapabilities.headerValue.contains("no-past-orders"))
+        XCTAssertEqual(BaseService.jsonHeader.value(for: "X-Client-Capabilities"), ClientCapabilities.headerValue)
+    }
+}
