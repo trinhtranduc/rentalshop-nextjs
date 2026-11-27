@@ -3123,3 +3123,4 @@
 "shopinfo.links.err.labelTooLong" = "ชื่อยาวได้ไม่เกิน 30 ตัวอักษร";
 "shopinfo.links.type.website" = "เว็บไซต์";
 "shopinfo.links.type.other" = "อื่น ๆ";
+"PICKUP_DATE_IN_PAST" = "เลือกวันรับสินค้าตั้งแต่วันนี้เป็นต้นไป ไม่สามารถสร้างออเดอร์ย้อนหลังได้";

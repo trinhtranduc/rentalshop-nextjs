@@ -3123,3 +3123,4 @@
 "shopinfo.links.err.labelTooLong" = "Название — не более 30 символов.";
 "shopinfo.links.type.website" = "Сайт";
 "shopinfo.links.type.other" = "Другое";
+"PICKUP_DATE_IN_PAST" = "Выберите дату выдачи начиная с сегодняшнего дня. Нельзя создать заказ на прошедшую дату.";

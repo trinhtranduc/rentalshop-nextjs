@@ -14,11 +14,12 @@ import Foundation
 
 /// Header every request carries so the API sends deposit stages and accepts `paymentPlan` (#1199), sends BLOCK options and checks BLOCK prices (#1189).
 /// `branch-listing` (#1346): this build has the "Hiện ở chi nhánh" tick, so the API does not list a product again when it is put on an order.
+/// `no-past-orders` (#1685): this build does not offer a pickup day before today on a new rental, so the API answers 400 `PICKUP_DATE_IN_PAST` to one.
 /// Old builds never send it and keep getting the answers they decode today.
 enum ClientCapabilities {
     static let headerName = "X-Client-Capabilities"
     /// One token per feature this build understands; the value is comma separated
-    static let tokens: [String] = ["installments", "block-pricing", "branch-listing"]
+    static let tokens: [String] = ["installments", "block-pricing", "branch-listing", PickupDayRule.capabilityToken]
     static var headerValue: String { tokens.joined(separator: ", ") }
 }
 

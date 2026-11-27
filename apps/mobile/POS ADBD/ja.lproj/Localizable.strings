@@ -3123,3 +3123,4 @@
 "shopinfo.links.err.labelTooLong" = "名前は30文字以内です。";
 "shopinfo.links.type.website" = "ウェブサイト";
 "shopinfo.links.type.other" = "その他";
+"PICKUP_DATE_IN_PAST" = "受け取り日は今日以降を選んでください。過去の日付の注文は作成できません。";

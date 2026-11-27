@@ -3126,3 +3126,4 @@
 "shopinfo.links.err.labelTooLong" = "名称最多 30 个字符。";
 "shopinfo.links.type.website" = "网站";
 "shopinfo.links.type.other" = "其他";
+"PICKUP_DATE_IN_PAST" = "取货日期须为今天或之后。无法创建过去日期的订单。";
