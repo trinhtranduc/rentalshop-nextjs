@@ -625,6 +625,7 @@
         "hint": "Choisissez des dates pour voir le nombre d'articles disponibles sur cette période.",
         "summary": "{from} → {to} · {days} jours",
         "reversed": "La date de retour doit être égale ou postérieure à la date de remise.",
+        "past": "La date de remise ne peut pas être antérieure à aujourd'hui.",
         "tooLong": "Une commande de location ne peut pas dépasser {days} jours.",
         "apply": "Choisir · {days} jours",
         "applyEmpty": "Choisir",

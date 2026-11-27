@@ -3339,3 +3339,4 @@
 "shopinfo.links.err.labelTooLong" = "Tên tối đa 30 ký tự.";
 "shopinfo.links.type.website" = "Trang web";
 "shopinfo.links.type.other" = "Khác";
+"PICKUP_DATE_IN_PAST" = "Ngày lấy hàng phải từ hôm nay trở đi. Không tạo được đơn ở ngày đã qua.";

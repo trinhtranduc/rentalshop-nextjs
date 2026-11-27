@@ -113,6 +113,7 @@ final class CartV2ViewController: BaseViewControler {
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         navigationController?.setNavigationBarHidden(true, animated: false)
+        dropPastPickupDays() // #1685: a draft kept from yesterday asks for its days again
         render()
         loadAvailability()
         refreshStalePricing()
@@ -1171,12 +1172,25 @@ final class CartV2ViewController: BaseViewControler {
         picker.delegate = self
         picker.tag = 3
         let today = Date()
+        // #1685: a new rental cannot start before today (shop day); an edited order keeps the year back
+        let minimum = PickupDayRule.calendarMinimum(orderType: cart.orderType, isEditMode: cart.isEditMode,
+                                                    fallback: Calendar.current.date(byAdding: .year, value: -1, to: today))
         // FSCalendar draws the phone's days: select the cart's shop days there (#596)
         picker.configureForDateRange(startDate: cart.pickupPlanAt?.devicePickFromShopDay(),
                                      endDate: cart.returnPlanAt?.devicePickFromShopDay(),
-                                     minimumDate: Calendar.current.date(byAdding: .year, value: -1, to: today),
+                                     minimumDate: minimum,
                                      maximumDate: Calendar.current.date(byAdding: .year, value: 1, to: today))
         present(picker, animated: true)
+    }
+
+    /// #1685: the cart holds a pickup day before today (a draft from yesterday, a day chosen before midnight): forget
+    /// both days so the row asks for them again. Never on an edited order. Returns true when it cleared them.
+    @discardableResult
+    private func dropPastPickupDays() -> Bool {
+        guard PickupDayRule.isStale(pickup: cart.pickupPlanAt, orderType: cart.orderType, isEditMode: cart.isEditMode) else { return false }
+        CartStore.shared.setPickupDate(nil)
+        CartStore.shared.setReturnDate(nil)
+        return true
     }
 
     @objc private func editDiscount() {
@@ -1220,6 +1234,11 @@ final class CartV2ViewController: BaseViewControler {
         // #518 OFF: blocked until the dates, quantities or lines change (the button is disabled too)
         guard ctaState != .blocked, CartV2Logic.cartDiscountError(cart) == nil else { return }
         HapticFeedback.medium()
+        // #1685: never submit a pickup day before today; say why and open the days again
+        if dropPastPickupDays() {
+            askPickupDaysAgain()
+            return
+        }
         var (valid, errors) = cart.validate()
         let missingPrices = CartV2Logic.missingPrices(cart)
         if !missingPrices.isEmpty {
@@ -1374,6 +1393,14 @@ final class CartV2ViewController: BaseViewControler {
                 DispatchQueue.main.async { CartStore.shared.refreshBlockTable(from: product) }
             }
         }
+    }
+
+    /// #1685: tell the user the pickup day is in the past, then show the day picker (the cart's days are empty)
+    private func askPickupDaysAgain() {
+        let picker: () -> Void = { [weak self] in self?.pickDates() }
+        let alert = UIAlertController(title: "Error".localized(), message: PickupDayRule.errorCode.localized(), preferredStyle: .alert)
+        alert.addAction(UIAlertAction(title: "OK".localized(), style: .default) { _ in picker() })
+        present(alert, animated: true)
     }
 
     /// The request `CartViewModel.saveOrder` sends from the review screen, with this checkout's key

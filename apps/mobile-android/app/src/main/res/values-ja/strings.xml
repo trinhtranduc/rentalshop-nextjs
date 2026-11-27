@@ -545,6 +545,7 @@
     <string name="api_error_product_held_by_other_outlets_no_params">他の店舗にもこの商品があります。削除できるのはオーナーのみです。自店舗で販売を停止するには、在庫を0にしてください。</string>
     <string name="api_error_outlet_has_open_orders">この店舗には予約済みまたは貸出中の注文があります。店舗を無効にする前に、それらの注文を完了またはキャンセルしてください。</string>
     <string name="api_error_block_price_mismatch">日数ブロック料金の商品価格が料金表と一致しません。商品を再読み込みしてからもう一度お試しください。</string>
+    <string name="api_error_pickup_date_in_past">受け取り日は今日以降を選んでください。過去の日付の注文は作成できません。</string>
     <string name="api_error_pricing_type_requires_update">この商品は日数ブロック料金を使用しています。レンタルするにはアプリを更新してください。</string>
     <string name="api_error_block_table_invalid">日数ブロック料金表が無効です。日数は1〜31日、価格は0以上にし、商品ごとに料金表は1つだけにしてください。</string>
     <string name="api_error_customer_duplicate">このメールアドレスまたは電話番号の顧客はすでに登録されています</string>
@@ -1070,6 +1071,7 @@
     <string name="extend_rental_new_total">新しい合計: %1$s</string>
     <string name="v2_cart_pick_dates">レンタル日を選択</string>
     <string name="v2_cart_need_pickup">レンタル注文のお渡し日を選択してください。</string>
+    <string name="v2_cart_pickup_past">お渡し日は今日以降にしてください。</string>
     <string name="v2_cart_need_return">レンタル注文の返却日を選択してください。</string>
     <string name="v2_cart_need_items">カートが空です。商品を1点以上追加してください。</string>
     <string name="v2_cart_need_customer">顧客を選択してください。</string>

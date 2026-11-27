@@ -59,6 +59,7 @@ import { buildOrderAuditSnapshot, safeAudit } from '../../../lib/change-timeline
 import { attachOrderBalances, loadCompletedPaymentSums } from '../../../lib/order-balance-batch';
 import { ORDER_SCHEDULE_CONFLICT, type ScheduleConflict } from '../../../lib/schedule-conflict';
 import { hasCapability } from '../../../lib/client-capabilities';
+import { rejectsPastPickup } from '../../../lib/order-pickup-day';
 import { isOldListingClient } from '../../../lib/product-listing';
 import {
   installmentsView,
@@ -675,6 +676,12 @@ export const POST = withPermissions(['orders.create'])(async (request, { user, u
         parsed.data.pickupPlanAt = days.pickupPlanAt as string | undefined;
         parsed.data.returnPlanAt = days.returnPlanAt as string | undefined;
       }
+    }
+
+    // #1684: a client that sends the `no-past-orders` capability does not get a rental for a day before today (Vietnam day).
+    // An installed app does not send it and is never refused here.
+    if (rejectsPastPickup(request, parsed.data.orderType, parsed.data.pickupPlanAt)) {
+      return NextResponse.json(ResponseBuilder.error('PICKUP_DATE_IN_PAST'), { status: 400 });
     }
 
     // ✅ Validate outletId based on user role

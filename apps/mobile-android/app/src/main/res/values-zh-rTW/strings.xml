@@ -545,6 +545,7 @@
     <string name="api_error_product_held_by_other_outlets_no_params">其他分店仍有此商品；只有店主可以刪除。若要停止在本分店銷售，請將庫存設為 0。</string>
     <string name="api_error_outlet_has_open_orders">分店仍有未完成或租借中的訂單。請先完成或取消這些訂單，再停用分店。</string>
     <string name="api_error_block_price_mismatch">依天數區間計價的品項價格與價目表不符。請重新載入商品後再試一次。</string>
+    <string name="api_error_pickup_date_in_past">取貨日期須為今天或之後。無法建立過去日期的訂單。</string>
     <string name="api_error_pricing_type_requires_update">此商品採用依天數區間計價。請更新應用程式後再預訂。</string>
     <string name="api_error_block_table_invalid">依天數區間的價目表無效。天數須為 1 至 31，價格須為 0 以上，且每件商品只能有一張價目表。</string>
     <string name="api_error_customer_duplicate">已存在使用此電子郵件或電話的客戶</string>
@@ -1070,6 +1071,7 @@
     <string name="extend_rental_new_total">新總額：%1$s</string>
     <string name="v2_cart_pick_dates">選擇租期</string>
     <string name="v2_cart_need_pickup">請選擇租賃訂單的取貨日期。</string>
+    <string name="v2_cart_pickup_past">交付日不能早於今天。</string>
     <string name="v2_cart_need_return">請選擇租賃訂單的歸還日期。</string>
     <string name="v2_cart_need_items">購物車是空的。請至少加入一件商品。</string>
     <string name="v2_cart_need_customer">請選擇客戶。</string>

@@ -579,5 +579,6 @@
   "SUBSCRIPTION_RENEWS_IN_STORE": "您的方案正透過 App Store 或 Google Play 自動續訂。請先在那裡關閉自動續訂，再於網頁付款。",
   "PLAN_NOT_PURCHASABLE": "此方案目前無法購買。",
   "POLAR_CUSTOMER_NOT_FOUND": "目前沒有可管理的信用卡訂閱。",
-  "POLAR_REQUEST_FAILED": "無法開啟付款頁面。請再試一次。"
+  "POLAR_REQUEST_FAILED": "無法開啟付款頁面。請再試一次。",
+  "PICKUP_DATE_IN_PAST": "取貨日期須為今天或之後。無法建立過去日期的訂單。"
 }

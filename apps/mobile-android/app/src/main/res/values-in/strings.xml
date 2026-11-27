@@ -545,6 +545,7 @@
     <string name="api_error_product_held_by_other_outlets_no_params">Cabang lain masih memiliki produk ini; hanya pemilik toko yang dapat menghapus. Untuk berhenti menjual di cabang Anda, atur stok ke 0.</string>
     <string name="api_error_outlet_has_open_orders">Cabang masih memiliki pesanan yang dipesan atau sedang disewa. Selesaikan atau batalkan pesanan tersebut sebelum menonaktifkan cabang.</string>
     <string name="api_error_block_price_mismatch">Harga produk berbasis blok hari tidak sesuai dengan tabel harga. Muat ulang produk lalu coba lagi.</string>
+    <string name="api_error_pickup_date_in_past">Pilih tanggal pengambilan mulai hari ini. Pesanan untuk hari yang sudah lewat tidak dapat dibuat.</string>
     <string name="api_error_pricing_type_requires_update">Produk ini menggunakan harga per blok hari. Silakan perbarui aplikasi untuk membuat pesanan sewa.</string>
     <string name="api_error_block_table_invalid">Tabel harga per blok hari tidak valid. Gunakan 1 sampai 31 hari, harga 0 atau lebih, dan hanya satu tabel harga per produk.</string>
     <string name="api_error_customer_duplicate">Pelanggan dengan email atau nomor telepon ini sudah ada</string>
@@ -1070,6 +1071,7 @@
     <string name="extend_rental_new_total">Total baru: %1$s</string>
     <string name="v2_cart_pick_dates">Pilih tanggal sewa</string>
     <string name="v2_cart_need_pickup">Pilih tanggal serah untuk pesanan sewa.</string>
+    <string name="v2_cart_pickup_past">Tanggal serah terima tidak boleh sebelum hari ini.</string>
     <string name="v2_cart_need_return">Pilih tanggal pengembalian untuk pesanan sewa.</string>
     <string name="v2_cart_need_items">Keranjang kosong. Tambahkan minimal satu produk.</string>
     <string name="v2_cart_need_customer">Pilih pelanggan.</string>

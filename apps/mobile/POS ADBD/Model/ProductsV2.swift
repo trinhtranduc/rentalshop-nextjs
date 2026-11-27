@@ -1187,6 +1187,43 @@ enum CartDateRowLogic {
     }
 }
 
+/// #1685 (#1684): a NEW rental cannot start on a shop day before today. Today stays allowed all day, even when the hour
+/// has passed. The day is the shop (Vietnam) civil day, never the phone's: the API checks the same day.
+/// Editing an order and sales are not touched.
+enum PickupDayRule {
+    /// Capability token: the API answers 400 `PICKUP_DATE_IN_PAST` to a client that sends it
+    static let capabilityToken = "no-past-orders"
+    static let errorCode = "PICKUP_DATE_IN_PAST"
+
+    /// The rule applies to a rental that is being created
+    static func appliesTo(orderType: OrderType, isEditMode: Bool) -> Bool {
+        orderType == .rent && !isEditMode
+    }
+
+    /// True when `pickup` is on a shop day before today's shop day (a `yyyy-MM-dd` key compares as text)
+    static func isBeforeToday(_ pickup: Date, now: Date = Date(), timeZone: TimeZone = Date.shopTimeZone) -> Bool {
+        DayFormatter.key(pickup, timeZone: timeZone) < DayFormatter.key(now, timeZone: timeZone)
+    }
+
+    /// A cart or draft that holds a pickup day the rule no longer allows (it was set yesterday, or earlier)
+    static func isStale(pickup: Date?, orderType: OrderType, isEditMode: Bool,
+                        now: Date = Date(), timeZone: TimeZone = Date.shopTimeZone) -> Bool {
+        guard appliesTo(orderType: orderType, isEditMode: isEditMode), let pickup else { return false }
+        return isBeforeToday(pickup, now: now, timeZone: timeZone)
+    }
+
+    /// First day the date picker offers on a new rental: midnight, in the phone's zone, of today's shop day
+    /// (FSCalendar draws the phone's days)
+    static func firstPickableDevicePick(now: Date = Date()) -> Date {
+        now.devicePickFromShopDay()
+    }
+
+    /// The picker's earliest day: today for a new rental, `fallback` (a year back, as before) otherwise
+    static func calendarMinimum(orderType: OrderType, isEditMode: Bool, fallback: Date?, now: Date = Date()) -> Date? {
+        appliesTo(orderType: orderType, isEditMode: isEditMode) ? firstPickableDevicePick(now: now) : fallback
+    }
+}
+
 /// Quantity from the shared number-pad sheet (#1162).
 enum QuantityEntry {
     /// 9.999 is enough stock for a rental SKU. The pad's "000" would otherwise jump to millions.

@@ -3123,3 +3123,4 @@
 "shopinfo.links.err.labelTooLong" = "Le nom comporte 30 caractères au maximum.";
 "shopinfo.links.type.website" = "Site web";
 "shopinfo.links.type.other" = "Autre";
+"PICKUP_DATE_IN_PAST" = "Choisissez une date de retrait à partir d'aujourd'hui. Impossible de créer une commande pour un jour passé.";

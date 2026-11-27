@@ -545,6 +545,7 @@
     <string name="api_error_product_held_by_other_outlets_no_params">สาขาอื่นยังมีสินค้านี้ เฉพาะเจ้าของร้านเท่านั้นที่ลบได้ หากต้องการหยุดขายที่สาขาของคุณ ให้ตั้งสต็อกเป็น 0</string>
     <string name="api_error_outlet_has_open_orders">สาขายังมีออเดอร์ที่จองหรือกำลังเช่า กรุณาดำเนินการหรือยกเลิกออเดอร์เหล่านั้นก่อนปิดสาขา</string>
     <string name="api_error_block_price_mismatch">ราคาของรายการที่คิดตามช่วงวันไม่ตรงกับตารางราคา กรุณาโหลดสินค้าใหม่แล้วลองอีกครั้ง</string>
+    <string name="api_error_pickup_date_in_past">เลือกวันรับสินค้าตั้งแต่วันนี้เป็นต้นไป ไม่สามารถสร้างออเดอร์ย้อนหลังได้</string>
     <string name="api_error_pricing_type_requires_update">สินค้านี้ใช้ราคาตามช่วงวัน กรุณาอัปเดตแอปเพื่อจองการเช่า</string>
     <string name="api_error_block_table_invalid">ตารางราคาตามช่วงวันไม่ถูกต้อง ใช้ได้ 1 ถึง 31 วัน ราคาตั้งแต่ 0 ขึ้นไป และสินค้าแต่ละรายการมีตารางราคาเพียงหนึ่งตาราง</string>
     <string name="api_error_customer_duplicate">มีลูกค้าที่ใช้อีเมลหรือเบอร์โทรนี้อยู่แล้ว</string>
@@ -1070,6 +1071,7 @@
     <string name="extend_rental_new_total">ยอดรวมใหม่: %1$s</string>
     <string name="v2_cart_pick_dates">เลือกวันเช่า</string>
     <string name="v2_cart_need_pickup">กรุณาเลือกวันส่งมอบสำหรับออเดอร์เช่า</string>
+    <string name="v2_cart_pickup_past">วันส่งมอบต้องไม่ก่อนวันนี้</string>
     <string name="v2_cart_need_return">กรุณาเลือกวันคืนสำหรับออเดอร์เช่า</string>
     <string name="v2_cart_need_items">ตะกร้าว่าง กรุณาเพิ่มสินค้าอย่างน้อยหนึ่งรายการ</string>
     <string name="v2_cart_need_customer">กรุณาเลือกลูกค้า</string>

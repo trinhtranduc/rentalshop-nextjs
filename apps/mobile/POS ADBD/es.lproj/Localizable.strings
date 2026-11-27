@@ -3126,3 +3126,4 @@ Abra el Calendario y lo verá.";
 "shopinfo.links.err.labelTooLong" = "El nombre admite como máximo 30 caracteres.";
 "shopinfo.links.type.website" = "Sitio web";
 "shopinfo.links.type.other" = "Otro";
+"PICKUP_DATE_IN_PAST" = "Elige una fecha de recogida a partir de hoy. No se pueden crear pedidos para días pasados.";

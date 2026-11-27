@@ -131,6 +131,16 @@ describe('days', () => {
     expect(checkDays('2026-01-01', '2027-01-01', 365)).toBe('tooLong');
   });
 
+  it('#1684 a new order cannot start before today; today and later are fine; without a minimum nothing changes', () => {
+    expect(checkDays('2026-10-06', '2026-10-08', 365, '2026-10-07')).toBe('past');
+    expect(checkDays('2026-10-07', '2026-10-08', 365, '2026-10-07')).toBeNull();
+    expect(checkDays('2026-10-09', '2026-10-09', 365, '2026-10-07')).toBeNull();
+    expect(checkDays('2026-10-06', '2026-10-08', 365)).toBeNull();
+    // a past day does not hide the other problems
+    expect(checkDays('', '', 365, '2026-10-07')).toBe('missing');
+    expect(checkDays('2026-10-09', '2026-10-07', 365, '2026-10-07')).toBe('reversed');
+  });
+
   it('offers quick picks from today', () => {
     // 2026-10-07 is a Wednesday
     expect(quickDays('2026-10-07')).toEqual({
@@ -222,6 +232,14 @@ describe('submit', () => {
     expect(firstMissing({ ...base, customerId: null })).toBe('customer');
     expect(firstMissing({ ...base, outletId: null })).toBe('outlet');
     expect(firstMissing({ ...base, orderType: 'SALE', pickup: '', ret: '' })).toBeNull();
+  });
+
+  it('#1684 a new rental whose saved pickup is before today asks for the days again; a sale and an edit do not', () => {
+    const past = { ...base, pickup: '2026-10-06', ret: '2026-10-08' };
+    expect(firstMissing({ ...past, minDay: '2026-10-07' })).toBe('days');
+    expect(firstMissing({ ...past, minDay: '2026-10-06' })).toBeNull();
+    expect(firstMissing(past)).toBeNull(); // editing an order that already exists: no minimum
+    expect(firstMissing({ ...past, orderType: 'SALE', minDay: '2026-10-07' })).toBeNull();
   });
 
   it('#684 a line note is trimmed, sent as orderItems[].notes, and blank clears it', () => {

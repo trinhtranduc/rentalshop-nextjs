@@ -625,6 +625,7 @@
         "hint": "Pilih tanggal untuk melihat jumlah item yang masih tersedia pada jadwal tersebut.",
         "summary": "{from} → {to} · {days} hari",
         "reversed": "Tanggal pengembalian harus sama atau setelah tanggal serah terima.",
+        "past": "Tanggal serah terima tidak boleh sebelum hari ini.",
         "tooLong": "Satu pesanan sewa maksimal {days} hari.",
         "apply": "Pilih · {days} hari",
         "applyEmpty": "Pilih",
