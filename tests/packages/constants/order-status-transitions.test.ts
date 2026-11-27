@@ -9,6 +9,7 @@ describe('canChangeOrderStatus (#361)', () => {
     ['RENT', 'PICKUPED', 'RETURNED'],
     ['RENT', 'RESERVED', 'CANCELLED'],
     ['RENT', 'PICKUPED', 'CANCELLED'],
+    ['RENT', 'RETURNED', 'CANCELLED'], // #1688
     ['SALE', 'COMPLETED', 'CANCELLED'],
     ['SALE', 'RESERVED', 'COMPLETED'],
     ['RENT', 'PICKUPED', 'PICKUPED'],
@@ -20,7 +21,6 @@ describe('canChangeOrderStatus (#361)', () => {
   it.each([
     ['RENT', 'RETURNED', 'RESERVED'],
     ['RENT', 'RETURNED', 'PICKUPED'],
-    ['RENT', 'RETURNED', 'CANCELLED'],
     ['RENT', 'PICKUPED', 'RESERVED'],
     ['RENT', 'RESERVED', 'RETURNED'],
     ['RENT', 'RESERVED', 'COMPLETED'],
@@ -28,6 +28,8 @@ describe('canChangeOrderStatus (#361)', () => {
     ['SALE', 'COMPLETED', 'PICKUPED'],
     ['SALE', 'COMPLETED', 'RESERVED'],
     ['SALE', 'CANCELLED', 'COMPLETED'],
+    ['RENT', 'CANCELLED', 'RETURNED'],
+    ['RENT', 'CANCELLED', 'PICKUPED'],
   ])('%s %s → %s is rejected', (orderType, from, to) => {
     expect(canChangeOrderStatus(orderType, from, to)).toBe(false);
   });

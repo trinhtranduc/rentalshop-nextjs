@@ -19,6 +19,7 @@ import {
   unpaidAtPickupBody,
   unpaidStagesBlockingPickup,
 } from '../../../../../lib/installments';
+import { staffCannotCancelReturned } from '../../../../../lib/order-cancel-returned';
 import { parseDepositPlan } from '../../../../../../../packages/utils/src/core/deposit-plan';
 import { API } from '@rentalshop/constants';
 import {
@@ -149,6 +150,11 @@ export async function PATCH(
         ResponseBuilder.error('INVALID_ORDER_STATUS'),
         { status: 400 }
       );
+    }
+
+    // #1688: only MERCHANT / OUTLET_ADMIN / platform roles cancel a rental that was already returned
+    if (staffCannotCancelReturned(user.role, existingOrder.orderType, existingOrder.status, status)) {
+      return NextResponse.json(ResponseBuilder.error('INSUFFICIENT_PERMISSIONS'), { status: API.STATUS.FORBIDDEN });
     }
 
     // #1199: an order with explicit deposit stages still unpaid cannot be handed over (the `rest` stage never blocks).
