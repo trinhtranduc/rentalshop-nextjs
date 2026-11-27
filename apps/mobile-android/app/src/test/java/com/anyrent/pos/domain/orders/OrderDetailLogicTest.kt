@@ -56,10 +56,21 @@ class OrderDetailLogicTest {
     }
 
     @Test
-    fun `returned and cancelled rent only print, cancelled can be deleted`() {
+    fun `returned rent has no primary, cannot be edited or deleted, but the owner can cancel it (#1688)`() {
         val returned = actions("RENT", "RETURNED")
         assertEquals(DetailPrimary.NONE, returned.primary)
-        assertFalse(returned.canCancel || returned.canEdit || returned.canDelete)
+        assertTrue(returned.canCancel)
+        assertFalse(returned.canEdit || returned.canDelete)
+        // Staff never have canManageOrders: no cancel
+        assertFalse(actions("RENT", "RETURNED", manage = false).canCancel)
+        // A delete right does not give a cancel right
+        assertFalse(actions("RENT", "RETURNED", manage = false, delete = true).canCancel)
+        // The sale rule is unchanged: a sale is never RETURNED
+        assertFalse(actions("SALE", "RETURNED").canCancel)
+    }
+
+    @Test
+    fun `cancelled rent only prints, cannot be cancelled again, can be deleted`() {
         val cancelled = actions("RENT", "CANCELLED")
         assertEquals(DetailPrimary.NONE, cancelled.primary)
         assertFalse(cancelled.canCancel)
