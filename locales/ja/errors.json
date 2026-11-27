@@ -579,5 +579,6 @@
   "SUBSCRIPTION_RENEWS_IN_STORE": "プランは App Store または Google Play で自動更新されています。Web で支払う前に、そちらで自動更新をオフにしてください。",
   "PLAN_NOT_PURCHASABLE": "このプランは現在購入できません。",
   "POLAR_CUSTOMER_NOT_FOUND": "管理できるカードのサブスクリプションはまだありません。",
-  "POLAR_REQUEST_FAILED": "支払いページを開けませんでした。もう一度お試しください。"
+  "POLAR_REQUEST_FAILED": "支払いページを開けませんでした。もう一度お試しください。",
+  "PICKUP_DATE_IN_PAST": "受け取り日は今日以降を選んでください。過去の日付の注文は作成できません。"
 }

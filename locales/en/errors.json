@@ -602,5 +602,6 @@
   "SUBSCRIPTION_RENEWS_IN_STORE": "Your plan renews through the App Store or Google Play. Turn off auto-renew there before paying on the web.",
   "PLAN_NOT_PURCHASABLE": "This plan can't be bought right now.",
   "POLAR_CUSTOMER_NOT_FOUND": "There is no card subscription to manage yet.",
-  "POLAR_REQUEST_FAILED": "Could not open the payment page. Please try again."
+  "POLAR_REQUEST_FAILED": "Could not open the payment page. Please try again.",
+  "PICKUP_DATE_IN_PAST": "Pick up a day from today onward. Orders for past days cannot be created."
 }

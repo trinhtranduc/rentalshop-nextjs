@@ -602,5 +602,6 @@
   "SUBSCRIPTION_RENEWS_IN_STORE": "Gói đang tự gia hạn qua App Store hoặc Google Play. Tắt tự gia hạn ở đó trước khi trả trên web.",
   "PLAN_NOT_PURCHASABLE": "Gói này chưa mua được lúc này.",
   "POLAR_CUSTOMER_NOT_FOUND": "Chưa có gói trả bằng thẻ để quản lý.",
-  "POLAR_REQUEST_FAILED": "Không mở được trang thanh toán. Vui lòng thử lại."
+  "POLAR_REQUEST_FAILED": "Không mở được trang thanh toán. Vui lòng thử lại.",
+  "PICKUP_DATE_IN_PAST": "Ngày lấy hàng phải từ hôm nay trở đi. Không tạo được đơn ở ngày đã qua."
 }

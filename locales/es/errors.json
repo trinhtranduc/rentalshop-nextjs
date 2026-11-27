@@ -579,5 +579,6 @@
   "SUBSCRIPTION_RENEWS_IN_STORE": "Tu plan se renueva a través de App Store o Google Play. Desactiva la renovación automática allí antes de pagar en la web.",
   "PLAN_NOT_PURCHASABLE": "Este plan no se puede comprar ahora.",
   "POLAR_CUSTOMER_NOT_FOUND": "Todavía no hay una suscripción con tarjeta que gestionar.",
-  "POLAR_REQUEST_FAILED": "No se pudo abrir la página de pago. Inténtalo de nuevo."
+  "POLAR_REQUEST_FAILED": "No se pudo abrir la página de pago. Inténtalo de nuevo.",
+  "PICKUP_DATE_IN_PAST": "Elige una fecha de recogida a partir de hoy. No se pueden crear pedidos para días pasados."
 }

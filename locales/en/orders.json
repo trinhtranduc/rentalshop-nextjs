@@ -625,6 +625,7 @@
         "hint": "Choose the days to see what is still free for them.",
         "summary": "{from} → {to} · {days, plural, one {# day} other {# days}}",
         "reversed": "The return day must be on or after the pickup day.",
+        "past": "The pickup day cannot be before today.",
         "tooLong": "A rental can last at most {days} days.",
         "apply": "Choose · {days} days",
         "applyEmpty": "Choose",

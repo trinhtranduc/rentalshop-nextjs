@@ -219,6 +219,7 @@ const ERROR_MESSAGES: Record<string, string> = {
   // #1189 day-block pricing
   'BLOCK_PRICE_MISMATCH': "The price of a day-block item does not match the price list. Reload the product and try again.",
   'PRICING_TYPE_REQUIRES_UPDATE': "This product uses day-block pricing. Please update the app to place this rental.",
+  'PICKUP_DATE_IN_PAST': "Pick up a day from today onward. Orders for past days cannot be created.",
   'BLOCK_TABLE_INVALID': "The day-block price list is not valid. Use 1 to 31 days, prices of 0 or more, and one block price list per product.",
 
   // #1199 staged deposits
