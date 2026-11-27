@@ -36,6 +36,7 @@ import com.anyrent.pos.ui.common.formatMoney
 import com.anyrent.pos.ui.common.nextOrderStatuses
 import com.anyrent.pos.ui.payment.PaymentQrDialog
 import com.anyrent.pos.ui.payment.PaymentViewModel
+import com.anyrent.pos.domain.orders.OrderDetailLogic
 import com.anyrent.pos.domain.orders.OrderPlanDays
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -45,17 +46,13 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.anyrent.pos.ui.navigation.OrdersChanged
 
 /**
- * iOS [OrderViewModel.availableActions] cancel rules:
- * - SALE + COMPLETED + canManageOrders
- * - RENT + RESERVED + canManageOrders
+ * Same rule as the detail ([OrderDetailLogic.actions], iOS `OrderDetailLogic.actions`):
+ * - RENT + RESERVED / PICKUPED / RETURNED (#1688) and SALE + RESERVED / COMPLETED
+ * - only with canManageOrders (MERCHANT / OUTLET_ADMIN)
  * Cancel is never a primary footer button — only under ⋯.
  */
-fun canCancelOrder(orderType: String, status: String): Boolean {
-    if (!PermissionManager.canManageOrders()) return false
-    val type = orderType.uppercase()
-    val st = status.uppercase()
-    return (type == "SALE" && st == "COMPLETED") || (type == "RENT" && st == "RESERVED")
-}
+fun canCancelOrder(orderType: String, status: String): Boolean =
+    OrderDetailLogic.actions(orderType, status, PermissionManager.canManageOrders(), false).canCancel
 
 /** iOS: delete only for CANCELLED + merchant/outlet admin (or system admin). */
 fun canDeleteCancelledOrder(status: String): Boolean =
