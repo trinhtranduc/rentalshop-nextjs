@@ -579,5 +579,6 @@
   "SUBSCRIPTION_RENEWS_IN_STORE": "요금제가 App Store 또는 Google Play에서 자동 갱신 중입니다. 웹에서 결제하기 전에 그곳에서 자동 갱신을 끄세요.",
   "PLAN_NOT_PURCHASABLE": "지금은 이 요금제를 구매할 수 없습니다.",
   "POLAR_CUSTOMER_NOT_FOUND": "관리할 카드 구독이 아직 없습니다.",
-  "POLAR_REQUEST_FAILED": "결제 페이지를 열 수 없습니다. 다시 시도하세요."
+  "POLAR_REQUEST_FAILED": "결제 페이지를 열 수 없습니다. 다시 시도하세요.",
+  "PICKUP_DATE_IN_PAST": "수령일은 오늘 이후로 선택해 주세요. 지난 날짜의 주문은 만들 수 없습니다."
 }

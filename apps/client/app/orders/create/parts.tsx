@@ -95,6 +95,7 @@ export function DaysDialog({
   todayKey,
   weekdays,
   maxDays,
+  minDay,
   onApply,
   onClose,
   t,
@@ -105,6 +106,8 @@ export function DaysDialog({
   todayKey: string;
   weekdays: string[];
   maxDays: number;
+  /** #1684: the first day a NEW order may start (today); undefined when editing an order */
+  minDay?: string;
   onApply: (pickup: string, ret: string) => void;
   onClose: () => void;
   t: T;
@@ -117,7 +120,7 @@ export function DaysDialog({
       setTo(ret);
     }
   }, [open, pickup, ret]);
-  const problem = checkDays(from, to, maxDays);
+  const problem = checkDays(from, to, maxDays, minDay);
   const quick = quickDays(todayKey);
   const days = problem ? 0 : rentalDays(from, to);
   return (
@@ -162,6 +165,7 @@ export function DaysDialog({
           from={from}
           to={to}
           todayKey={todayKey}
+          min={minDay}
           hints={{ start: t('editor.days.pickPickup'), end: t('editor.days.pickReturn') }}
           onPick={(r) => {
             setFrom(r.from);
@@ -171,7 +175,9 @@ export function DaysDialog({
         <p className={`m-0 text-sm ${problem && problem !== 'missing' ? 'text-ar-danger' : 'text-ar-muted'}`} role="status">
           {problem === 'reversed'
             ? t('editor.days.reversed')
-            : problem === 'tooLong'
+            : problem === 'past'
+              ? t('editor.days.past')
+              : problem === 'tooLong'
               ? t('editor.days.tooLong', { days: maxDays })
               : problem === 'missing'
                 ? t('editor.days.hint')

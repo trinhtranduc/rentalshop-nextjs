@@ -625,6 +625,7 @@
         "hint": "Tage wählen, um zu sehen, was an diesen Tagen noch frei ist.",
         "summary": "{from} → {to} · {days, plural, one {# Tag} other {# Tage}}",
         "reversed": "Der Rückgabetag muss am oder nach dem Übergabetag liegen.",
+        "past": "Der Übergabetag darf nicht vor heute liegen.",
         "tooLong": "Eine Vermietung kann höchstens {days} Tage dauern.",
         "apply": "Wählen · {days} Tage",
         "applyEmpty": "Wählen",

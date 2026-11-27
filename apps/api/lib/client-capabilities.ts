@@ -15,8 +15,10 @@ export const CLIENT_CAPABILITIES_HEADER = 'x-client-capabilities';
  * Tokens the server knows. Add a token here in the PR that ships the behaviour.
  * `branch-listing` (#1341): the client shows the "Hiện ở chi nhánh" tick, so the server does not list products for it
  * (an old app has no tick: the server lists the products it puts on an order, see lib/product-listing.ts).
+ * `no-past-orders` (#1684): the client does not let staff pick a day before today for a new rental, so the server also refuses it
+ * (400 PICKUP_DATE_IN_PAST). An installed app has no such rule and is never refused.
  */
-export type ClientCapability = 'installments' | 'block-pricing' | 'branch-listing';
+export type ClientCapability = 'installments' | 'block-pricing' | 'branch-listing' | 'no-past-orders';
 
 interface HeaderSource {
   get(name: string): string | null;

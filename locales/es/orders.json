@@ -625,6 +625,7 @@
         "hint": "Elija los días para ver qué artículos siguen disponibles en esas fechas.",
         "summary": "{from} → {to} · {days, plural, one {# día} other {# días}}",
         "reversed": "El día de devolución debe ser igual o posterior al día de entrega.",
+        "past": "El día de entrega no puede ser anterior a hoy.",
         "tooLong": "Un alquiler puede durar como máximo {days} días.",
         "apply": "Elegir · {days} días",
         "applyEmpty": "Elegir",

@@ -579,5 +579,6 @@
   "SUBSCRIPTION_RENEWS_IN_STORE": "您的套餐正在通过 App Store 或 Google Play 自动续费。请先在那里关闭自动续费，再在网页上付款。",
   "PLAN_NOT_PURCHASABLE": "该套餐目前无法购买。",
   "POLAR_CUSTOMER_NOT_FOUND": "暂无可管理的银行卡订阅。",
-  "POLAR_REQUEST_FAILED": "无法打开付款页面。请重试。"
+  "POLAR_REQUEST_FAILED": "无法打开付款页面。请重试。",
+  "PICKUP_DATE_IN_PAST": "取货日期须为今天或之后。无法创建过去日期的订单。"
 }

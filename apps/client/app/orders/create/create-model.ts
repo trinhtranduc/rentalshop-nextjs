@@ -503,11 +503,13 @@ export function dayRangeIso(pickup: string, ret: string): { startDate: string; e
   };
 }
 
-export type DaysProblem = 'missing' | 'reversed' | 'tooLong' | null;
+export type DaysProblem = 'missing' | 'reversed' | 'tooLong' | 'past' | null;
 
-export function checkDays(pickup: string, ret: string, maxDays: number): DaysProblem {
+/** `minDay` (#1684): a NEW order cannot start before this day (today, Vietnam day key); editing passes none. */
+export function checkDays(pickup: string, ret: string, maxDays: number, minDay?: string): DaysProblem {
   if (!pickup || !ret) return 'missing';
   if (ret < pickup) return 'reversed';
+  if (minDay && pickup < minDay) return 'past';
   if (rentalDays(pickup, ret) > maxDays) return 'tooLong';
   return null;
 }
@@ -648,8 +650,11 @@ export function firstMissing(s: {
   customerId: number | null;
   outletId: number | null;
   lines: CartLine[];
+  /** #1684: a new rental cannot start before this day; a draft saved on an earlier day asks for the days again */
+  minDay?: string;
 }): Missing {
   if (s.orderType === 'RENT' && (!s.pickup || !s.ret)) return 'days';
+  if (s.orderType === 'RENT' && s.minDay && s.pickup < s.minDay) return 'days';
   if (!s.lines.length) return 'items';
   if (s.lines.some((l) => needsPrice(l, s.orderType))) return 'price';
   if (!s.customerId) return 'customer';

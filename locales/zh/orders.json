@@ -625,6 +625,7 @@
         "hint": "选择日期后可查看该时段内的剩余商品数。",
         "summary": "{from} → {to} · {days} 天",
         "reversed": "归还日期不能早于取货日期。",
+        "past": "取货日期不能早于今天。",
         "tooLong": "单个租赁订单最多 {days} 天。",
         "apply": "确定 · {days} 天",
         "applyEmpty": "确定",
