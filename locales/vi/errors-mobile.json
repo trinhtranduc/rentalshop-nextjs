@@ -417,5 +417,6 @@
   "PRICING_TYPE_REQUIRES_UPDATE": "Sản phẩm này dùng giá theo khối ngày. Vui lòng cập nhật ứng dụng để đặt thuê.",
   "BLOCK_TABLE_INVALID": "Bảng giá theo khối ngày không hợp lệ. Dùng từ 1 đến 31 ngày, giá từ 0 trở lên và mỗi sản phẩm chỉ một bảng giá.",
   "CANCEL_AMOUNTS_MISMATCH": "Số tiền giữ lại lớn hơn số đã thu hoặc không hợp lệ.",
-  "CANCELLED_ORDER_KEEPS_AMOUNT": "Đơn đã huỷ có giữ lại tiền cọc nên được lưu trong lịch sử, không xoá được."
+  "CANCELLED_ORDER_KEEPS_AMOUNT": "Đơn đã huỷ có giữ lại tiền cọc nên được lưu trong lịch sử, không xoá được.",
+  "PICKUP_DATE_IN_PAST": "Ngày lấy hàng phải từ hôm nay trở đi. Không tạo được đơn ở ngày đã qua."
 }
